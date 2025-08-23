@@ -50,12 +50,15 @@ model StudySession {
   id              String      @id @default(uuid())
   userId          String
   startTime       DateTime
-  endTime         DateTime
-  durationMinutes Int
+  endTime         DateTime?           // 结束时再写入
+  durationMinutes Int?                // 结束时再写入
   type            SessionType
   createdAt       DateTime    @default(now())
 
   user            User        @relation(fields: [userId], references: [id])
+
+  @@index([userId, endTime])         // 快速查“进行中”会话
+  @@index([userId, startTime])
 }
 
 enum SessionType {

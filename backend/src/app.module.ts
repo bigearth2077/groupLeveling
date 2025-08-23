@@ -7,13 +7,15 @@ import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { StudyModule } from './study/study.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
-    UsersModule,
     AuthModule,
+    UsersModule,
+    StudyModule,
   ],
   controllers: [AppController],
   providers: [
