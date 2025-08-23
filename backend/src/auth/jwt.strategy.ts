@@ -1,6 +1,11 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable, UnauthorizedException, CanActivate, ExecutionContext } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  CanActivate,
+  ExecutionContext,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -9,13 +14,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: cfg.get<string>('JWT_SECRET'),
+      secretOrKey: cfg.get<string>('JWT_ACCESS_SECRET'),
     });
   }
 
   async validate(payload: any) {
     // 返回对象会被挂在 req.user
-    return { id: payload.sub, email: payload.email, nickname: payload.nickname };
+    return {
+      id: payload.sub,
+      email: payload.email,
+      nickname: payload.nickname,
+    };
   }
 }
 
