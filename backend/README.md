@@ -1,98 +1,145 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# StudyRoom Backend (NestJS + Prisma + Redis + Postgres)
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+本项目是一个 **自习室管理 & 学习监督系统** 的后端，基于 **NestJS + Prisma** 开发，使用 **Postgres** 作为数据库，**Redis** 作为缓存/排行榜。
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+支持 **Docker 一键启动**，方便团队成员在本地快速运行。
 
-## Description
+---
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 🚀 快速开始
 
-## Project setup
+### 1. 安装依赖
+- 需要本地安装 [Docker](https://docs.docker.com/get-docker/) 和 [Docker Compose](https://docs.docker.com/compose/)。
 
+确认是否安装：
 ```bash
-$ npm install
+docker -v
+docker compose version
 ```
 
-## Compile and run the project
-
+### 2. 启动开发环境（热重载）
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+docker compose -f docker-compose.dev.yml up -d --build
 ```
 
-## Run tests
+- 服务将运行在 `http://localhost:3000`
+- 默认数据库在 `localhost:5432`
+- 默认 Redis 在 `localhost:6379`
 
+查看日志：
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+docker compose -f docker-compose.dev.yml logs -f api
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
+停止服务：
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+docker compose -f docker-compose.dev.yml down
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 3. 启动生产环境
+```bash
+docker compose up -d --build
+```
 
-## Resources
+停止：
+```bash
+docker compose down
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+---
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+## ⚙️ 环境变量
 
-## Support
+项目使用 `.docker.env` 来配置容器环境：
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```env
+NODE_ENV=production
+PORT=3000
 
-## Stay in touch
+DATABASE_URL=postgresql://postgres:postgres@postgres:5432/studyroom
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+REDIS_URL=redis://redis:6379
 
-## License
+JWT_ACCESS_SECRET=super-access-secret
+JWT_REFRESH_SECRET=super-refresh-secret
+JWT_ACCESS_EXPIRES_IN=15m
+JWT_REFRESH_EXPIRES_IN=30d
+```
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+你可以在 `.docker.env` 修改配置，例如数据库密码。
+
+---
+
+## 📦 数据迁移
+
+容器启动时会自动执行：
+```bash
+npx prisma migrate deploy
+```
+
+如果你修改了 `prisma/schema.prisma`，需要在本地执行：
+```bash
+npx prisma migrate dev --name <migration-name>
+```
+
+然后重新构建容器：
+```bash
+docker compose -f docker-compose.dev.yml up -d --build
+```
+
+---
+
+## 📖 常用命令
+
+### 查看容器状态
+```bash
+docker ps
+```
+
+### 进入数据库容器
+```bash
+docker exec -it study_pg psql -U postgres -d studyroom
+```
+
+### 进入 Redis 容器
+```bash
+docker exec -it study_redis redis-cli
+```
+
+### 停止并清理所有数据（慎用）
+```bash
+docker compose down -v
+```
+
+---
+
+## 🛠️ 调试技巧
+
+- **修改代码**：在开发模式下，NestJS 会热重载。
+- **查看日志**：`docker compose logs -f api`
+- **数据库可视化**：推荐安装 [TablePlus](https://tableplus.com/) / [pgAdmin](https://www.pgadmin.org/) 查看数据。
+- **Redis 可视化**：推荐 [RedisInsight](https://redis.com/redis-enterprise/redis-insight/)。
+
+---
+
+## 👥 团队成员使用说明
+
+1. 克隆仓库：
+   ```bash
+   git clone <repo-url>
+   cd <repo>
+   ```
+
+2. 启动服务：
+   ```bash
+   docker compose -f docker-compose.dev.yml up -d --build
+   ```
+
+3. 打开 `http://localhost:3000`，使用 Postman/Swagger 调试 API。
+
+4. 如果要运行生产环境：
+   ```bash
+   docker compose up -d --build
+   ```
+
+就这么简单 🚀
