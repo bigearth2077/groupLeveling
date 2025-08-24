@@ -8,6 +8,8 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { StudyModule } from './study/study.module';
+import { RedisModule } from './redis/redis.module';
+import { FriendModule } from './friend/friend.module';
 
 @Module({
   imports: [
@@ -16,6 +18,8 @@ import { StudyModule } from './study/study.module';
     AuthModule,
     UsersModule,
     StudyModule,
+    RedisModule,
+    FriendModule,
   ],
   controllers: [AppController],
   providers: [

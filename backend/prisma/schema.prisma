@@ -39,6 +39,10 @@ model Friend {
 
   user      User     @relation("UserFriends", fields: [userId], references: [id])
   friend    User     @relation("FriendOf", fields: [friendId], references: [id])
+
+  @@unique([userId, friendId])
+  @@index([friendId, status])
+  @@index([userId, status])
 }
 
 enum FriendStatus {
