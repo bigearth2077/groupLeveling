@@ -10,6 +10,7 @@ import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { StudyModule } from './study/study.module';
 import { RedisModule } from './redis/redis.module';
 import { FriendModule } from './friend/friend.module';
+import { RoomModule } from './room/room.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { FriendModule } from './friend/friend.module';
     StudyModule,
     RedisModule,
     FriendModule,
+    RoomModule,
   ],
   controllers: [AppController],
   providers: [
