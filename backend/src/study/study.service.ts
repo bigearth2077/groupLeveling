@@ -43,22 +43,41 @@ export class StudyService {
       throw new NotFoundException('Session not found');
     if (sess.endTime) throw new BadRequestException('Session already ended');
 
-    const end = new Date(dto.endTime);
-    if (!(sess.startTime instanceof Date))
-      sess.startTime = new Date(sess.startTime);
+    const end = dto.endTime ? new Date(dto.endTime) : new Date();
+    const start = new Date(sess.startTime);
     if (isNaN(end.getTime())) throw new BadRequestException('Invalid endTime');
-    if (end <= sess.startTime)
+    if (end <= start)
       throw new BadRequestException('endTime must be after startTime');
 
-    const minutes = Math.floor(
-      (end.getTime() - sess.startTime.getTime()) / 60000,
-    );
+    // 实际经过分钟数（自然流逝）
+    const elapsed = Math.floor((end.getTime() - start.getTime()) / 60000);
+
+    // 有效分钟数：如用户提供，则校验；否则用 elapsed
+    let effective = dto.durationMinutes ?? elapsed;
+
+    // 约束：有效分钟数不得 > 自然经过分钟数（否则说明前端计时溢出/数据异常）
+    if (effective > elapsed) {
+      throw new BadRequestException(
+        `durationMinutes (${effective}) exceeds elapsed minutes (${elapsed}).`,
+      );
+    }
+    // 约束：最低 1 分钟（如果需要允许 0 可放开下行判断）
+    if (effective < 1) {
+      throw new BadRequestException('durationMinutes must be >= 1 minute');
+    }
+    // 约束：单次会话上限（与 DTO Max 保持一致，双层校验）
+    const MAX_SESSION_MINUTES = 12 * 60;
+    if (effective > MAX_SESSION_MINUTES) {
+      throw new BadRequestException(
+        `durationMinutes must be <= ${MAX_SESSION_MINUTES} minutes`,
+      );
+    }
 
     return this.prisma.studySession.update({
       where: { id: sessionId },
       data: {
         endTime: end,
-        durationMinutes: minutes,
+        durationMinutes: effective,
       },
     });
   }
