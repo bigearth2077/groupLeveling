@@ -45,214 +45,148 @@
 </template>
 
 <script setup>
-import * as echarts from "echarts"
-import { ref, onMounted, onBeforeUnmount, watch } from "vue"
-import {
-  quarterMonths,
-  quarterData,
-  yearMonths,
-  yearData,
-  weekDays,
-  weekData,
-  hours,
-  todayData,
-} from "../mock/fakeData"
+import * as echarts from "echarts";
+import { ref, onMounted, onBeforeUnmount, watch, computed } from "vue";
 
-const primaryColor = getComputedStyle(document.documentElement)
-  .getPropertyValue('--p')
-  .trim()
+ // ----------- 1. 状态管理 (State Management) -----------
+const monthlyRef = ref(null);
+const weeklyRef = ref(null);
+const dailyRef = ref(null);
+const pieRef = ref(null);
+const chart1Type = ref("quarter");
 
-const accentColor = getComputedStyle(document.documentElement)
-  .getPropertyValue('--a')
-  .trim()
+const monthlyApiData = ref(null);
+const weeklyApiData = ref(null);
+const dailyApiData = ref(null);
 
-// 转换成 hsl(var(--p)) 格式
-const primary = `hsl(${primaryColor})`
-const accent = `hsl(${accentColor})`
-
-// DOM 引用
-const monthlyRef = ref(null)
-const weeklyRef = ref(null)
-const dailyRef = ref(null)
-const pieRef = ref(null)
-
-// ECharts 实例
-let monthlyChart = null
-let weeklyChart = null
-let dailyChart = null
-let pieChart = null
-
-// 图表一切换类型（quarter / year）
-const chart1Type = ref("quarter")
-
-// 工具函数：分钟转 "xx小时xx分钟"
-function formatMinutesToHourMinute(value) {
-  const hours = Math.floor(value / 60)
-  const minutes = Math.round(value % 60)
-  return `${hours}小时${minutes.toString().padStart(2, "0")}分钟`
+// ----------- 2. 数据获取 (Data Fetching) -----------
+async function fetchMonthlyData(type) {
+  console.log(`获取[${type}]数据...`);
+  monthlyApiData.value = {
+    labels: type === 'quarter' ? ['第一季度', '第二季度', '第三季度', '第四季度'] : ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'],     
+    values: type === 'quarter' ? [120, 150, 200, 180] : [20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130]
+  };
 }
 
-
-// 图表一（月/季度/年度学习时间）
-const renderMonthlyChart = () => {
-  if (!monthlyChart) monthlyChart = echarts.init(monthlyRef.value)
-
-  const data = chart1Type.value === "quarter" ? quarterData : yearData
-  const labels = chart1Type.value === "quarter" ? quarterMonths : yearMonths
-  const color = chart1Type.value === "quarter" ? "#36a2eb" : "#ff6384"
-
-
-  monthlyChart.setOption({
-    tooltip: {
-      trigger: "axis",
-      formatter: (params) =>
-        params
-          .map(p => `${p.axisValue}: ${formatMinutesToHourMinute(p.data * 60)}`)
-          .join("<br/>"),
-    },
-    xAxis: { type: "category", data: labels },
-    yAxis: {
-      type: "value",
-      name: "学习时间",
-      splitLine: { lineStyle: { type: "dashed" } },
-      axisLabel: {
-        formatter: (val) => `${val}小时`
-      },
-    },
-    series: [
-      {
-        data: data, // 转小时
-        type: "line",
-        smooth: true,
-        areaStyle: {},
-        lineStyle: { color },
-      },
-    ],
-  })
-}
-
-// 图表二（周学习时间，小时）
-const renderWeeklyChart = () => {
-  if (!weeklyChart) weeklyChart = echarts.init(weeklyRef.value)
-  weeklyChart.setOption({
-    tooltip: {
-      formatter: (params) => `${params.name}: ${formatMinutesToHourMinute(params.data * 60)}`,
-    },
-    xAxis: { type: "category", data: weekDays },
-    yAxis: {
-      type: "value",
-      name: "学习时间",
-      splitLine: { lineStyle: { type: "dashed" } }
-    },
-    series: [
-      {
-        data: weekData,
-        type: "bar",
-        itemStyle: {
-          color: "#4bc0c0",
-          borderRadius: [6, 6, 0, 0],
-        },
-      },
-    ],
-  })
-}
-
-// 图表三（今日学习时间，分钟）
-const renderDailyChart = () => {
-  if (!dailyChart) dailyChart = echarts.init(dailyRef.value)
-  dailyChart.setOption({
-    tooltip: {
-      formatter: (params) => `${params.name}: ${params.data}分钟`,
-    },
-    xAxis: { type: "category", data: hours },
-    yAxis: {
-      type: "value",
-      name: "学习时间",
-      splitLine: { lineStyle: { type: "dashed" } },
-    },
-    series: [
-      {
-        data: todayData,
-        type: "bar",
-        itemStyle: { 
-          color: "#9966ff",
-          borderRadius: [6, 6, 6, 6] // 左上、右上、右下、左下
-         },
-        barWidth: 14,
-      },
-    ],
-  })
-}
-
-const renderPieChart = () => {
-  if (!pieChart) pieChart = echarts.init(pieRef.value)
-
-  // 计算学习总时长（分钟）
-const totalMinutes = todayData.reduce((a, b) => a + b, 0)
-
-// 学习时间
-const studyHours = Math.floor(totalMinutes / 60)
-const studyMinutes = totalMinutes % 60
-
-// 剩余时间
-const restTotalMinutes = 24 * 60 - totalMinutes
-const restHours = Math.floor(restTotalMinutes / 60)
-const restMinutes = restTotalMinutes % 60
-
-  const option = {
-    tooltip: {
-      trigger: "item",
-      formatter: ({ name, value }) => `${name}: ${formatMinutesToHourMinute(value)}`
-    },
-    legend: {
-      orient: "vertical",
-      left: "left",
-      data: ["学习时间", "未学习时间"]
-    },
-    series: [
-      {
-        name: "今日学习占比",
-        type: "pie",
-        radius: "70%",
-        data: [
-          { value: totalMinutes, name: "学习时间" },
-          { value: restTotalMinutes, name: "未学习时间" }
-        ],
-        emphasis: {
-          itemStyle: {
-            shadowBlur: 10,
-            shadowOffsetX: 0,
-            shadowColor: "rgba(0, 0, 0, 0.5)"
-          }
-        }
-      }
+async function fetchWeeklyData() {
+  weeklyApiData.value = {
+    "totalMinutes": 1240,
+    "daily": [
+      { "date": "2025-08-17", "minutes": 180 }, { "date": "2025-08-18", "minutes": 240 },
+      { "date": "2025-08-19", "minutes": 300 }, { "date": "2025-08-20", "minutes": 150 },
+      { "date": "2025-08-21", "minutes": 220 }, { "date": "2025-08-22", "minutes": 180 },
     ]
-  }
-
-  pieChart.setOption(option)
+  };
 }
 
-// 初始化 & 监听窗口大小变化
+async function fetchDailyData() {
+  // TODO: 待后端接口完成后，替换为真实API调用
+  // const response = await api.getDailyStats({ date: 'today' });
+  // dailyApiData.value = response.data;
+  dailyApiData.value = {
+    labels: Array.from({ length: 24 }, (_, i) => `${i}:00`),
+    values: [0,0,0,0,0,0,0,15,45,60,60,30,10,0,0,0,25,55,60,30,0,0,0,0]
+  };
+}
+
+// ----------- 3. 数据处理与图表配置 (Computed Options) -----------
+const monthlyChartOption = computed(() => {
+  if (!monthlyApiData.value) return { title: { text: '加载中...' } };
+  const { labels, values } = monthlyApiData.value;
+  return {
+    title: { text: chart1Type.value === 'quarter' ? '季度学习时间' : '年度学习时间', left: 'center' },
+    tooltip: { trigger: "axis", formatter: params => `${params[0].axisValue}: ${formatMinutesToHourMinute(params[0].data * 60)}` },
+    xAxis: { type: "category", data: labels },
+    yAxis: { type: "value", name: "学习时间", axisLabel: { formatter: (val) => `${val}小时` } },
+    series: [{ data: values, type: "line", smooth: true, areaStyle: {} }],
+    grid: { left: 60, right: 20, top: 40, bottom: 30 }
+  };
+});
+
+const weeklyChartOption = computed(() => {
+  if (!weeklyApiData.value) return { title: { text: '加载中...' } };
+  const labels = weeklyApiData.value.daily.map(d => d.date);
+  const values = weeklyApiData.value.daily.map(d => d.minutes);
+  return {
+    title: {text:''},
+    tooltip: { formatter: params => `${params.name}: ${formatMinutesToHourMinute(params.data)}` },
+    xAxis: { type: "category", data: labels },
+    yAxis: { type: "value", name: "学习时间(分钟)" },
+    series: [{ data: values, type: "bar", itemStyle: { color: "#4bc0c0", borderRadius: [6, 6, 0, 0] } }],
+    grid: { left: 60, right: 20, top: 40, bottom: 30 }
+  };
+});
+
+const dailyChartOption = computed(() => {
+    if (!dailyApiData.value) return { title: { text: '加载中...' } };
+    const { labels, values } = dailyApiData.value;
+    return {
+        title: {text:''},
+        tooltip: { formatter: params => `${params.name}: ${params.data}分钟` },
+        xAxis: { type: 'category', data: labels, axisLabel: { interval: 5 } },
+        yAxis: { type: 'value', name: '分钟' },
+        series: [{ data: values, type: 'bar', barWidth: 14, itemStyle: { color: "#9966ff", borderRadius: [4, 4, 4, 4] } }],
+        grid: { left: 50, right: 20, top: 40, bottom: 30 }
+    }
+});
+const pieChartOption = computed(() => {
+    if (!dailyApiData.value) return { title: { text: '加载中...' } };
+    const totalMinutes = dailyApiData.value.values.reduce((a, b) => a + b , 0);
+    const restTotalMinutes = 24 * 60 - totalMinutes;
+    return {
+        title: {text:''},
+        tooltip: { trigger: "item", formatter: ({ name, value }) => `${name}: ${formatMinutesToHourMinute(value)}` },
+        legend: { orient: "vertical", left: "left" },
+        series: [{
+            name: "今日学习占比", type: "pie", radius: "70%",
+            data: [ { value: totalMinutes, name: "学习时间" }, { value: restTotalMinutes, name: "未学习时间" } ]
+        }]
+    };
+});
+
+// ----------- 4. 渲染与响应 (Renderer) -----------
+function useChart(chartRef, option) {
+  let chartInstance = null;
+  const render = () => {
+    if (!chartRef.value) return;
+    if (!chartInstance) chartInstance = echarts.init(chartRef.value);
+    chartInstance.setOption(option.value);
+  };
+  const resize = () => chartInstance?.resize();
+  watch(option, render, { deep: true });
+  onMounted(render);
+  return { resize };
+}
+const { resize: monthlyResize } = useChart(monthlyRef, monthlyChartOption);
+const { resize: weeklyResize } = useChart(weeklyRef, weeklyChartOption);
+const { resize: dailyResize } = useChart(dailyRef, dailyChartOption);
+const { resize: pieResize } = useChart(pieRef, pieChartOption);
+
+// ----------- 5. 生命周期与事件处理 (Lifecycle & Events) -----------
 const handleResize = () => {
-  monthlyChart?.resize()
-  weeklyChart?.resize()
-  dailyChart?.resize()
-  pieChart?.resize()
-}
+  monthlyResize(); weeklyResize(); dailyResize(); pieResize();
+};
 
 onMounted(() => {
-  renderMonthlyChart()
-  renderWeeklyChart()
-  renderDailyChart()
-  renderPieChart()
-  window.addEventListener("resize", handleResize)
-})
+  fetchMonthlyData(chart1Type.value);
+  fetchWeeklyData();
+  fetchDailyData();
+  window.addEventListener("resize", handleResize);
+});
 
-watch(chart1Type, () => {
-  renderMonthlyChart()
-})
+watch(chart1Type, (newType) => {
+  fetchMonthlyData(newType);
+});
 
 onBeforeUnmount(() => {
-  window.removeEventListener("resize", handleResize)
-})
+  window.removeEventListener("resize", handleResize);
+});
+
+// ----------- 辅助函数 (Utils) -----------
+function formatMinutesToHourMinute(value) {
+  if (value === undefined || value === null) return "";
+  const hours = Math.floor(value / 60);
+  const minutes = Math.round(value % 60);
+  return `${hours}小时${minutes.toString().padStart(2, "0")}分钟`;
+}
 </script>

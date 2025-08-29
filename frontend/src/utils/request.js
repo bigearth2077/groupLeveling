@@ -40,6 +40,12 @@ export const get = (url, params = {}) => instance.get(url, { params });
 
 // 封装 POST 请求
 export const post = (url, data = {}) => instance.post(url, data);
+// 封装 DELETE 请求
+export const del = (url, data = {}, config = {}) => {
+  return instance.delete(url, { data, ...config })
+}
+// 封装 PATCH 请求
+export const patch = (url, data = {}) => instance.patch(url, data);
 
 export default instance;
 

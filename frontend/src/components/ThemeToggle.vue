@@ -1,5 +1,5 @@
 <template>
-  <button class="btn btn-sm btn-outline w-full bg-primary text-white hover:bg-accent hover:border-accent" @click="themeStore.toggleTheme">
+  <button class="btn btn-sm btn-outline w-6 h-6 bg-primary text-white hover:bg-accent hover:border-accent" @click="themeStore.toggleTheme">
     {{ themeLabel }}
   </button>
 </template>
@@ -12,9 +12,9 @@ const themeStore = useThemeStore()
 
 const themeLabel = computed(() => {
   if (themeStore.theme === 'lemonade') {
-    return '🍋 Lemonade 主题'
+    return '🍋'
   } else {
-    return '☕ Coffee 主题'
+    return '☕'
   }
 })
 </script>

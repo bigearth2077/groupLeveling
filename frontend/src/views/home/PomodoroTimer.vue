@@ -1,134 +1,155 @@
 <template>
-  <div class="card bg-base-100 shadow-xl h-full">
-    <div class="card-body">
-      <h3 class="card-title">PomodoroTimer</h3>
-      <div>
-      <p v-if="taskName" class="text-lg font-semibold">当前任务: {{ taskName }}</p>
-      <p v-else class="text-lg text-gray-400">暂无任务</p>
+  <div class="card bg-base-100 shadow-xl h-full w-full">
+    <div class="card-body flex flex-col items-center">
+      
+      <!-- 模式切换按钮 -->
+      <div class="flex gap-4 justify-center mb-4">
+        <button 
+          v-for="mode in ['learning','shortbreak','longbreak']"
+          :key="mode"
+          @click="switchMode(mode)"
+          :class="['btn', currentMode===mode ? 'btn-primary' : 'btn-outline']"
+        >
+          {{ modeLabel(mode) }}
+        </button>
       </div>
-      <div class="text-6xl font-bold text-center py-6">
+
+      <!-- 学习时间选择区域，始终渲染，隐藏非学习模式按钮 -->
+      <div class="flex gap-2 justify-center mb-4 h-10">
+        <button 
+          v-for="t in learningTimes" 
+          :key="t" 
+          @click="selectLearningTime(t)"
+          :class="[
+            'btn',
+            duration===t ? 'btn-primary' : 'btn-outline',
+            currentMode==='learning' ? '' : 'invisible'
+          ]"
+        >
+          {{ t }} 分钟
+        </button>
+      </div>
+
+      <!-- 倒计时显示 -->
+      <div class="text-huge font-bold text-center py-6 text-primary">
         {{ minutes }}:{{ seconds }}
       </div>
 
+      <!-- 进度条 -->
       <progress
         class="progress progress-primary w-full mb-4"
         :value="progress"
         max="100"
       ></progress>
 
-      <!-- 快捷时间（学习时长） -->
-      <div class="flex gap-2 mb-3 justify-center">
+      <!-- 开始/暂停/结束按钮组 -->
+      <div class="flex justify-center gap-4">
         <button
-          v-for="m in [15, 25, 50]"
-          :key="m"
-          @click="setDuration(m)"
-          :disabled="isTicking"
-          :class="['btn btn-sm', duration === m ? 'btn-primary' : 'btn-outline']"
+          v-if="!isRunning"
+          @click="startTimer"
+          class="btn btn-primary text-white"
         >
-          {{ m }}min
+          开始
+        </button>
+        <button
+          v-else
+          @click="pauseTimer"
+          class="btn btn-warning text-white"
+        >
+          暂停
+        </button>
+        <button @click="handleFinish" class="btn btn-accent text-white">
+          结束
         </button>
       </div>
 
-      <div class="flex justify-center gap-4">
-        <button @click="startTimer" class="btn btn-primary text-white">开始</button>
-        <button @click="pauseTimer" class="btn btn-warning text-white">暂停</button>
-        <!-- 结束按钮使用统一完成流程 -->
-        <button @click="handleFinish" class="btn btn-accent text-white">结束</button>
-      </div>
-
-      <div class="flex items-center gap-4 mt-4">
-        <label class="label cursor-pointer">
-          <span class="label-text">自动休息</span>
-          <input type="checkbox" v-model="autoBreak" class="toggle toggle-primary" />
-        </label>
-
-        <div v-if="autoBreak" class="flex gap-2">
-          <button
-            v-for="m in [5, 10, 15, 20]"
-            :key="m"
-            @click="setBreakDuration(m)"
-            :disabled="isTicking && currentMode === 'rest'"
-            :class="['btn text-white btn-xs', breakDuration === m ? 'btn-accent' : 'btn-primary']"
-          >
-            {{ m }}min
-          </button>
-        </div>
-      </div>
     </div>
   </div>
 </template>
 
+
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue"
-import { post } from "../../utils/request"         // 你的 post 封装
-import { eventBus } from "../../utils/eventBus"
+import { ref, computed } from "vue"
+import { post } from "../../utils/request"
+import { del } from "../../utils/request"
 import { useSound } from "../../composables/useSound"
 
 const { playBeep } = useSound()
 
 /** ---------------- 状态 ---------------- **/
-const taskName = ref("")
-const currentTask = ref(null)                 // 保存来自 TodoList 的原始 task 引用
-const duration = ref(25)                      // 学习时长（分钟）
-const breakDuration = ref(5)                  // 休息时长（分钟）
-const autoBreak = ref(false)
-const time = ref(duration.value * 60)         // 当前倒计时（秒）
-const timer = ref(null)
-const sessionId = ref(null)                   // 当前会话 ID（学习 或 休息）
-const currentMode = ref("learning")           // "learning" | "rest"  ✅ JS 里不要用 TS 泛型
+const duration = ref(25)              // 学习时长（分钟）
+const time = ref(duration.value * 60) // 当前倒计时（秒）
+const timer = ref(null)               // 定时器引用
+const sessionId = ref(null)           // 当前会话 ID
+const currentMode = ref("learning")   // 当前模式：学习/休息
+const elapsedSeconds = ref(0)         // 真实学习累计时间（秒）
 
-const isTicking = computed(() => !!timer.value)
+// 可选时间列表
+const learningTimes = [15, 25, 50]
+const breakTimes = {
+  shortbreak: 5,
+  longbreak: 10
+}
+// 判断计时器是否运行
+const isRunning = computed(() => !!timer.value)
 
+// 计算分钟和秒
 const minutes = computed(() =>
   String(Math.floor(time.value / 60)).padStart(2, "0")
 )
 const seconds = computed(() =>
   String(time.value % 60).padStart(2, "0")
 )
+
+// 进度条
 const progress = computed(() => {
-  const total = (currentMode.value === "rest" ? breakDuration.value : duration.value) * 60
+  const total = duration.value * 60
   return ((total - time.value) / total) * 100
 })
+//切换模式
+const switchMode = async (mode) => {
+  pauseTimer()
+  await cancelActiveSession()
+  currentMode.value = mode
+  if (mode === "learning") duration.value = 25
+    else duration.value = breakTimes[mode] || 5
 
-/** -------------- 事件绑定 -------------- **/
-const handleStartTask = (task) => {
-  // 来自 TodoList 的 task：保持同一引用，便于完成时直接修改
-  currentTask.value = task
-  taskName.value = task.title
-  currentMode.value = "learning"      // 切回学习模式
-  setDuration(task.duration || 25)    // 没设置则默认 25
+    time.value = duration.value * 60
+    elapsedSeconds.value = 0
+    sessionId.value = null
+}
+//时间选择
+const selectLearningTime = (minutes) => {
+  duration.value = minutes
+  time.value = minutes * 60
+  elapsedSeconds.value = 0
+  pauseTimer()
+  sessionId.value = null
 }
 
-onMounted(() => {
-  eventBus.on("pomodoro:startTask", handleStartTask)
-})
-onUnmounted(() => {
-  eventBus.off("pomodoro:startTask", handleStartTask)
-})
-
-/** -------------- 操作函数 -------------- **/
-const setDuration = (m) => {
-  // 只在学习模式下改变学习倒计时
-  duration.value = m
-  if (currentMode.value === "learning" && !isTicking.value) {
-    time.value = m * 60
+const modeLabel = (mode) => {
+  switch(mode) {
+    case 'learning':
+      return '学习'
+    case 'shortbreak':
+      return '短休息'
+    case 'longbreak':
+      return '长休息'
+    default:
+      return mode
   }
 }
-const setBreakDuration = (m) => {
-  breakDuration.value = m
-  if (currentMode.value === "rest" && !isTicking.value) {
-    time.value = m * 60
-  }
-}
 
+
+/** ---------------- 功能函数 ---------------- **/
+
+// 启动计时器
 const startTimer = async () => {
-  if (timer.value) return
-
-  if (currentMode.value === "learning") {
-    // 学习开始
+  if (!sessionId.value) {
+    // 如果没有会话ID，则先创建会话
     try {
       const res = await post("/study/sessions/start", {
-        type: "learning",
+        type: currentMode.value=== "learning" ? "learning" : "rest",
         startTime: new Date().toISOString(),
       })
       sessionId.value = res?.id || null
@@ -136,101 +157,90 @@ const startTimer = async () => {
       console.error("❌ 开始学习会话失败:", err)
       return
     }
-    if (!time.value || time.value <= 0) time.value = duration.value * 60
-  } else {
-    // 休息开始（通常由 AutoBreak 触发，但也允许手动）
-    try {
-      const res = await post("/study/sessions/start", {
-        type: "rest",
-        startTime: new Date().toISOString(),
-      })
-      sessionId.value = res?.id || null
-    } catch (err) {
-      console.error("❌ 开始休息会话失败:", err)
-      return
-    }
-    if (!time.value || time.value <= 0) time.value = breakDuration.value * 60
   }
 
   runCountdown()
 }
 
+// 倒计时逻辑
+let lastTick = null
 const runCountdown = () => {
+  if (timer.value) return // 已经在计时
+  lastTick = Date.now()
   timer.value = setInterval(() => {
-    if (time.value > 0) {
-      time.value--
-    } else {
-      handleFinish()
+    const now = Date.now()
+    const delta = Math.floor((now - lastTick) / 1000)
+    if (delta >= 1) {
+      lastTick = now
+      if (time.value > 0) {
+        time.value--
+        elapsedSeconds.value++
+      } else {
+        handleFinish()
+      }
     }
-  }, 1000)
+  }, 250) // 每 250ms 检查一次
 }
 
+// 暂停计时器
 const pauseTimer = () => {
   clearInterval(timer.value)
   timer.value = null
 }
 
+// 结束计时器
 const endTimer = async () => {
   pauseTimer()
+
   if (!sessionId.value) {
-    // 没有进行中的会话：仅复位当前模式下的计时显示
-    time.value = (currentMode.value === "rest" ? breakDuration.value : duration.value) * 60
+    // 没有会话ID，直接复位
+    time.value = duration.value * 60
+    elapsedSeconds.value = 0
     return
   }
+
   try {
     await post(`/study/sessions/${sessionId.value}/end`, {
       endTime: new Date().toISOString(),
+      durationMinutes: Math.floor(elapsedSeconds.value / 60),
     })
   } catch (err) {
     console.error("❌ 结束会话失败:", err)
   } finally {
     sessionId.value = null
-    // 复位当前模式显示时间
-    time.value = (currentMode.value === "rest" ? breakDuration.value : duration.value) * 60
+    time.value = duration.value * 60
+    elapsedSeconds.value = 0
   }
 }
 
-/** ✅ 统一的结束/完成流程（倒计时为 0 或点击“结束”都会走这里） */
+const cancelActiveSession = async () => {
+  try {
+    const token = localStorage.getItem('token')  // 或从 store 获取 token
+
+    const res = await del("/study/sessions/active", null, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+
+    if (res.data?.ok) {
+      console.log("✅ 当前进行中的会话已取消")
+    }
+  } catch (err) {
+    console.error("❌ 取消会话失败:", err)
+  } finally {
+    // 前端清理状态
+    pauseTimer()
+    sessionId.value = null
+    time.value = duration.value * 60
+    elapsedSeconds.value = 0
+  }
+}
+
+
+// 统一结束流程
 const handleFinish = async () => {
   playBeep()
   await endTimer()
-
-  // 学习结束：标记 TodoList 完成 + 清空任务名
-  if (currentMode.value === "learning") {
-    if (currentTask.value) {
-      eventBus.emit("pomodoro:finished", currentTask.value)
-    }
-    currentTask.value = null
-    taskName.value = ""
-
-    // 仅在学习结束时，根据开关进入休息
-    if (autoBreak.value) {
-      try {
-        const res = await post("/study/sessions/start", {
-          type: "rest",
-          startTime: new Date().toISOString(),
-        })
-        sessionId.value = res?.id || null
-        currentMode.value = "rest"
-
-        time.value = breakDuration.value * 60
-        runCountdown()
-      } catch (err) {
-        console.error("❌ 自动休息启动失败:", err)
-      }
-      return
-    }
-
-    // 未开启 AutoBreak：停留在学习模式待机
-    currentMode.value = "learning"
-    time.value = duration.value * 60
-    return
-  }
-
-  // 休息结束：回到学习模式待机，不再继续休息
-  if (currentMode.value === "rest") {
-    currentMode.value = "learning"
-    time.value = duration.value * 60
-  }
 }
 </script>

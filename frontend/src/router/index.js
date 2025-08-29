@@ -10,7 +10,7 @@ const routes = [
   { path: '/studyroom', name: 'StudyRoom', component: () => import('../views/home/Home.vue') },
   { path: '/blog', name: 'Blog', component: () => import('../views/home/Home.vue') },
   { path: '/aieval', name: 'AiEval', component: () => import('../views/home/Home.vue') },
-
+  { path: '/profile', name: 'Profile', component: () => import('../views/profile/ProfilePage.vue') },
   { path: '/', redirect: '/home' }
 ];
 

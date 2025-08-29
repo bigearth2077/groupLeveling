@@ -12,5 +12,6 @@ const themeStore = useThemeStore()
 userStore.loadFromLocalStorage()
 onMounted(() => {
   themeStore.applyTheme(themeStore.theme)
+  userStore.loadFromLocalStorage();
 })
 </script>
