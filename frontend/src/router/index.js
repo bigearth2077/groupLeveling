@@ -11,6 +11,7 @@ const routes = [
   { path: '/blog', name: 'Blog', component: () => import('../views/home/Home.vue') },
   { path: '/aieval', name: 'AiEval', component: () => import('../views/home/Home.vue') },
   { path: '/profile', name: 'Profile', component: () => import('../views/profile/ProfilePage.vue') },
+  { path: '/friends', name: 'Friends', component: () => import('../views/friends/FriendsPage.vue') },
   { path: '/', redirect: '/home' }
 ];
 

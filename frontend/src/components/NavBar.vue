@@ -51,14 +51,16 @@ import {
   TrophyIcon,
   UsersIcon,
   PencilSquareIcon,
-  CpuChipIcon,
+  CpuChipIcon, 
+  AcademicCapIcon 
 } from '@heroicons/vue/24/outline'
 
 const navItems = [
   { name: '首页', icon: HomeIcon, path: '/home' },
   { name: '学习记录', icon: ChartBarIcon, path: '/records' },
+  { name: '好友', icon: UsersIcon , path: '/friends' },
   { name: '排行榜', icon: TrophyIcon, path: '/rank' },
-  { name: '在线自习室', icon: UsersIcon, path: '/studyroom' },
+  { name: '在线自习室', icon: AcademicCapIcon, path: '/studyroom' },
   { name: '个人博客', icon: PencilSquareIcon, path: '/blog' },
   { name: 'AI 评估', icon: CpuChipIcon, path: '/aieval' }
 ]

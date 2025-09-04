@@ -1,6 +1,5 @@
 <template>
   <div class="min-h-screen flex bg-base-200">
-    <!-- 左侧导航栏 -->
     <AvatarDropdown class="z-30 ml-auto"/>
     <!-- 背景层（番茄钟全屏） -->
     <PomodoroTimer class="absolute inset-0 w-full h-full pl-32 z-10" />
@@ -69,14 +68,6 @@ const toggle = (type) => {
   if (type === "study") showStudy.value = !showStudy.value
   if (type === "todo") showTodo.value = !showTodo.value
 }
-/* 导航栏 */
-const navItems = [
-  { name: '首页', icon: HomeIcon, path:'/home'},
-  { name: '学习记录', icon: ChartBarIcon, path:'/records' },
-  { name: '排行榜', icon: TrophyIcon, path:'/rank' },
-  { name: '在线自习室', icon: UsersIcon, path:'/studyroom' },
-  { name: '个人博客', icon: PencilSquareIcon, path:'/blog' },
-  { name: 'AI 评估', icon: CpuChipIcon, path:'/aieval'},
-]
+
 
 </script>
