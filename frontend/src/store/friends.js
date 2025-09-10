@@ -149,6 +149,26 @@ export const useFriendsStore = defineStore('friends', () => {
     }
   };
 
+  //获取已发送的好友请求
+  const fetchOutgoingRequests = async () => {
+    isRequestsLoading.value = true;
+    try {
+      const response = await get('/friends/requests/outgoing');
+      outgoingRequests.value = response.items.map(req => ({
+        ...req,
+        friend:{
+          ...req.friend,
+          avatar: req.friend.avatarUrl || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${req.friend.nickname}`,
+        }
+      }));
+    } catch (error) {
+      console.error("获取已发送好友请求列表失败:", error);
+      outgoingRequests.value = []; // 失败时清空
+    } finally {
+      isRequestsLoading.value = false;
+    }
+  };
+
   // 处理好友请求 (同意或拒绝)
   const handleFriendRequest = async (requestId, action) => {
     try {
@@ -188,6 +208,7 @@ export const useFriendsStore = defineStore('friends', () => {
     searchUsers,
     sendFriendRequest,
     fetchFriendRequests,
+    fetchOutgoingRequests,
     handleFriendRequest,
   };
 });

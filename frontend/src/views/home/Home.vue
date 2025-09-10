@@ -1,6 +1,5 @@
 <template>
   <div class="min-h-screen flex bg-base-200">
-    <AvatarDropdown class="z-30 ml-auto"/>
     <!-- 背景层（番茄钟全屏） -->
     <PomodoroTimer class="absolute inset-0 w-full h-full pl-32 z-10" />
     <NavBar class="z-20"/>

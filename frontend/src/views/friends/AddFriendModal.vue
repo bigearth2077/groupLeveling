@@ -116,8 +116,43 @@
         <!-- Tab 3: 已发送的请求 -->
         <input type="radio" name="friend_tabs" role="tab" class="tab-content-bg-base-100 tab" aria-label="已发送的请求" />
         <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
-          <p class="text-center">这里将显示你发出的、等待对方处理的请求。</p>
+          <div v-if="friendsStore.isRequestsLoading" class="text-center py-10">
+            <span class="loading loading-spinner loading-lg"></span>
+          </div>
+          <div v-else-if="friendsStore.outgoingRequests.length === 0" class="text-center text-base-content text-opacity-60 py-10">
+            <p>你还没有发送过好友请求</p>
+          </div>
+          <div v-else class="overflow-x-auto">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>用户</th>
+                  <th>昵称</th>
+                  <th>状态</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="request in friendsStore.outgoingRequests" :key="request.id">
+                  <td>
+                    <div class="flex items-center gap-3">
+                      <div class="avatar">
+                        <div class="mask mask-squircle w-12 h-12">
+                          <img :src="request.friend.avatar" :alt="request.friend.nickname" />
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>{{ request.friend.nickname }}</td>
+                  <th>
+                    <span class="badge badge-ghost badge-sm">{{request.status}}</span>
+                  </th>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
         </div>
+        
       </div>
 
       <div class="modal-action">
@@ -149,7 +184,7 @@ const open = () => {
     
     // 【新增】同时获取待处理的好友请求
     friendsStore.fetchFriendRequests();
-
+    friendsStore.fetchOutgoingRequests();
     modalRef.value.showModal();
   }
 };

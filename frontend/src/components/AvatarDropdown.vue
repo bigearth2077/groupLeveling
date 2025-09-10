@@ -1,6 +1,5 @@
 <template>
-  <div class="dropdown dropdown-end">
-    
+  <div class="dropdown dropdown-right">
     <label tabindex="0" class="btn btn-ghost btn-circle avatar mr-6 mt-6 btn-lg">
         <div class="w-12 rounded-full"> 
             <img
