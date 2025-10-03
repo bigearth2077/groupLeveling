@@ -58,7 +58,6 @@ import TodoList from './TodoList.vue'
 import PomodoroTimer from './PomodoroTimer.vue'
 import NavBar from '../../components/NavBar.vue'
 import { HomeIcon, ChartBarIcon, TrophyIcon, UsersIcon, PencilSquareIcon, CpuChipIcon } from '@heroicons/vue/24/outline'
-import { useNavStore } from '../../store/nav'
 
 const showStudy = ref(false)
 const showTodo = ref(false)
