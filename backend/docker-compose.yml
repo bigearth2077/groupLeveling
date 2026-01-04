@@ -1,46 +1,57 @@
-version: '3.8'
+version: "3.8"
+
 services:
-  postgres:
-    image: postgres:16
-    restart: unless-stopped
+  app:
+    build: .
+    container_name: my-backend-go
+    restart: always
+    ports:
+      - "8080:8080"
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: studyroom
+      - DB_HOST=db
+      - DB_USER=postgres
+      - DB_PASSWORD=mysecretpassword
+      - DB_NAME=study_app
+      - DB_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - GIN_MODE=release # 生产模式
+    depends_on:
+      - db
+      - redis
+    networks:
+      - app-network
+
+  db:
+    image: postgres:15-alpine
+    container_name: my-backend-postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=mysecretpassword
+      - POSTGRES_DB=study_app
+      - TZ=Asia/Shanghai
     volumes:
-      - pg_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres -d studyroom']
-      interval: 5s
-      timeout: 5s
-      retries: 10
+      - ./pg_data:/var/lib/postgresql/data # 数据持久化挂载到本地
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh # 初始化脚本
+    ports:
+      - "5432:5432" # 映射到主机，方便你用 Navicat 等工具连接
+    networks:
+      - app-network
 
   redis:
     image: redis:7-alpine
-    restart: unless-stopped
-    command: ['redis-server', '--appendonly', 'yes']
+    container_name: my-backend-redis
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai
     volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  api:
-    build:
-      context: .
-      target: prod
-    restart: unless-stopped
-    env_file: .docker.env
+      - ./redis_data:/data # 数据持久化
     ports:
-      - '3000:3000'
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - "6379:6379"
+    networks:
+      - app-network
 
-volumes:
-  pg_data:
-  redis_data:
+networks:
+  app-network:
+    driver: bridge

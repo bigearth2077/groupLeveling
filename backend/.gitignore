@@ -1,58 +1,39 @@
-# compiled output
-/dist
-/node_modules
-/build
+# --- 1. 编译产物 (Binaries) ---
+# 忽略编译出来的可执行文件
+server
+main
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
 
-# Logs
-logs
-*.log
-npm-debug.log*
-pnpm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-lerna-debug.log*
+# --- 2. 依赖与临时文件 ---
+# Go 的 vendor 目录 (如果你不使用 vendor 模式，可以忽略这个文件夹)
+vendor/
 
-# OS
-.DS_Store
-
-# Tests
-/coverage
-/.nyc_output
-
-# IDEs and editors
-/.idea
-.project
-.classpath
-.c9/
-*.launch
-.settings/
-*.sublime-workspace
-
-# IDE - VSCode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-
-# dotenv environment variable files
+# --- 3. 环境变量与密钥 (Secrets) ---
+# 极其重要！防止密码泄露
 .env
-.env.development.local
-.env.test.local
-.env.production.local
 .env.local
+config/config.yaml
+# 如果你想保留一个配置模板，可以创建一个 config/config.example.yaml 提交上去
+# 但真正的 config.yaml 要忽略
 
-# temp directory
-.temp
-.tmp
+# --- 4. Docker 挂载的数据目录 (Data Volumes) ---
+# 对应 docker-compose.yml 里的 volumes
+pg_data/
+redis_data/
 
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
+# --- 5. IDE 配置 (IDE Settings) ---
+# VS Code
+.vscode/
+# GoLand / IntelliJ
+.idea/
+*.iml
 
-# Diagnostic reports (https://nodejs.org/api/report.html)
-report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
-
-/generated/prisma
+# --- 6. 系统文件 (OS Files) ---
+# Mac
+.DS_Store
+# Windows
+Thumbs.db

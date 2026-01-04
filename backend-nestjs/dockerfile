@@ -1,0 +1,37 @@
+# ---- Base ----
+FROM docker.m.daocloud.io/library/node:20-alpine AS base
+WORKDIR /app
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+# 用 npm 就好：alpine 自带 npm
+COPY package*.json ./
+
+# ---- Dev deps layer (缓存依赖) ----
+FROM base AS deps
+RUN npm ci
+
+# ---- Build (生产) ----
+FROM deps AS build
+COPY . .
+RUN npm run prisma:generate
+RUN npm run build
+
+# ---- Production runtime ----
+FROM node:20-alpine AS prod
+WORKDIR /app
+ENV NODE_ENV=production
+# 仅复制运行需要的文件
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/package*.json ./
+COPY wait-for.js ./wait-for.js
+EXPOSE 3000
+CMD node wait-for.js && npx prisma migrate deploy && node dist/main.js
+
+# ---- Dev runtime (热重载) ----
+FROM deps AS dev
+WORKDIR /app
+COPY . .
+EXPOSE 3000
+CMD node wait-for.js && npm run prisma:generate && npm run start:dev
