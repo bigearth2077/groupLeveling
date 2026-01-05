@@ -90,9 +90,12 @@ const handleLogin = async () => {
       email:email.value,
       password:password.value,
     });
-    if (res.token) {
-      userStore.setUser(res.token, res.user)
-      localStorage.setItem('token',res.token);
+    if (res.accessToken) {
+      userStore.setUser(res.accessToken, res.user)
+      localStorage.setItem('token', res.accessToken);
+      if (res.refreshToken) {
+        localStorage.setItem('refreshToken', res.refreshToken);
+      }
       localStorage.setItem('user', JSON.stringify(res.user))
       const redirect = route.query.redirect || '/home';
       router.push(redirect);
