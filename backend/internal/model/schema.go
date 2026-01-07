@@ -127,10 +127,23 @@ type Blog struct {
 }
 
 type Room struct {
-	ID        string       `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
-	Name      string       `gorm:"not null"`
-	CreatedAt time.Time    `gorm:"autoCreateTime"`
-	Members   []RoomMember `gorm:"foreignKey:RoomID"`
+	ID          string    `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	Name        string    `gorm:"not null"`
+	Description *string   `gorm:"type:text"` // 房间简介
+	
+	// 房间属性
+	CreatorID   string    `gorm:"type:uuid;not null"`         // 房主
+	TagID       *string   `gorm:"type:uuid;default:null"`     // 关联标签
+	IsPrivate   bool      `gorm:"default:false"`              // 是否私密(不公开列出)
+	Password    *string   `gorm:"default:null"`               // 访问密码
+	MaxMembers  int       `gorm:"default:50"`                 // 人数上限
+	
+	CreatedAt   time.Time `gorm:"autoCreateTime"`
+	
+	// Relations
+	Members []RoomMember `gorm:"foreignKey:RoomID"`
+	Tag     *Tag         `gorm:"foreignKey:TagID"`
+	Creator User         `gorm:"foreignKey:CreatorID"`
 }
 
 type RoomMember struct {

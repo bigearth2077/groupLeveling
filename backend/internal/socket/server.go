@@ -17,6 +17,12 @@ var Server *socketio.Server
 var roomService service.RoomService
 var userService service.UserService // 需要获取用户信息
 
+// 辅助结构体，存入 Context
+type SocketContext struct {
+	UserID string
+	RoomID string // 当前所在的房间ID
+}
+
 // InitSocket 初始化 Socket.IO 服务
 func InitSocket() {
 	var err error
@@ -26,15 +32,9 @@ func InitSocket() {
 	}
 
 	// --- 1. 连接鉴权 (Middleware) ---
-	// go-socket.io 没有像 Gin 那样的中间件链，我们在 OnConnect 处理
 	Server.OnConnect("/", func(s socketio.Conn) error {
-		// 从 URL 参数获取 token: ws://host/socket.io/?token=xxx
 		url := s.URL()
 		token := url.Query().Get("token")
-
-		// 或者从 Header 获取 (Socket.io 客户端有时候会放在 ExtraHeaders)
-		// 但最通用的方式是放在 query 或 auth payload (需要客户端配合)
-		// 这里假设前端传的是 ?token=ey...
 
 		if token == "" {
 			return nil // 拒绝连接
@@ -45,11 +45,14 @@ func InitSocket() {
 			return nil // Token 无效，拒绝
 		}
 
-		// 将 UserID 存入 Socket 上下文
-		s.SetContext(claims.UserID)
+		// 初始化 Context
+		s.SetContext(&SocketContext{
+			UserID: claims.UserID,
+			RoomID: "",
+		})
 		log.Printf("User %s connected, SocketID: %s", claims.UserID, s.ID())
 
-		// 自动加入一个以 UserID 命名的房间，方便点对点通知
+		// 自动加入一个以 UserID 命名的房间
 		s.Join(claims.UserID)
 
 		return nil
@@ -57,24 +60,26 @@ func InitSocket() {
 
 	// --- 2. 事件: join_room ---
 	Server.OnEvent("/", "join_room", func(s socketio.Conn, msg string) string {
-		// msg 是 JSON 字符串，需要解析
 		var payload dto.JoinRoomPayload
 		if err := json.Unmarshal([]byte(msg), &payload); err != nil {
 			return errorResponse("invalid payload")
 		}
 
-		userID := s.Context().(string)
+		ctx := s.Context().(*SocketContext)
+		userID := ctx.UserID
 
 		// 业务逻辑：写库
 		if err := roomService.JoinRoom(userID, payload.RoomID); err != nil {
 			return errorResponse(err.Error())
 		}
 
+		// 更新 Context，记录当前房间
+		ctx.RoomID = payload.RoomID
+
 		// Socket 逻辑：加入房间
 		s.Join(payload.RoomID)
 
-		// 广播给房间其他人：user_joined
-		// 先查出用户详情
+		// 广播给房间其他人
 		user, _ := userService.GetProfile(userID)
 		broadcastEvent(payload.RoomID, "user_joined", dto.UserJoinedEvent{
 			User: dto.UserSimple{
@@ -84,18 +89,24 @@ func InitSocket() {
 			},
 		})
 
-		// 返回 Ack 给发送者
 		return successResponse(gin.H{"message": "joined"})
 	})
 
 	// --- 3. 事件: leave_room ---
 	Server.OnEvent("/", "leave_room", func(s socketio.Conn, msg string) string {
-		var payload dto.JoinRoomPayload // 复用结构体
+		var payload dto.JoinRoomPayload
 		json.Unmarshal([]byte(msg), &payload)
-		userID := s.Context().(string)
+		
+		ctx := s.Context().(*SocketContext)
+		userID := ctx.UserID
 
 		// 业务逻辑
 		roomService.LeaveRoom(userID, payload.RoomID)
+		
+		// 清理 Context
+		if ctx.RoomID == payload.RoomID {
+			ctx.RoomID = ""
+		}
 
 		// Socket 逻辑
 		s.Leave(payload.RoomID)
@@ -112,12 +123,14 @@ func InitSocket() {
 	Server.OnEvent("/", "send_message", func(s socketio.Conn, msg string) string {
 		var payload dto.SendMessagePayload
 		json.Unmarshal([]byte(msg), &payload)
-		userID := s.Context().(string)
+		
+		ctx := s.Context().(*SocketContext)
+		userID := ctx.UserID
 
 		// 获取发送者信息
 		user, _ := userService.GetProfile(userID)
 
-		// 构造消息对象 (不存库，直接转发)
+		// 构造消息对象
 		eventData := dto.NewMessageEvent{
 			ID:        uuid.New().String(),
 			Content:   payload.Content,
@@ -129,7 +142,7 @@ func InitSocket() {
 			},
 		}
 
-		// 广播给房间所有人 (包括发送者自己，前端通常用来回显)
+		// 广播
 		broadcastEvent(payload.RoomID, "new_message", eventData)
 
 		return successResponse(gin.H{"ok": true})
@@ -139,7 +152,9 @@ func InitSocket() {
 	Server.OnEvent("/", "update_status", func(s socketio.Conn, msg string) string {
 		var payload dto.UpdateStatusPayload
 		json.Unmarshal([]byte(msg), &payload)
-		userID := s.Context().(string)
+		
+		ctx := s.Context().(*SocketContext)
+		userID := ctx.UserID
 
 		// 业务逻辑
 		roomService.UpdateStatus(userID, payload.RoomID, payload.Status)
@@ -153,16 +168,34 @@ func InitSocket() {
 		return successResponse(gin.H{"ok": true})
 	})
 
-	// --- 6. 断开连接 ---
+	// --- 6. 断开连接 (修复逻辑) ---
 	Server.OnDisconnect("/", func(s socketio.Conn, reason string) {
-		userID := s.Context().(string)
+		// 检查 Context
+		if s.Context() == nil {
+			return
+		}
+		
+		ctx, ok := s.Context().(*SocketContext)
+		if !ok {
+			return
+		}
+		
+		userID := ctx.UserID
 		log.Printf("User %s disconnected: %s", userID, reason)
 
-		// 注意：这里有个问题，我们不知道用户刚刚在哪个房间里。
-		// Socket.IO 的 s.Rooms() 在 Disconnect 时可能已经空了。
-		// 更好的做法是：JoinRoom 时在 s.Context 里记录 RoomID，或者前端显式调用 Leave。
-		// 这里为了 MVP，我们假设用户离开连接时，只是断网，数据库层面的 left_at 可能需要定时任务清理，
-		// 或者我们在 Join 时把 roomID 拼在 Context 里，例如 s.SetContext(map[string]string{"uid":..., "rid":...})
+		// 如果用户在房间里，执行离开逻辑
+		if ctx.RoomID != "" {
+			log.Printf("Auto leaving room %s for user %s", ctx.RoomID, userID)
+			
+			// 1. 业务逻辑离开
+			roomService.LeaveRoom(userID, ctx.RoomID)
+			
+			// 2. 广播 (虽然 Socket 断了发不出去给自己，但可以发给房间里其他人)
+			// 注意：go-socket.io 此时连接已断，Server.BroadcastToRoom 依然有效
+			broadcastEvent(ctx.RoomID, "user_left", dto.UserLeftEvent{
+				UserID: userID,
+			})
+		}
 	})
 
 	go Server.Serve()

@@ -8,15 +8,26 @@ import (
 // --- HTTP REST API DTOs ---
 
 type CreateRoomRequest struct {
-	Name string `json:"name" binding:"required"`
+	Name        string  `json:"name" binding:"required,max=50"`
+	Description *string `json:"description"`
+	TagID       *string `json:"tagId"`
+	IsPrivate   bool    `json:"isPrivate"`
+	Password    *string `json:"password"`   // 只有私密房才需要
+	MaxMembers  int     `json:"maxMembers"` // 默认50
 }
 
 type RoomResponse struct {
-	ID        string    `json:"id"`
-	Name      string    `json:"name"`
-	CreatedAt time.Time `json:"createdAt"`
-	// 可以选择是否返回当前在线人数
-	OnlineCount int `json:"onlineCount"`
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
+	Description *string   `json:"description"`
+	TagID       *string   `json:"tagId"`
+	TagName     string    `json:"tagName"` // 为了方便展示
+	IsPrivate   bool      `json:"isPrivate"`
+	MaxMembers  int       `json:"maxMembers"`
+	CreatorID   string    `json:"creatorId"`
+	CreatedAt   time.Time `json:"createdAt"`
+	OnlineCount int       `json:"onlineCount"`
+	HasPassword bool      `json:"hasPassword"` // 不返回真实密码，只返回是否有密码
 }
 
 type RoomListResponse struct {

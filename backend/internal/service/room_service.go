@@ -11,10 +11,22 @@ import (
 type RoomService struct{}
 
 // CreateRoom 创建房间 (HTTP)
-func (s *RoomService) CreateRoom(name string) (*model.Room, error) {
-	room := model.Room{
-		Name: name,
+func (s *RoomService) CreateRoom(creatorID string, req dto.CreateRoomRequest) (*model.Room, error) {
+	maxMembers := 50
+	if req.MaxMembers > 0 {
+		maxMembers = req.MaxMembers
 	}
+
+	room := model.Room{
+		Name:        req.Name,
+		Description: req.Description,
+		CreatorID:   creatorID,
+		TagID:       req.TagID,
+		IsPrivate:   req.IsPrivate,
+		Password:    req.Password,
+		MaxMembers:  maxMembers,
+	}
+	
 	if err := database.DB.Create(&room).Error; err != nil {
 		return nil, err
 	}
@@ -22,11 +34,19 @@ func (s *RoomService) CreateRoom(name string) (*model.Room, error) {
 }
 
 // GetRooms 获取房间列表 (HTTP)
-func (s *RoomService) GetRooms(page, pageSize int) (*dto.RoomListResponse, error) {
+func (s *RoomService) GetRooms(page, pageSize int, tagID string) (*dto.RoomListResponse, error) {
 	var rooms []model.Room
 	var total int64
 
-	db := database.DB.Model(&model.Room{})
+	// 过滤条件：公开房间 或者 只是隐藏了？通常私密房间不出现在大厅，或者带锁显示。
+	// 这里假设：只显示 IsPrivate=false 的，或者显示 IsPrivate=true 但需要密码的。
+	// 简单起见：显示所有，但在前端用锁图标区分。
+	db := database.DB.Model(&model.Room{}).Preload("Tag")
+
+	if tagID != "" {
+		db = db.Where("tag_id = ?", tagID)
+	}
+
 	db.Count(&total)
 
 	offset := (page - 1) * pageSize
@@ -36,12 +56,29 @@ func (s *RoomService) GetRooms(page, pageSize int) (*dto.RoomListResponse, error
 
 	items := make([]dto.RoomResponse, len(rooms))
 	for i, r := range rooms {
-		// 这里暂不统计实时人数，或者通过 Redis 统计
+		// 统计实时人数
+		var count int64
+		database.DB.Model(&model.RoomMember{}).
+			Where("room_id = ? AND left_at IS NULL", r.ID).
+			Count(&count)
+
+		tagName := ""
+		if r.Tag != nil {
+			tagName = r.Tag.Name
+		}
+
 		items[i] = dto.RoomResponse{
 			ID:          r.ID,
 			Name:        r.Name,
+			Description: r.Description,
+			TagID:       r.TagID,
+			TagName:     tagName,
+			IsPrivate:   r.IsPrivate,
+			MaxMembers:  r.MaxMembers,
+			CreatorID:   r.CreatorID,
 			CreatedAt:   r.CreatedAt,
-			OnlineCount: 0, // TODO: 连接 Socket Server 获取
+			OnlineCount: int(count),
+			HasPassword: r.Password != nil && *r.Password != "",
 		}
 	}
 
