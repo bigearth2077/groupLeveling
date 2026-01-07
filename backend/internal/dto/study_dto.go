@@ -84,3 +84,22 @@ type LevelInfo struct {
 	NextLevelXP  int     `json:"nextLevelXP"`
 	Progress     float64 `json:"progress"`
 }
+
+// --- Tag DTOs ---
+
+type TagResponse struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type UserTagResponse struct {
+	TagID        string    `json:"tagId"`
+	TagName      string    `json:"tagName"`
+	TotalMinutes int       `json:"totalMinutes"`
+	Level        LevelInfo `json:"levelInfo"` // 包含等级详情
+	LastStudied  time.Time `json:"lastStudied"`
+}
+
+type AddTagRequest struct {
+	TagName string `json:"tagName" binding:"required"`
+}

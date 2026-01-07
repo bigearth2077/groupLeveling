@@ -80,17 +80,13 @@ func (h *UserHandler) ChangePassword(c *gin.Context) {
 func (h *UserHandler) GetPublicProfile(c *gin.Context) {
 	targetID := c.Param("id")
 
-	user, err := h.Service.GetPublicProfile(targetID)
+	profile, err := h.Service.GetPublicProfile(targetID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.PublicProfileResponse{
-		ID:        user.ID,
-		Nickname:  user.Nickname,
-		AvatarURL: user.AvatarUrl,
-	})
+	c.JSON(http.StatusOK, profile)
 }
 
 // SearchUsers 搜索用户

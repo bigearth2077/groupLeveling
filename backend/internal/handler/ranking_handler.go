@@ -35,8 +35,10 @@ func (h *RankingHandler) GetGlobalRankings(c *gin.Context) {
 	if strings.Contains(scopeStr, "all") {
 		targetScope = "all"
 	}
+	
+	tagName := c.Query("tag")
 
-	items, err := h.Service.GetGlobalRankings(targetScope, limit)
+	items, err := h.Service.GetGlobalRankings(targetScope, limit, tagName)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

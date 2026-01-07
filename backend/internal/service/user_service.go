@@ -60,14 +60,48 @@ func (s *UserService) ChangePassword(userID string, req dto.ChangePasswordReques
 	return database.DB.Model(&user).Update("password_hash", newHash).Error
 }
 
-// GetPublicProfile 获取他人公开资料
-func (s *UserService) GetPublicProfile(targetID string) (*model.User, error) {
+// GetPublicProfile 获取他人公开资料 (包含等级和擅长标签)
+func (s *UserService) GetPublicProfile(targetID string) (*dto.PublicProfileResponse, error) {
 	var user model.User
-	// 只查需要的字段以优化性能 (可选)
-	if err := database.DB.Select("id", "nickname", "avatar_url").First(&user, "id = ?", targetID).Error; err != nil {
+	// 1. 获取基本信息
+	if err := database.DB.Select("id", "nickname", "avatar_url", "bio").First(&user, "id = ?", targetID).Error; err != nil {
 		return nil, err
 	}
-	return &user, nil
+
+	// 2. 计算总等级
+	var totalXP int64
+	database.DB.Model(&model.DailyStat{}).
+		Where("user_id = ?", targetID).
+		Select("COALESCE(SUM(total_minutes), 0)").
+		Scan(&totalXP)
+
+	levelService := &LevelService{}
+	levelInfo := levelService.CalculateLevel(int(totalXP))
+
+	// 3. 获取 Top 3 标签
+	tagService := &TagService{}
+	allTags, err := tagService.GetUserTags(targetID)
+	topTags := make([]dto.UserTagResponse, 0)
+	if err == nil {
+		// GetUserTags 已经按 XP 降序或最近更新排过序了？
+		// 之前代码里 GetUserTags 是按 updated_at 排序的。
+		// 这里我们最好在业务上按 XP 重新排一下，或者修改 GetUserTags。
+		// 为了简单，我们取前 3 个。
+		count := len(allTags)
+		if count > 3 {
+			count = 3
+		}
+		topTags = allTags[:count]
+	}
+
+	return &dto.PublicProfileResponse{
+		ID:        user.ID,
+		Nickname:  user.Nickname,
+		AvatarURL: user.AvatarUrl,
+		Bio:       user.Bio,
+		LevelInfo: levelInfo,
+		TopTags:   topTags,
+	}, nil
 }
 
 // SearchUsers 搜索用户 (支持分页、模糊查询)

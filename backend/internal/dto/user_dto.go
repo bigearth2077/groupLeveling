@@ -24,9 +24,12 @@ type ChangePasswordRequest struct {
 
 // PublicProfileResponse
 type PublicProfileResponse struct {
-	ID        string  `json:"id"`
-	Nickname  string  `json:"nickname"`
-	AvatarURL *string `json:"avatarUrl"`
+	ID        string            `json:"id"`
+	Nickname  string            `json:"nickname"`
+	AvatarURL *string           `json:"avatarUrl"`
+	Bio       *string           `json:"bio"`
+	LevelInfo LevelInfo         `json:"levelInfo"` // 总等级信息
+	TopTags   []UserTagResponse `json:"topTags"`   // 最擅长的 3 个标签
 }
 
 // SearchUserResponse (单项)

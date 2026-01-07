@@ -21,14 +21,15 @@ func (s *FriendService) SendRequest(userID, friendID string) (*model.Friend, boo
 
 	if err == nil {
 		// 找到了反向记录
-		if reverseReq.Status == model.FriendStatusPending {
+		switch reverseReq.Status {
+		case model.FriendStatusPending:
 			// case 1: 对方已申请 -> 自动接受
 			reverseReq.Status = model.FriendStatusAccepted
 			if err := database.DB.Save(&reverseReq).Error; err != nil {
 				return nil, false, err
 			}
 			return &reverseReq, true, nil // true 表示是"匹配成功/自动接受"
-		} else if reverseReq.Status == model.FriendStatusAccepted {
+		case model.FriendStatusAccepted:
 			return nil, false, errors.New("already friends")
 		}
 	}

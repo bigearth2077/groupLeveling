@@ -14,9 +14,55 @@ import (
 
 type RankingService struct{}
 
-// GetGlobalRankings 获取全站排行榜
-func (s *RankingService) GetGlobalRankings(scope string, limit int) ([]dto.RankingItem, error) {
+// GetGlobalRankings 获取全站排行榜 (支持按 Tag 筛选)
+func (s *RankingService) GetGlobalRankings(scope string, limit int, tagName string) ([]dto.RankingItem, error) {
 	ctx := context.Background()
+	
+	// === 场景 A: 按具体标签筛选 (走 DB) ===
+	if tagName != "" {
+		// 1. 解析标签 (处理别名)
+		tagService := &TagService{}
+		tag, err := tagService.FindOrCreateTag(tagName) // 这里稍微有点副作用：如果是新词会创建。也可以用 SearchTags 但那个是模糊。
+		// 其实 FindOrCreateTag 没问题，查榜单时顺便创建 Tag 记录是可以接受的，或者专门写个 FindTagByName。
+		// 为了 MVP，复用 FindOrCreateTag。
+		if err != nil {
+			return nil, err
+		}
+
+		// 2. 查询 user_tag_stats (联表查询 User 信息)
+		var results []struct {
+			UserID       string
+			TotalMinutes int
+			Nickname     string
+			AvatarUrl    *string
+		}
+
+		err = database.DB.Table("user_tag_stats").
+			Select("user_tag_stats.user_id, user_tag_stats.total_minutes, users.nickname, users.avatar_url").
+			Joins("JOIN users ON users.id = user_tag_stats.user_id").
+			Where("user_tag_stats.tag_id = ?", tag.ID).
+			Order("user_tag_stats.total_minutes DESC").
+			Limit(limit).
+			Scan(&results).Error
+		
+		if err != nil {
+			return nil, err
+		}
+
+		// 3. 组装
+		items := make([]dto.RankingItem, len(results))
+		for i, r := range results {
+			items[i] = dto.RankingItem{
+				UserID:    r.UserID,
+				Minutes:   r.TotalMinutes,
+				Nickname:  r.Nickname,
+				AvatarURL: r.AvatarUrl,
+			}
+		}
+		return items, nil
+	}
+
+	// === 场景 B: 全局总榜 (走 Redis) ===
 	var key string
 
 	// 确定 Redis Key

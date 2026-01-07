@@ -15,6 +15,7 @@ func SetupRouter(r *gin.Engine) {
 	friendHandler := &handler.FriendHandler{}
 	rankingHandler := &handler.RankingHandler{}
 	roomHandler := &handler.RoomHandler{}
+	tagHandler := &handler.TagHandler{}
 
 	// --- Socket.IO 路由挂载 ---
 	// 必须在 main 中先 InitSocket()
@@ -24,6 +25,9 @@ func SetupRouter(r *gin.Engine) {
 	r.POST("/socket.io/*any", gin.WrapH(socket.Server))
 
 	// 公开路由
+	r.GET("/tags/search", tagHandler.Search) // 公开搜索
+	r.GET("/tags/popular", tagHandler.GetPopular) // 热门标签
+
 	authGroup := r.Group("/auth")
 	{
 		authGroup.POST("/register", authHandler.Register)
@@ -46,6 +50,11 @@ func SetupRouter(r *gin.Engine) {
 
 			userGroup.GET("/search", userHandler.SearchUsers) // 对应 /users/search?query=xxx
 			userGroup.GET("/:id/public", userHandler.GetPublicProfile)
+
+			// 用户的标签管理
+			userGroup.GET("/me/tags", tagHandler.GetMyTags)
+			userGroup.POST("/me/tags", tagHandler.AddTag)
+			userGroup.DELETE("/me/tags/:id", tagHandler.RemoveTag)
 		}
 
 		// Study 路由
