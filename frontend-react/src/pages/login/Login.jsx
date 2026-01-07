@@ -1,14 +1,22 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useNavigate, useLocation } from "react-router-dom";
 import { TomatoCrossSection } from "./components/TomatoCrossSection";
 import WelcomeTitle from "./components/WelcomeTitle";
 import Testimonial from "./components/Testimonial";
+import { LoginForm } from "@/feature/auth";
 
 function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleLoginSuccess = () => {
+    // 获取跳转前的页面路径（从 state 或 search 参数中获取）
+    const from = location.state?.from?.pathname || 
+                 new URLSearchParams(location.search).get('redirect') || 
+                 '/';
+    
+    // 跳转到之前的页面或主页
+    navigate(from, { replace: true });
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
@@ -23,53 +31,7 @@ function Login() {
         <div className="flex-1 flex items-center justify-center">
           <div className="bg-transparent p-8 rounded-lg w-full max-w-md">
             <WelcomeTitle />
-            <form className="space-y-6">
-              <div>
-                <Input
-                  type="email"
-                  placeholder="Email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full border-0 border-b border-primary bg-transparent rounded-none px-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-primary placeholder:text-primary/70 focus-visible:border-primary/80"
-                />
-              </div>
-              <div>
-                <Input
-                  type="password"
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full border-0 border-b border-primary bg-transparent rounded-none px-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-primary placeholder:text-primary/70 focus-visible:border-primary/80"
-                />
-              </div>
-              <Button 
-                type="submit" 
-                variant="outline"
-                className="w-full bg-background text-primary border-primary hover:bg-primary hover:text-white hover:border-primary transition-colors"
-              >
-                login
-              </Button>
-              <div className="flex justify-between items-center mt-6 text-sm">
-                <Button 
-                  asChild
-                  variant="ghost"
-                  className="text-primary hover:text-primary/80 hover:bg-transparent p-0 h-auto"
-                >
-                  <Link to="/register">
-                    Register
-                  </Link>
-                </Button>
-                <Button 
-                  asChild
-                  variant="ghost"
-                  className="text-primary hover:text-primary/80 hover:bg-transparent p-0 h-auto"
-                >
-                  <Link to="/forget-password">
-                    Forget Password
-                  </Link>
-                </Button>
-              </div>
-            </form>
+            <LoginForm onSuccess={handleLoginSuccess} />
           </div>
         </div>
 
