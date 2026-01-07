@@ -5,8 +5,7 @@ const Chamber = ({ rotation }) => (
   <g transform={`rotate(${rotation} 250 250)`}>
     {/* 
       1. 果冻状心室 (Jelly Chamber)
-      这是番茄内部最"湿润"的部分。
-      我们使用 primary 颜色，但降低不透明度，并混合 darker 模式来模拟深邃的果冻感。
+      使用 fill-current 并通过 opacity 调整深浅，不再硬编码颜色
     */}
     <path
       d="M250 230 
@@ -16,16 +15,13 @@ const Chamber = ({ rotation }) => (
          Q 190 50 160 100 
          Q 140 140 170 180 
          Q 220 230 250 230 Z"
-      className="fill-primary/60 mix-blend-multiply" 
+      className="fill-current opacity-60" 
     />
 
     {/* 
       2. 种子 (Seeds)
-      真实番茄的种子是附着在中心胎座上的。
-      这里让种子沿着心室的内侧边缘整齐排列。
-      颜色使用 white/yellow 混合，但保持低饱和度以融入 primary 色调。
     */}
-    <g className="fill-yellow-50/80 drop-shadow-sm">
+    <g className="fill-background/80 drop-shadow-sm">
       {/* 右侧种子列 */}
       <ellipse cx="270" cy="190" rx="5" ry="8" transform="rotate(-15 270 190)" />
       <ellipse cx="295" cy="165" rx="5" ry="8" transform="rotate(-25 295 165)" />
@@ -50,16 +46,14 @@ export function TomatoCrossSection({ className = '', ...props }) {
     >
       {/* 
         背景层：果肉 (Flesh)
-        这是整个番茄的主体颜色，使用你的 primary 颜色。
-        opacity-90 让它看起来不那么死板。
+        使用 fill-current，颜色由父级 text- color 控制
       */}
-      <circle cx="250" cy="250" r="245" className="fill-primary" />
+      <circle cx="250" cy="250" r="245" className="fill-current" />
       
       {/* 
         外皮 (Skin)
-        稍微深一点的轮廓，增加体积感
       */}
-      <circle cx="250" cy="250" r="245" fill="none" className="stroke-primary stroke-8 opacity-100 brightness-75" />
+      <circle cx="250" cy="250" r="245" fill="none" className="stroke-current stroke-8 opacity-100 brightness-75" />
 
       {/* 
         内部结构组：通过旋转生成 3 个完美对称的心室 
@@ -74,7 +68,7 @@ export function TomatoCrossSection({ className = '', ...props }) {
         中心核心 (Core)
         连接所有心室的中心部分，稍微模糊一点，过渡自然
       */}
-      <circle cx="250" cy="250" r="30" className="fill-primary blur-sm" />
+      <circle cx="250" cy="250" r="30" className="fill-current blur-sm" />
 
       {/* 
         高光 (Highlights) - 极简且克制

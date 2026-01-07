@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import { TomatoCrossSection } from "../../pages/login/components/TomatoCrossSection";
-import WelcomeTitle from "../../pages/login/components/WelcomeTitle";
 import Testimonial from "../../pages/login/components/Testimonial";
 import { RegisterForm } from "@/feature/auth";
 
@@ -8,33 +7,66 @@ function Register() {
   const navigate = useNavigate();
 
   const handleRegisterSuccess = () => {
-    // 注册成功后直接进入主页
     navigate('/', { replace: true });
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
-      {/* 装饰性圆形背景 - 左侧大圆 */}
-      <div className="absolute left-[-20vw] top-[10vh] w-[80vw] h-[80vw] max-w-[80vh] max-h-[80vh] opacity-30">
-        <TomatoCrossSection />
-      </div>
+    <div className="container relative min-h-screen flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
       
-      {/* 主容器：上下布局 */}
-      <div className="container mx-auto px-4 flex flex-col min-h-screen py-12 z-10 relative">
-        {/* 上方：注册表单 */}
-        <div className="flex-1 flex items-center justify-center">
-          <div className="bg-transparent p-8 rounded-lg w-full max-w-md">
-            {/* 复用 WelcomeTitle，或者可以新建一个 RegisterTitle */}
-            <WelcomeTitle /> 
-            <RegisterForm onSuccess={handleRegisterSuccess} />
-          </div>
+      {/* Left Side: Brand & Art */}
+      <div className="relative hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex">
+        <div className="absolute inset-0 bg-zinc-900" />
+        
+        <div className="absolute inset-0 overflow-hidden flex items-center justify-center">
+            <TomatoCrossSection className="w-[80%] h-[80%] opacity-10 text-primary" />
         </div>
+        
+        <div className="relative z-20 flex items-center text-lg font-bold tracking-tight">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="mr-2 h-6 w-6"
+          >
+            <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
+          </svg>
+          Group Leveling
+        </div>
+        
+        <div className="relative z-20 mt-auto">
+          <Testimonial />
+        </div>
+      </div>
 
-        {/* 下方：客户评价 - 居右显示 */}
-        <div className="flex justify-end pb-12">
-          <div className="w-full max-w-md">
-            <Testimonial />
+      {/* Right Side: Register Form */}
+      <div className="lg:p-8">
+        <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
+          <div className="flex flex-col space-y-2 text-center">
+            <h1 className="text-2xl font-semibold tracking-tight">
+              Create an account
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Enter your email below to create your account
+            </p>
           </div>
+          
+          <RegisterForm onSuccess={handleRegisterSuccess} />
+          
+          <p className="px-8 text-center text-sm text-muted-foreground">
+            By clicking continue, you agree to our{" "}
+            <a href="#" className="underline underline-offset-4 hover:text-primary">
+              Terms of Service
+            </a>{" "}
+            and{" "}
+            <a href="#" className="underline underline-offset-4 hover:text-primary">
+              Privacy Policy
+            </a>
+            .
+          </p>
         </div>
       </div>
     </div>

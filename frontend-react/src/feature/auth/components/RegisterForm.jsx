@@ -56,44 +56,40 @@ export const RegisterForm = ({ onSuccess }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
         <Input
           type="text"
           placeholder="Nickname"
           value={nickname}
           onChange={(e) => setNickname(e.target.value)}
-          className="w-full border-0 border-b border-primary bg-transparent rounded-none px-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-primary placeholder:text-primary/70 focus-visible:border-primary/80"
           disabled={loading}
         />
       </div>
-      <div>
+      <div className="space-y-2">
         <Input
           type="email"
-          placeholder="Email"
+          placeholder="name@example.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full border-0 border-b border-primary bg-transparent rounded-none px-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-primary placeholder:text-primary/70 focus-visible:border-primary/80"
           disabled={loading}
         />
       </div>
-      <div>
+      <div className="space-y-2">
         <Input
           type="password"
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full border-0 border-b border-primary bg-transparent rounded-none px-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-primary placeholder:text-primary/70 focus-visible:border-primary/80"
           disabled={loading}
         />
       </div>
-      <div>
+      <div className="space-y-2">
         <Input
           type="password"
           placeholder="Confirm Password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
-          className="w-full border-0 border-b border-primary bg-transparent rounded-none px-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-primary placeholder:text-primary/70 focus-visible:border-primary/80"
           disabled={loading}
         />
       </div>
@@ -107,11 +103,10 @@ export const RegisterForm = ({ onSuccess }) => {
 
       <Button 
         type="submit" 
-        variant="outline"
-        className="w-full bg-background text-primary border-primary hover:bg-primary hover:text-secondary hover:border-primary transition-colors"
+        className="w-full"
         disabled={loading}
       >
-        {loading ? 'Creating Account...' : 'Register'}
+        {loading ? 'Creating Account...' : 'Create Account'}
       </Button>
       
       <div className="flex justify-center items-center mt-6 text-sm">

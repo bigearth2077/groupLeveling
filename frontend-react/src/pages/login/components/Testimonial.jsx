@@ -40,13 +40,13 @@ function Testimonial() {
       <div className="space-y-6">
         {selectedTestimonials.map((testimonial, index) => (
           <blockquote key={index} className="space-y-2">
-            <p className="text-lg text-primary leading-relaxed font-medium">
+            <p className="text-lg leading-relaxed font-medium text-white/90">
               &ldquo;{testimonial.quote}&rdquo;
             </p>
-            <footer className="text-sm text-muted-foreground">
-              <span className="font-semibold text-primary">{testimonial.author}</span>
+            <footer className="text-sm text-white/70">
+              <span className="font-semibold">{testimonial.author}</span>
               <span className="mx-1">·</span>
-              <span className="text-primary">{testimonial.role}</span>
+              <span>{testimonial.role}</span>
             </footer>
           </blockquote>
         ))}
