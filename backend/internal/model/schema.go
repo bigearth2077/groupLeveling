@@ -51,6 +51,17 @@ type User struct {
 	HealthData    []HealthData   `gorm:"foreignKey:UserID"`
 	AIReports     []AIReport     `gorm:"foreignKey:UserID"`
 	RefreshTokens []RefreshToken `gorm:"foreignKey:UserID"`
+	DailyStats    []DailyStat    `gorm:"foreignKey:UserID"`
+}
+
+type DailyStat struct {
+	ID           string    `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	UserID       string    `gorm:"type:uuid;not null;index:idx_user_date,unique"` // 复合唯一索引
+	Date         time.Time `gorm:"type:date;not null;index:idx_user_date,unique"` // 复合唯一索引
+	TotalMinutes int       `gorm:"default:0"`
+	UpdatedAt    time.Time `gorm:"autoUpdateTime"`
+
+	User User `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 type Friend struct {

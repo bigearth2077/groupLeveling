@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"log"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // StartSessionReaper 启动后台清理任务
@@ -50,22 +52,38 @@ func reapSessions() {
 	
 			duration := int(endTime.Sub(session.StartTime).Minutes())
 	
-			// 更新 DB
-			session.EndTime = &endTime
-			session.DurationMinutes = &duration
+					// 更新 DB
+					session.EndTime = &endTime
+					session.DurationMinutes = &duration
+					
+					// 使用事务处理清理逻辑，确保 DailyStats 同步更新
+					err = database.DB.Transaction(func(tx *gorm.DB) error {
+						if err := tx.Save(&session).Error; err != nil {
+							return err
+						}
 			
-			if err := database.DB.Save(&session).Error; err != nil {
-				log.Printf("[Reaper] Failed to save session %s: %v\n", session.ID, err)
-				continue
-			}
-	
-			// 4. 更新排行榜 (调用统一的辅助方法)
-			s := &StudyService{}
-			if err := s.updateRankings(ctx, session.UserID, duration, endTime); err != nil {
-				log.Printf("[Reaper] Failed to update rankings for session %s: %v\n", session.ID, err)
-			}
+						// 调用 DailyStats 更新
+						s := &StudyService{}
+						if err := s.updateDailyStats(tx, session.UserID, session.StartTime, duration); err != nil {
+							return err
+						}
+						
+						return nil
+					})
 			
-			// 5. 确保删除心跳 Key
-			database.RDB.Del(ctx, key)
-		}
-	}
+					if err != nil {
+						log.Printf("[Reaper] Failed to save session %s: %v\n", session.ID, err)
+						continue
+					}
+			
+					// 4. 更新排行榜 (调用统一的辅助方法)
+					s := &StudyService{}
+					// 注意: Redis 更新可以放在事务外，或者只要不报错就行
+					if err := s.updateRankings(ctx, session.UserID, duration, endTime); err != nil {
+						log.Printf("[Reaper] Failed to update rankings for session %s: %v\n", session.ID, err)
+					}
+					
+					// 5. 确保删除心跳 Key
+					database.RDB.Del(ctx, key)
+				}
+			}

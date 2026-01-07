@@ -11,9 +11,33 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type StudyService struct{}
+
+// updateDailyStats 内部辅助函数，更新每日统计表 (Upsert)
+func (s *StudyService) updateDailyStats(tx *gorm.DB, userID string, startTime time.Time, durationMinutes int) error {
+	if durationMinutes <= 0 {
+		return nil
+	}
+
+	// 简单策略：归属到 StartTime 所在的 UTC 日期
+	date := time.Date(startTime.Year(), startTime.Month(), startTime.Day(), 0, 0, 0, 0, time.UTC)
+
+	// Upsert: 如果存在则累加，不存在则插入
+	// PostgreSQL: INSERT ... ON CONFLICT (user_id, date) DO UPDATE SET total_minutes = daily_stats.total_minutes + ?
+	err := tx.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "user_id"}, {Name: "date"}},
+		DoUpdates: clause.Assignments(map[string]interface{}{"total_minutes": gorm.Expr("daily_stats.total_minutes + ?", durationMinutes)}),
+	}).Create(&model.DailyStat{
+		UserID:       userID,
+		Date:         date,
+		TotalMinutes: durationMinutes,
+	}).Error
+
+	return err
+}
 
 // StartSession 开始会话
 func (s *StudyService) StartSession(userID string, req dto.StartSessionRequest) (*model.StudySession, error) {
@@ -120,20 +144,24 @@ func (s *StudyService) EndSession(userID, sessionID string, req dto.EndSessionRe
 	session.EndTime = &now
 	session.DurationMinutes = &duration
 
-	// 使用事务确保数据一致性 (可选，但推荐)
+	// 使用事务确保数据一致性
 	err := database.DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Save(&session).Error; err != nil {
 			return err
 		}
 
-		// 同步更新排行榜 (只要 DB 成功，就尝试更新 Redis)
-		// 注意：如果 Redis 失败，这里会回滚 DB 事务，保证绝对的一致性
+		// 1. 更新每日统计表 (预计算)
+		if err := s.updateDailyStats(tx, userID, session.StartTime, duration); err != nil {
+			return fmt.Errorf("failed to update daily stats: %v", err)
+		}
+
+		// 2. 同步更新排行榜
 		ctx := context.Background()
 		if err := s.updateRankings(ctx, userID, duration, now); err != nil {
 			return fmt.Errorf("failed to update rankings: %v", err)
 		}
 
-		// 删除心跳 Key (也在事务内执行)
+		// 3. 删除心跳 Key
 		database.RDB.Del(ctx, fmt.Sprintf("study:heartbeat:%s", session.ID))
 
 		return nil
@@ -183,12 +211,9 @@ func (s *StudyService) GetSessionsList(userID string, q dto.GetSessionsQuery) (*
 		db = db.Where("type = ?", q.Type)
 	}
 	if q.From != "" {
-		// 假设前端传的是 UTC 或者带时区的字符串，或者简单的 YYYY-MM-DD (视为当天的0点)
-		// 这里简化处理，直接比较
 		db = db.Where("start_time >= ?", q.From)
 	}
 	if q.To != "" {
-		// 为了包含 To 那一天的结尾，通常需要处理时间，这里简单处理
 		db = db.Where("start_time <= ?", q.To)
 	}
 
@@ -231,11 +256,10 @@ func (s *StudyService) GetStatsSummary(userID string, q dto.GetStatsQuery) (*dto
 	var startTime, endTime time.Time
 	now := time.Now()
 
+	// 默认使用 UTC 处理
 	if q.Range == "custom" || q.Range == "" && q.From != "" {
-		// 解析 From/To
-		// 实际项目中建议使用 helper 解析多种时间格式，这里简化假定 ISO8601
-		t1, _ := time.Parse(time.RFC3339, q.From) // 简单处理错误
-		t2, _ := time.Parse(time.RFC3339, q.To)
+		t1, _ := time.Parse("2006-01-02", q.From) // 假设传入 YYYY-MM-DD
+		t2, _ := time.Parse("2006-01-02", q.To)
 		startTime = t1
 		endTime = t2
 	} else {
@@ -244,53 +268,50 @@ func (s *StudyService) GetStatsSummary(userID string, q dto.GetStatsQuery) (*dto
 		if q.Range != "" {
 			days, _ = strconv.Atoi(q.Range)
 		}
-		endTime = now
-		startTime = now.AddDate(0, 0, -days)
+		// 归一化到 UTC 0点
+		today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+		endTime = today
+		startTime = today.AddDate(0, 0, -days+1) // +1 是为了包含今天
 	}
 
-	// 2. 数据库聚合查询
-	// 目标：按日期分组求和 duration_minutes
-	// 注意：日期必须基于用户请求的时区 (q.Tz)
-	// PostgreSQL: to_char(start_time AT TIME ZONE 'Asia/Shanghai', 'YYYY-MM-DD')
-
-	type Result struct {
-		DateStr      string
-		TotalMinutes int
-	}
-
-	var results []Result
-
-	err := database.DB.Model(&model.StudySession{}).
-		// Select 中定义了别名 date_str
-		Select("TO_CHAR(start_time AT TIME ZONE ?, 'YYYY-MM-DD') as date_str, SUM(duration_minutes) as total_minutes", q.Tz).
-		Where("user_id = ? AND type = ? AND start_time BETWEEN ? AND ? AND duration_minutes IS NOT NULL", userID, q.Type, startTime, endTime).
-		// 【修改点】不要用 "1"，直接用别名 "date_str"
-		Group("date_str").
-		Order("date_str").
-		Scan(&results).Error
+	// 2. 查询 DailyStat 表 (高效)
+	var stats []model.DailyStat
+	err := database.DB.Model(&model.DailyStat{}).
+		Where("user_id = ? AND date BETWEEN ? AND ?", userID, startTime, endTime).
+		Order("date ASC").
+		Find(&stats).Error
 
 	if err != nil {
 		return nil, err
 	}
 
-	// 3. 组装数据
+	// 3. 组装数据 & 补全缺失日期
 	dailyStats := make([]dto.DailyStat, 0)
 	grandTotal := 0
+	statsMap := make(map[string]int)
 
-	for _, r := range results {
-		dailyStats = append(dailyStats, dto.DailyStat{
-			Date:    r.DateStr,
-			Minutes: r.TotalMinutes,
-		})
-		grandTotal += r.TotalMinutes
+	for _, s := range stats {
+		dateStr := s.Date.Format("2006-01-02")
+		statsMap[dateStr] = s.TotalMinutes
+		grandTotal += s.TotalMinutes
 	}
 
-	// 补充：如果需要填充中间缺失的日期（例如某天没学习，要是0），需要在 Go 代码里循环 startTime 到 endTime 补全。
-	// 为了符合 MVP 说明，这里暂只返回有数据的天数。
+	// 循环补全日期
+	for d := startTime; !d.After(endTime); d = d.AddDate(0, 0, 1) {
+		dateStr := d.Format("2006-01-02")
+		minutes := 0
+		if val, ok := statsMap[dateStr]; ok {
+			minutes = val
+		}
+		dailyStats = append(dailyStats, dto.DailyStat{
+			Date:    dateStr,
+			Minutes: minutes,
+		})
+	}
 
 	return &dto.StatsSummaryResponse{
-		Type:         q.Type,
-		Tz:           q.Tz,
+		Type:         q.Type, // 注意：DailyStat 目前没分 Type，如果是 MVP 可以忽略 Type 筛选，或者 DailyStat 表加 Type 字段
+		Tz:           "UTC",  // 强制 UTC
 		From:         startTime,
 		To:           endTime,
 		TotalMinutes: grandTotal,

@@ -63,6 +63,7 @@ func InitDB() {
 		&model.HealthData{},
 		&model.AIReport{},
 		&model.RefreshToken{},
+		&model.DailyStat{},
 	)
 
 	if err != nil {
