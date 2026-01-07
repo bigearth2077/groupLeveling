@@ -1,33 +1,33 @@
-import axios from 'axios';
+import axios from "axios";
 
 // 创建 axios 实例
 const instance = axios.create({
-  baseURL: 'http://127.0.0.1:4523/m1/6951145-6667911-default', // Apifox Base URL
+  baseURL: "http://127.0.0.1:8080", // Apifox Base URL
   timeout: 5000, // 请求超时
 });
 
 // 请求拦截器
 instance.interceptors.request.use(
-  config => {
+  (config) => {
     // 如果本地有 token，则自动携带
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  error => Promise.reject(error)
+  (error) => Promise.reject(error)
 );
 
 // 响应拦截器
 instance.interceptors.response.use(
-  res => res.data, // 直接返回 data
-  err => {
-    console.error('请求出错：', err);
+  (res) => res.data, // 直接返回 data
+  (err) => {
+    console.error("请求出错：", err);
 
     // 统一处理未授权（401）
     if (err.response && err.response.status === 401) {
-      console.warn('登录状态已过期，请重新登录');
+      console.warn("登录状态已过期，请重新登录");
       // 这里可以跳转到登录页
     }
 
@@ -42,19 +42,12 @@ export const get = (url, params = {}) => instance.get(url, { params });
 export const post = (url, data = {}) => instance.post(url, data);
 // 封装 DELETE 请求
 export const del = (url, data = {}, config = {}) => {
-  return instance.delete(url, { data, ...config })
-}
+  return instance.delete(url, { data, ...config });
+};
 // 封装 PATCH 请求
 export const patch = (url, data = {}) => instance.patch(url, data);
 
 export default instance;
-
-
-
-
-
-
-
 
 // 你调用 post('/auth/login', {email, password})
 //         │
