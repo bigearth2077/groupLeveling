@@ -8,7 +8,9 @@ import (
 // --- Request DTOs ---
 
 type StartSessionRequest struct {
-	Type model.SessionType `json:"type" binding:"required,oneof=learning rest"`
+	Type    model.SessionType `json:"type" binding:"required,oneof=learning rest"`
+	TagName string            `json:"tagName"` // 可选：用户输入的标签名
+	TagID   string            `json:"tagId"`   // 可选：直接传 ID
 }
 
 type EndSessionRequest struct {
@@ -62,10 +64,23 @@ type DailyStat struct {
 }
 
 type StatsSummaryResponse struct {
-	Type         string      `json:"type"`
-	Tz           string      `json:"tz"`
-	From         time.Time   `json:"from"`
-	To           time.Time   `json:"to"`
-	TotalMinutes int         `json:"totalMinutes"`
-	Daily        []DailyStat `json:"daily"`
+	Type          string      `json:"type"`
+	Tz            string      `json:"tz"`
+	From          time.Time   `json:"from"`
+	To            time.Time   `json:"to"`
+	TotalMinutes  int         `json:"totalMinutes"`
+	Daily         []DailyStat `json:"daily"`
+	
+	// Gamification Info
+	LevelInfo     LevelInfo   `json:"levelInfo"`
+	CurrentStreak int         `json:"currentStreak"`
+	LongestStreak int         `json:"longestStreak"` // 这通常需要更复杂的计算，MVP 先不做或者简化
+}
+
+type LevelInfo struct {
+	Level        int     `json:"level"`
+	CurrentXP    int     `json:"currentXP"`
+	LevelFloorXP int     `json:"levelFloorXP"`
+	NextLevelXP  int     `json:"nextLevelXP"`
+	Progress     float64 `json:"progress"`
 }

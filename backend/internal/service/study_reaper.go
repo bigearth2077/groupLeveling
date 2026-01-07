@@ -62,15 +62,21 @@ func reapSessions() {
 							return err
 						}
 			
-						// 调用 DailyStats 更新
-						s := &StudyService{}
-						if err := s.updateDailyStats(tx, session.UserID, session.StartTime, duration); err != nil {
-							return err
-						}
+									// 调用 DailyStats 更新
+									s := &StudyService{}
+									if err := s.updateDailyStats(tx, session.UserID, session.StartTime, duration); err != nil {
+										return err
+									}
 						
-						return nil
-					})
-			
+									// 调用 TagStats 更新
+									if session.TagID != nil {
+										if err := s.updateUserTagStats(tx, session.UserID, *session.TagID, duration); err != nil {
+											return err
+										}
+									}
+									
+									return nil
+								})			
 					if err != nil {
 						log.Printf("[Reaper] Failed to save session %s: %v\n", session.ID, err)
 						continue

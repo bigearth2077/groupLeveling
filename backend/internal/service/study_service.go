@@ -39,6 +39,25 @@ func (s *StudyService) updateDailyStats(tx *gorm.DB, userID string, startTime ti
 	return err
 }
 
+// updateUserTagStats 内部辅助函数，更新标签累计经验 (Upsert)
+func (s *StudyService) updateUserTagStats(tx *gorm.DB, userID string, tagID string, durationMinutes int) error {
+	if tagID == "" || durationMinutes <= 0 {
+		return nil
+	}
+
+	// Upsert: INSERT ... ON CONFLICT (user_id, tag_id) DO UPDATE
+	err := tx.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "user_id"}, {Name: "tag_id"}},
+		DoUpdates: clause.Assignments(map[string]interface{}{"total_minutes": gorm.Expr("user_tag_stats.total_minutes + ?", durationMinutes)}),
+	}).Create(&model.UserTagStat{
+		UserID:       userID,
+		TagID:        tagID,
+		TotalMinutes: durationMinutes,
+	}).Error
+
+	return err
+}
+
 // StartSession 开始会话
 func (s *StudyService) StartSession(userID string, req dto.StartSessionRequest) (*model.StudySession, error) {
 	// 1. 检查是否已有进行中的会话 (EndTime 为空的)
@@ -51,22 +70,36 @@ func (s *StudyService) StartSession(userID string, req dto.StartSessionRequest) 
 		return nil, errors.New("you already have an active session")
 	}
 
-	// 2. 确定开始时间 (统一使用后端时间)
+	// 2. 处理标签
+	var tagID *string
+	if req.TagID != "" {
+		tagID = &req.TagID
+	} else if req.TagName != "" {
+		tagService := &TagService{}
+		tag, err := tagService.FindOrCreateTag(req.TagName)
+		if err != nil {
+			return nil, err
+		}
+		tagID = &tag.ID
+	}
+
+	// 3. 确定开始时间 (统一使用后端时间)
 	startTime := time.Now()
 
-	// 3. 创建
+	// 4. 创建
 	session := model.StudySession{
 		UserID:    userID,
 		Type:      req.Type,
 		StartTime: startTime,
 		EndTime:   nil, // 明确为空
+		TagID:     tagID,
 	}
 
 	if err := database.DB.Create(&session).Error; err != nil {
 		return nil, err
 	}
 
-	// 4. 设置初始心跳
+	// 5. 设置初始心跳
 	go func() {
 		ctx := context.Background()
 		database.RDB.Set(ctx, fmt.Sprintf("study:heartbeat:%s", session.ID), startTime.Unix(), 3*time.Minute)
@@ -155,13 +188,20 @@ func (s *StudyService) EndSession(userID, sessionID string, req dto.EndSessionRe
 			return fmt.Errorf("failed to update daily stats: %v", err)
 		}
 
-		// 2. 同步更新排行榜
+		// 2. 更新 Tag 累计经验 (XP)
+		if session.TagID != nil {
+			if err := s.updateUserTagStats(tx, userID, *session.TagID, duration); err != nil {
+				return fmt.Errorf("failed to update tag stats: %v", err)
+			}
+		}
+
+		// 3. 同步更新排行榜
 		ctx := context.Background()
 		if err := s.updateRankings(ctx, userID, duration, now); err != nil {
 			return fmt.Errorf("failed to update rankings: %v", err)
 		}
 
-		// 3. 删除心跳 Key
+		// 4. 删除心跳 Key
 		database.RDB.Del(ctx, fmt.Sprintf("study:heartbeat:%s", session.ID))
 
 		return nil
@@ -296,25 +336,179 @@ func (s *StudyService) GetStatsSummary(userID string, q dto.GetStatsQuery) (*dto
 		grandTotal += s.TotalMinutes
 	}
 
-	// 循环补全日期
-	for d := startTime; !d.After(endTime); d = d.AddDate(0, 0, 1) {
-		dateStr := d.Format("2006-01-02")
-		minutes := 0
-		if val, ok := statsMap[dateStr]; ok {
-			minutes = val
+		// 循环补全日期
+
+		for d := startTime; !d.After(endTime); d = d.AddDate(0, 0, 1) {
+
+			dateStr := d.Format("2006-01-02")
+
+			minutes := 0
+
+			if val, ok := statsMap[dateStr]; ok {
+
+				minutes = val
+
+			}
+
+			dailyStats = append(dailyStats, dto.DailyStat{
+
+				Date:	dateStr,
+
+				Minutes: minutes,
+
+			})
+
 		}
-		dailyStats = append(dailyStats, dto.DailyStat{
-			Date:    dateStr,
-			Minutes: minutes,
-		})
+
+	
+
+		// --- Gamification Calculations ---
+
+	
+
+		// 1. Calculate Total XP & Level
+
+		var totalXP int64
+
+		// 这是一个快速聚合查询
+
+		database.DB.Model(&model.DailyStat{}).
+
+			Where("user_id = ?", userID).
+
+			Select("COALESCE(SUM(total_minutes), 0)").
+
+			Scan(&totalXP)
+
+	
+
+		levelService := &LevelService{}
+
+		levelInfo := levelService.CalculateLevel(int(totalXP))
+
+	
+
+		// 2. Calculate Streak
+
+		// 我们需要查找最近的连续打卡记录。
+
+		// 定义：Streak = 连续多少天 total_minutes > 0。
+
+		// 从今天(或昨天)开始倒推。
+
+		var streakStats []model.DailyStat
+
+		// 查最近 100 条非零记录即可，大多数人 streak 不会太夸张，或者分批查。
+
+		// 这里为了性能，先查最近 365 天。
+
+		yesterday := now.AddDate(0, 0, -1)
+
+		oneYearAgo := now.AddDate(-1, 0, 0)
+
+		
+
+		// 注意：这里需要查所有日期的记录，而不仅是 daily_stats 存在的记录（因为 daily_stats 只有有学习才有记录）。
+
+		// 利用 daily_stats 的特性：只有有学习才有记录。
+
+		// 那么如果是连续的，date 应该是连续的 (差距 24h)。
+
+		
+
+		database.DB.Model(&model.DailyStat{}).
+
+			Where("user_id = ? AND date >= ?", userID, oneYearAgo).
+
+			Order("date DESC").
+
+			Find(&streakStats)
+
+			
+
+		currentStreak := 0
+
+		// 今天的日期字符串 (UTC)
+
+		todayStr := now.UTC().Format("2006-01-02")
+
+		yesterdayStr := yesterday.UTC().Format("2006-01-02")
+
+		
+
+		// 检查 streak
+
+		// 逻辑：如果最近的一条是今天，streak++，继续看上一条是否是昨天。
+
+		// 如果最近的一条是昨天，streak++，继续看上一条是否是前天。
+
+		// 如果最近的一条是前天，说明今天和昨天都断了，streak = 0。
+
+		
+
+		if len(streakStats) > 0 {
+
+			lastDate := streakStats[0].Date.Format("2006-01-02")
+
+			
+
+			// 只有当最近一次学习是“今天”或“昨天”时，Streak 才有效
+
+			if lastDate == todayStr || lastDate == yesterdayStr {
+
+				currentStreak = 1
+
+				expectedDate := streakStats[0].Date.AddDate(0, 0, -1) // 期望的下一条日期
+
+				
+
+				for i := 1; i < len(streakStats); i++ {
+
+					thisDate := streakStats[i].Date
+
+					// 比较 thisDate 和 expectedDate (忽略时分秒，只比年月日)
+
+					if thisDate.Format("2006-01-02") == expectedDate.Format("2006-01-02") {
+
+						currentStreak++
+
+						expectedDate = expectedDate.AddDate(0, 0, -1)
+
+					} else {
+
+						break // 断了
+
+					}
+
+				}
+
+			}
+
+		}
+
+	
+
+		return &dto.StatsSummaryResponse{
+
+			Type:			 q.Type,
+
+			Tz:				 "UTC",
+
+			From:			 startTime,
+
+			To:				 endTime,
+
+			TotalMinutes:	 grandTotal, // 这是 Range 内的总时间，不是生涯总时间
+
+			Daily:			 dailyStats,
+
+			LevelInfo:		 levelInfo,
+
+			CurrentStreak:	 currentStreak,
+
+			LongestStreak:	 0, // MVP 暂不计算，需要全表扫描
+
+		}, nil
+
 	}
 
-	return &dto.StatsSummaryResponse{
-		Type:         q.Type, // 注意：DailyStat 目前没分 Type，如果是 MVP 可以忽略 Type 筛选，或者 DailyStat 表加 Type 字段
-		Tz:           "UTC",  // 强制 UTC
-		From:         startTime,
-		To:           endTime,
-		TotalMinutes: grandTotal,
-		Daily:        dailyStats,
-	}, nil
-}

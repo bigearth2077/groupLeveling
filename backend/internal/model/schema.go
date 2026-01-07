@@ -52,6 +52,7 @@ type User struct {
 	AIReports     []AIReport     `gorm:"foreignKey:UserID"`
 	RefreshTokens []RefreshToken `gorm:"foreignKey:UserID"`
 	DailyStats    []DailyStat    `gorm:"foreignKey:UserID"`
+	TagStats      []UserTagStat  `gorm:"foreignKey:UserID"`
 }
 
 type DailyStat struct {
@@ -62,6 +63,29 @@ type DailyStat struct {
 	UpdatedAt    time.Time `gorm:"autoUpdateTime"`
 
 	User User `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+}
+
+type Tag struct {
+	ID        string    `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	Name      string    `gorm:"uniqueIndex;not null"` // 标准化名称 (lowercase)
+	ParentID  *string   `gorm:"type:uuid;default:null;index"` // 指向父标签(标准词)ID，实现别名机制
+	CreatedAt time.Time `gorm:"autoCreateTime"`
+
+	// Relations
+	Parent   *Tag          `gorm:"foreignKey:ParentID"`
+	Children []Tag         `gorm:"foreignKey:ParentID"`
+	Stats    []UserTagStat `gorm:"foreignKey:TagID"`
+}
+
+type UserTagStat struct {
+	ID           string    `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	UserID       string    `gorm:"type:uuid;not null;index:idx_user_tag,unique"`
+	TagID        string    `gorm:"type:uuid;not null;index:idx_user_tag,unique"`
+	TotalMinutes int       `gorm:"default:0"` // 1 min = 1 XP
+	UpdatedAt    time.Time `gorm:"autoUpdateTime"`
+
+	User User `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Tag  Tag  `gorm:"foreignKey:TagID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 type Friend struct {
@@ -84,8 +108,10 @@ type StudySession struct {
 	DurationMinutes *int        `gorm:"default:null"`
 	Type            SessionType `gorm:"type:varchar(20);not null"`
 	CreatedAt       time.Time   `gorm:"autoCreateTime"`
+	TagID           *string     `gorm:"type:uuid;default:null;index"` // 允许为空，兼容旧数据
 
 	User User `gorm:"foreignKey:UserID"`
+	Tag  *Tag `gorm:"foreignKey:TagID"`
 }
 
 type Blog struct {

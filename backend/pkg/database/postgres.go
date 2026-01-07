@@ -64,6 +64,8 @@ func InitDB() {
 		&model.AIReport{},
 		&model.RefreshToken{},
 		&model.DailyStat{},
+		&model.Tag{},
+		&model.UserTagStat{},
 	)
 
 	if err != nil {
