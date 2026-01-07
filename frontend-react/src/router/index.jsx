@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router-dom';
 import App from '../App';
 import Login from '../pages/login/Login';
+import Register from '../pages/register/Register';
 import Auth from '../components/Auth';
 
 // 路由配置
@@ -9,6 +10,11 @@ const router = createBrowserRouter([
   {
     path: '/login',
     element: <Login />,
+  },
+  // 公开路由：注册页面
+  {
+    path: '/register',
+    element: <Register />,
   },
   
   // 受保护路由：需要登录才能访问
