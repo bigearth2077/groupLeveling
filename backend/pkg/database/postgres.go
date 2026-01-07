@@ -69,5 +69,11 @@ func InitDB() {
 		log.Fatal("Failed to migrate database: ", err)
 	}
 
+	// 手动添加部分唯一索引 (Partial Unique Index)
+	// 确保每个用户只能有一个 end_time 为 NULL 的活跃会话
+	DB.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_one_active_session_per_user 
+             ON study_sessions (user_id) 
+             WHERE end_time IS NULL`)
+
 	log.Println("Database migration completed")
 }

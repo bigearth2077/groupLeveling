@@ -27,11 +27,8 @@ func (s *StudyService) StartSession(userID string, req dto.StartSessionRequest) 
 		return nil, errors.New("you already have an active session")
 	}
 
-	// 2. 确定开始时间
+	// 2. 确定开始时间 (统一使用后端时间)
 	startTime := time.Now()
-	if req.StartTime != nil {
-		startTime = *req.StartTime
-	}
 
 	// 3. 创建
 	session := model.StudySession{
@@ -45,7 +42,61 @@ func (s *StudyService) StartSession(userID string, req dto.StartSessionRequest) 
 		return nil, err
 	}
 
+	// 4. 设置初始心跳
+	go func() {
+		ctx := context.Background()
+		database.RDB.Set(ctx, fmt.Sprintf("study:heartbeat:%s", session.ID), startTime.Unix(), 3*time.Minute)
+	}()
+
 	return &session, nil
+}
+
+// Heartbeat 接收心跳
+func (s *StudyService) Heartbeat(userID, sessionID string) error {
+	// 简单校验该 Session 是否属于该用户且正在进行中
+	// 也可以为了性能只依靠 Redis，但查一下 DB 更稳妥
+	var count int64
+	err := database.DB.Model(&model.StudySession{}).
+		Where("id = ? AND user_id = ? AND end_time IS NULL", sessionID, userID).
+		Count(&count).Error
+
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		return errors.New("session not found or inactive")
+	}
+
+	// 更新 Redis
+	ctx := context.Background()
+	key := fmt.Sprintf("study:heartbeat:%s", sessionID)
+	return database.RDB.Set(ctx, key, time.Now().Unix(), 3*time.Minute).Err()
+}
+
+// updateRankings 内部辅助函数，同步更新排行榜
+func (s *StudyService) updateRankings(ctx context.Context, userID string, duration int, endTime time.Time) error {
+	if duration <= 0 {
+		return nil
+	}
+
+	score := float64(duration)
+
+	// 1. 更新总榜
+	if err := database.RDB.ZIncrBy(ctx, "ranking:total", score, userID).Err(); err != nil {
+		return err
+	}
+
+	// 2. 更新周榜
+	year, week := endTime.ISOWeek()
+	weekKey := fmt.Sprintf("ranking:week:%d-%d", year, week)
+
+	if err := database.RDB.ZIncrBy(ctx, weekKey, score, userID).Err(); err != nil {
+		return err
+	}
+
+	// 设置周榜过期时间
+	database.RDB.Expire(ctx, weekKey, 14*24*time.Hour)
+	return nil
 }
 
 // EndSession 结束会话
@@ -62,32 +113,35 @@ func (s *StudyService) EndSession(userID, sessionID string, req dto.EndSessionRe
 		return nil, errors.New("session is already ended")
 	}
 
-	// 更新
-	session.EndTime = &req.EndTime
-	session.DurationMinutes = &req.DurationMinutes
+	// 更新 (后端自动计算结束时间和时长)
+	now := time.Now()
+	duration := int(now.Sub(session.StartTime).Minutes())
 
-	if err := database.DB.Save(&session).Error; err != nil {
+	session.EndTime = &now
+	session.DurationMinutes = &duration
+
+	// 使用事务确保数据一致性 (可选，但推荐)
+	err := database.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Save(&session).Error; err != nil {
+			return err
+		}
+
+		// 同步更新排行榜 (只要 DB 成功，就尝试更新 Redis)
+		// 注意：如果 Redis 失败，这里会回滚 DB 事务，保证绝对的一致性
+		ctx := context.Background()
+		if err := s.updateRankings(ctx, userID, duration, now); err != nil {
+			return fmt.Errorf("failed to update rankings: %v", err)
+		}
+
+		// 删除心跳 Key (也在事务内执行)
+		database.RDB.Del(ctx, fmt.Sprintf("study:heartbeat:%s", session.ID))
+
+		return nil
+	})
+
+	if err != nil {
 		return nil, err
 	}
-
-	go func() {
-		ctx := context.Background()
-		duration := float64(req.DurationMinutes)
-
-		// 1. 更新总榜
-		database.RDB.ZIncrBy(ctx, "ranking:total", duration, userID)
-
-		// 2. 更新周榜
-		// 获取当前 ISO 年和周
-		year, week := time.Now().ISOWeek()
-		weekKey := fmt.Sprintf("ranking:week:%d-%d", year, week)
-
-		// 增加分数
-		database.RDB.ZIncrBy(ctx, weekKey, duration, userID)
-
-		// 设置周榜过期时间 (例如保留 2 周，避免垃圾数据堆积)
-		database.RDB.Expire(ctx, weekKey, 14*24*time.Hour)
-	}()
 
 	return &session, nil
 }

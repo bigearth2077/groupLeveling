@@ -45,10 +45,8 @@ func (h *StudyHandler) EndSession(c *gin.Context) {
 	sessionID := c.Param("id")
 	var req dto.EndSessionRequest
 
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+	// 如果有 Body 则绑定，没有也不强制报错，因为现在后端自计算
+	_ = c.ShouldBindJSON(&req)
 
 	sess, err := h.Service.EndSession(userID, sessionID, req)
 	if err != nil {
@@ -107,6 +105,19 @@ func (h *StudyHandler) CancelActiveSession(c *gin.Context) {
 		Ok:      true,
 		Deleted: rowsAffected,
 	})
+}
+
+// Heartbeat
+func (h *StudyHandler) Heartbeat(c *gin.Context) {
+	userID := c.GetString("userId")
+	sessionID := c.Param("id")
+
+	if err := h.Service.Heartbeat(userID, sessionID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
 
 // GetSessions (History)

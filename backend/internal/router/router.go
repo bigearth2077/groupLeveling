@@ -53,6 +53,7 @@ func SetupRouter(r *gin.Engine) {
 		{
 			studyGroup.POST("/sessions/start", studyHandler.StartSession)
 			studyGroup.POST("/sessions/:id/end", studyHandler.EndSession) // 注意 :id
+			studyGroup.POST("/sessions/:id/heartbeat", studyHandler.Heartbeat) // 心跳
 			studyGroup.GET("/sessions/active", studyHandler.GetActiveSession)
 			studyGroup.DELETE("/sessions/active", studyHandler.CancelActiveSession)
 			studyGroup.GET("/sessions", studyHandler.GetSessions) // 历史记录

@@ -8,13 +8,11 @@ import (
 // --- Request DTOs ---
 
 type StartSessionRequest struct {
-	Type      model.SessionType `json:"type" binding:"required,oneof=learning rest"`
-	StartTime *time.Time        `json:"startTime"` // 可选，指针类型以便判断是否传入
+	Type model.SessionType `json:"type" binding:"required,oneof=learning rest"`
 }
 
 type EndSessionRequest struct {
-	EndTime         time.Time `json:"endTime" binding:"required"`
-	DurationMinutes int       `json:"durationMinutes" binding:"required,gte=0"` // gte=0 也就是 >= 0
+	// 目前不需要传入字段，后端自行计算时间和时长
 }
 
 type GetSessionsQuery struct {
