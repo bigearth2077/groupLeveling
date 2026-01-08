@@ -1,5 +1,5 @@
-export * from './components/LoginForm';
-export * from './components/RegisterForm';
-export * from './api';
-export * from './hooks/useLogin';
-export * from './hooks/useRegister';
+export { LoginForm } from './components/LoginForm';
+export { RegisterForm } from './components/RegisterForm';
+export { loginAPI, registerAPI } from './api';
+export { useLogin } from './hooks/useLogin';
+export { useRegister } from './hooks/useRegister';
