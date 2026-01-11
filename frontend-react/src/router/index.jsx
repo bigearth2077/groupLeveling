@@ -3,6 +3,7 @@ import App from '../App';
 import Login from '../pages/login/Login';
 import Register from '../pages/register/Register';
 import Auth from '../components/Auth';
+import Home from '../pages/home/Home';
 
 // 路由配置
 const router = createBrowserRouter([
@@ -28,7 +29,7 @@ const router = createBrowserRouter([
         children: [
           {
             index: true,
-            element: <div className="p-10 text-2xl font-bold text-foreground">首页 - 欢迎使用 React</div>, // 临时占位
+            element: <Home />,
           },
           {
             path: 'about',
