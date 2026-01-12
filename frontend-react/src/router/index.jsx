@@ -4,6 +4,7 @@ import Login from '../pages/login/Login';
 import Register from '../pages/register/Register';
 import Auth from '../components/Auth';
 import Home from '../pages/home/Home';
+import Profile from '../pages/user/Profile';
 
 // 路由配置
 const router = createBrowserRouter([
@@ -45,7 +46,7 @@ const router = createBrowserRouter([
           },
           {
             path: 'profile',
-            element: <div className="p-10 text-foreground">Profile Page (Coming Soon)</div>,
+            element: <Profile />,
           }
         ]
       }
