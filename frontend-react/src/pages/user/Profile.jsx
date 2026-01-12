@@ -8,22 +8,34 @@ import {
   Save, 
   Lock, 
   Trophy, 
-  Clock, 
   Zap,
   Loader2,
-  Camera
+  Camera,
+  History,
+  Clock,
+  ArrowLeft,
+  ArrowRight,
+  Coffee,
+  Brain
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { getMe, getUserProfile, updateProfile, changePassword } from '@/feature/user/api';
+import { getSessions, getStatsSummary } from '@/feature/study/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 export default function Profile() {
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'settings'
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'history' | 'settings'
   const [user, setUser] = useState(null);
-  const [stats, setStats] = useState(null);
+  const [stats, setStats] = useState(null); // LevelInfo
   
+  // Data for tabs
+  const [summary, setSummary] = useState(null); // Weekly stats
+  const [sessions, setSessions] = useState([]); // History list
+  const [sessionPage, setSessionPage] = useState(1);
+  const [hasMoreSessions, setHasMoreSessions] = useState(false);
+
   // Edit Form State
   const [formData, setFormData] = useState({
     nickname: '',
@@ -39,6 +51,12 @@ export default function Profile() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'history') {
+      fetchHistory(sessionPage);
+    }
+  }, [activeTab, sessionPage]);
 
   const fetchData = async () => {
     try {
@@ -57,6 +75,12 @@ export default function Profile() {
         if (profile) {
           setStats(profile.levelInfo);
         }
+
+        // Fetch Summary for Overview
+        const sumResp = await getStatsSummary({ range: '7' });
+        if (sumResp) {
+          setSummary(sumResp);
+        }
       }
     } catch (error) {
       console.error("Failed to fetch profile:", error);
@@ -65,12 +89,26 @@ export default function Profile() {
     }
   };
 
+  const fetchHistory = async (page) => {
+    try {
+      const resp = await getSessions({ page, pageSize: 10 });
+      if (resp && resp.items) {
+        setSessions(resp.items);
+        setHasMoreSessions(resp.items.length === 10);
+      } else {
+        setSessions([]);
+        setHasMoreSessions(false);
+      }
+    } catch (err) {
+      console.error("Failed to fetch history", err);
+    }
+  };
+
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
       await updateProfile(formData);
-      // Refresh local data
       const updated = { ...user, ...formData };
       setUser(updated);
       alert('Profile updated successfully!');
@@ -96,13 +134,18 @@ export default function Profile() {
   };
 
   const getChartOption = () => {
+    if (!summary || !summary.daily) return {};
+
+    const dates = summary.daily.map(d => d.date.slice(5)); // 'MM-DD'
+    const values = summary.daily.map(d => d.minutes);
+
     return {
-      title: { text: 'Weekly Focus', textStyle: { fontSize: 14 } },
+      title: { text: 'Weekly Focus (Minutes)', textStyle: { fontSize: 14, fontWeight: 'bold', color: '#334155' } },
       tooltip: { trigger: 'axis' },
       grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
       xAxis: {
         type: 'category',
-        data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        data: dates,
         axisLine: { lineStyle: { color: '#94a3b8' } }
       },
       yAxis: {
@@ -112,13 +155,19 @@ export default function Profile() {
       },
       series: [
         {
-          data: [120, 200, 150, 80, 70, 110, 130],
+          data: values,
           type: 'bar',
           itemStyle: { color: '#6366f1', borderRadius: [4, 4, 0, 0] },
           barWidth: '40%'
         }
       ]
     };
+  };
+
+  const formatDate = (isoString) => {
+    return new Date(isoString).toLocaleString('en-US', {
+      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
   };
 
   if (loading) {
@@ -130,7 +179,7 @@ export default function Profile() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
+    <div className="max-w-5xl mx-auto space-y-8 pb-20">
       
       {/* Header Card */}
       <div className="relative overflow-hidden rounded-3xl bg-white p-8 shadow-lg shadow-slate-200/50 border border-slate-100">
@@ -177,25 +226,26 @@ export default function Profile() {
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3">
-             <button 
-               onClick={() => setActiveTab('overview')}
-               className={`px-5 py-2.5 rounded-xl font-bold transition-all ${activeTab === 'overview' ? 'bg-slate-900 text-white shadow-lg' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}
-             >
-               Overview
-             </button>
-             <button 
-               onClick={() => setActiveTab('settings')}
-               className={`px-5 py-2.5 rounded-xl font-bold transition-all ${activeTab === 'settings' ? 'bg-slate-900 text-white shadow-lg' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}
-             >
-               <Settings size={18} />
-             </button>
+          <div className="flex gap-2">
+             {['overview', 'history', 'settings'].map(tab => (
+               <button 
+                 key={tab}
+                 onClick={() => setActiveTab(tab)}
+                 className={`px-5 py-2.5 rounded-xl font-bold transition-all capitalize ${
+                   activeTab === tab 
+                   ? 'bg-slate-900 text-white shadow-lg' 
+                   : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                 }`}
+               >
+                 {tab === 'settings' ? <Settings size={18} /> : tab}
+               </button>
+             ))}
           </div>
         </div>
       </div>
 
       {/* Content Tabs */}
-      {activeTab === 'overview' ? (
+      {activeTab === 'overview' && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Left Col: Stats */}
           <div className="space-y-6">
@@ -214,7 +264,7 @@ export default function Profile() {
                   <div className="text-xs text-orange-400 uppercase font-bold">Streak</div>
                   <div className="text-2xl font-black text-orange-600 flex items-center gap-1">
                     <Zap size={20} className="fill-current" />
-                    12
+                    {summary?.currentStreak || 0}
                   </div>
                 </div>
                 <div className="p-4 rounded-2xl bg-blue-50 col-span-2">
@@ -233,12 +283,84 @@ export default function Profile() {
 
           {/* Right Col: Charts */}
           <div className="md:col-span-2 space-y-6">
-             <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                <ReactECharts option={getChartOption()} style={{ height: '300px' }} />
+             <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm min-h-[350px]">
+                {summary && summary.daily ? (
+                  <ReactECharts option={getChartOption()} style={{ height: '320px' }} />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-slate-400">
+                    No activity data available yet.
+                  </div>
+                )}
              </div>
           </div>
         </div>
-      ) : (
+      )}
+
+      {activeTab === 'history' && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-slate-50 flex justify-between items-center">
+               <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                 <History size={20} className="text-indigo-600" />
+                 Session History
+               </h3>
+               <div className="text-xs text-slate-400">Page {sessionPage}</div>
+            </div>
+            
+            <div className="divide-y divide-slate-50">
+               {sessions.length === 0 ? (
+                 <div className="p-12 text-center text-slate-400">No sessions found. Start focusing!</div>
+               ) : (
+                 sessions.map((sess) => (
+                   <div key={sess.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                      <div className="flex items-center gap-4">
+                        <div className={`p-3 rounded-2xl ${sess.type === 'learning' ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                           {sess.type === 'learning' ? <Brain size={20} /> : <Coffee size={20} />}
+                        </div>
+                        <div>
+                          <div className="font-bold text-slate-700 capitalize">{sess.type === 'learning' ? 'Focus Session' : 'Break'}</div>
+                          <div className="text-xs text-slate-400 flex items-center gap-1">
+                             <Calendar size={12} />
+                             {formatDate(sess.startTime)}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-8">
+                         <div className="text-right">
+                           <div className="text-sm font-bold text-slate-800">{sess.durationMinutes || 0} min</div>
+                           <div className="text-xs text-slate-400">Duration</div>
+                         </div>
+                         {/* Optional: Add tag here if available */}
+                      </div>
+                   </div>
+                 ))
+               )}
+            </div>
+
+            <div className="p-4 bg-slate-50 flex justify-center gap-4">
+              <Button 
+                variant="outline" 
+                disabled={sessionPage === 1}
+                onClick={() => setSessionPage(p => p - 1)}
+                className="rounded-xl border-slate-200"
+              >
+                <ArrowLeft size={16} className="mr-2" /> Previous
+              </Button>
+              <Button 
+                variant="outline" 
+                disabled={!hasMoreSessions}
+                onClick={() => setSessionPage(p => p + 1)}
+                className="rounded-xl border-slate-200"
+              >
+                Next <ArrowRight size={16} className="ml-2" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'settings' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Edit Profile */}
           <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm space-y-6">
