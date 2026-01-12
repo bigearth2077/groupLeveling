@@ -6,11 +6,16 @@ import (
 	"backend/pkg/utils"
 	"encoding/json"
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	socketio "github.com/googollee/go-socket.io"
+	"github.com/googollee/go-socket.io/engineio"
+	"github.com/googollee/go-socket.io/engineio/transport"
+	"github.com/googollee/go-socket.io/engineio/transport/polling"
+	"github.com/googollee/go-socket.io/engineio/transport/websocket"
 )
 
 var Server *socketio.Server
@@ -26,7 +31,20 @@ type SocketContext struct {
 // InitSocket 初始化 Socket.IO 服务
 func InitSocket() {
 	var err error
-	Server = socketio.NewServer(nil)
+	Server = socketio.NewServer(&engineio.Options{
+		Transports: []transport.Transport{
+			&polling.Transport{
+				CheckOrigin: func(r *http.Request) bool {
+					return true
+				},
+			},
+			&websocket.Transport{
+				CheckOrigin: func(r *http.Request) bool {
+					return true
+				},
+			},
+		},
+	})
 	if err != nil {
 		log.Fatal(err)
 	}

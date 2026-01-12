@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, UserPlus, Check, Loader2, User } from 'lucide-react';
-import { searchUsers } from '@/feature/user/api';
+import { searchUsers, getMe } from '@/feature/user/api';
 import { sendFriendRequest } from '@/feature/friend/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,11 @@ export default function UserSearch() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [sentMap, setSentMap] = useState({}); // { userId: true }
+  const [myId, setMyId] = useState(null);
+
+  useEffect(() => {
+    getMe().then(u => { if (u) setMyId(u.id); }).catch(() => {});
+  }, []);
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -19,7 +24,9 @@ export default function UserSearch() {
     try {
       const resp = await searchUsers(query);
       if (resp && resp.items) {
-        setResults(resp.items);
+        // Filter out self
+        const filtered = resp.items.filter(u => u.id !== myId);
+        setResults(filtered);
       } else {
         setResults([]);
       }

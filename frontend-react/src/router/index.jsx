@@ -6,6 +6,8 @@ import Auth from '../components/Auth';
 import Home from '../pages/home/Home';
 import Profile from '../pages/user/Profile';
 import Leaderboard from '../pages/ranking/Leaderboard';
+import RoomLobby from '../pages/room/RoomLobby';
+import RoomDetail from '../pages/room/RoomDetail';
 
 // 路由配置
 const router = createBrowserRouter([
@@ -39,7 +41,11 @@ const router = createBrowserRouter([
           },
           {
             path: 'rooms',
-            element: <div className="p-10 text-foreground">Rooms Page (Coming Soon)</div>,
+            element: <RoomLobby />,
+          },
+          {
+            path: 'room/:id',
+            element: <RoomDetail />,
           },
           {
             path: 'rankings',

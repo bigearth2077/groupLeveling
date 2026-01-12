@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import PomodoroDock from '@/components/PomodoroDock';
 import FriendDrawer from '@/components/friend/FriendDrawer';
+import RoomConnectionManager from '@/components/room/RoomConnectionManager';
 import { LayoutDashboard, Users, Trophy, User } from 'lucide-react';
 
 const AppLayout = () => {
@@ -16,6 +17,9 @@ const AppLayout = () => {
 
   return (
     <div className="min-h-screen bg-gray-50/50 text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-700">
+      {/* Global Room Manager */}
+      <RoomConnectionManager />
+
       {/* Top Navigation (Desktop) / Mobile Header */}
       <header className="sticky top-0 z-40 w-full border-b bg-white/80 backdrop-blur-md px-4 sm:px-6">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between">
