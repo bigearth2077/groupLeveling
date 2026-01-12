@@ -1,136 +1,102 @@
-import React, { useState } from 'react';
-import { 
-  Timer, 
-  LayoutDashboard, 
-  Trophy, 
-  NotebookPen, 
-  Library, 
-  GripHorizontal, 
-  X 
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect } from 'react';
+import { Play, Pause, Square, Headphones, Settings, Timer as TimerIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const icons = [
-  { icon: LayoutDashboard, label: '仪表盘' },
-  { icon: Trophy, label: '排行榜' },
-  { icon: Timer, label: '番茄钟' },
-  { icon: NotebookPen, label: '日志' },
-  { icon: Library, label: '自习室' },
-];
-
-// 缩小尺寸配置
-const RADIUS = 80; // 继续减小半径
-const DOCK_WIDTH = 220; // 容器宽度适配
-const DOCK_HEIGHT = 110; // 容器高度适配
-
 export default function PomodoroDock() {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
+  const [status, setStatus] = useState('idle'); // 'idle', 'running', 'paused'
+  const [timeLeft, setTimeLeft] = useState(25 * 60); // 25 minutes in seconds
 
-  // 避免地平线贴底：15°, 52.5°, 90°, 127.5°, 165°
-  const fixedAngles = [165, 127.5, 90, 52.5, 15];
+  useEffect(() => {
+    let interval;
+    if (status === 'running' && timeLeft > 0) {
+      interval = setInterval(() => {
+        setTimeLeft((prev) => prev - 1);
+      }, 1000);
+    } else if (timeLeft === 0) {
+      setStatus('idle');
+      setTimeLeft(25 * 60);
+    }
+    return () => clearInterval(interval);
+  }, [status, timeLeft]);
 
-  const getPosition = (index) => {
-    const angleDeg = fixedAngles[index];
-    const angleRad = (angleDeg * Math.PI) / 180;
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
 
-    const x = RADIUS * Math.cos(angleRad);
-    const y = RADIUS * Math.sin(angleRad);
-    return { x, y };
+  const toggleTimer = () => {
+    if (status === 'idle' || status === 'paused') setStatus('running');
+    else setStatus('paused');
+  };
+
+  const stopTimer = () => {
+    setStatus('idle');
+    setTimeLeft(25 * 60);
   };
 
   return (
-    <>
-      {/* 全屏遮罩 - 仅在展开时显示，点击收起 */}
-      {isExpanded && (
-        <div 
-          className="fixed inset-0 z-40 bg-black/10 backdrop-blur-[1px]" 
-          onClick={() => setIsExpanded(false)}
-        />
-      )}
+    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
+      <div className={cn(
+        "flex items-center gap-4 px-2 py-2 rounded-full border border-slate-700 shadow-2xl transition-all duration-300",
+        "bg-slate-900/90 backdrop-blur-md text-white"
+      )}>
+        
+        {/* Left Section: Icon */}
+        <div className="pl-3 pr-1 flex items-center text-indigo-400">
+           <TimerIcon size={20} />
+        </div>
 
-      {/* 交互热区容器 */}
-      {/* 
-         状态一 (Invisible): opacity-30, translate-y-full (but showing 10px tip)
-         状态二 (Peeking): opacity-100, button rises
-         状态三 (Expanded): full display
-      */}
-      <div 
-        className="fixed bottom-0 left-0 right-0 h-[120px] z-50 flex justify-center items-end pointer-events-none"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        {/* 指针事件穿透控制：热区本身不挡鼠标，但内部元素需要挡 */}
-        <div className="absolute inset-x-0 bottom-0 h-[100px] pointer-events-auto bg-transparent" />
+        {/* Divider */}
+        <div className="w-px h-6 bg-slate-700/50"></div>
 
-        {/* 坞体容器 */}
-        <div className={cn(
-            "relative flex items-end justify-center transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] origin-bottom pointer-events-auto",
-            isExpanded ? "h-[110px] opacity-100 mb-0" : "h-0 opacity-0 mb-0"
-        )}
-        style={{ width: DOCK_WIDTH }}
-        >
-             {/* 扇形背景 */}
-            <div className="absolute inset-0 bg-primary/95 backdrop-blur-md rounded-t-full border-t border-white/20 shadow-2xl origin-bottom" />
+        {/* Middle Section: Controls & Time */}
+        {status === 'idle' ? (
+          <button 
+            onClick={toggleTimer}
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm transition-all active:scale-95"
+          >
+            <Play size={16} className="fill-current" />
+            <span>Start Session</span>
+          </button>
+        ) : (
+          <div className="flex items-center gap-4 px-2">
+            <span className="font-mono text-xl font-bold tracking-widest text-white tabular-nums">
+              {formatTime(timeLeft)}
+            </span>
             
-            {/* 图标渲染 */}
-            {icons.map((item, index) => {
-                const { x, y } = getPosition(index);
-                const IconComp = item.icon;
-                return (
-                    <Button
-                        key={index}
-                        variant="ghost"
-                        size="icon"
-                        className={cn(
-                            "absolute w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all duration-300 shadow-sm border border-white/10",
-                            "translate-x-[-50%] translate-y-[50%]", // 替代 style 里的 transform
-                            "active:scale-90 active:!duration-75 active:!delay-0 hover:text-white", // 强制无延迟，瞬间响应
-                            isExpanded ? "scale-100 opacity-100" : "scale-0 opacity-0"
-                        )}
-                        style={{
-                            left: `calc(50% + ${x}px)`, 
-                            bottom: `${y}px`,
-                            // transform: 'translate(-50%, 50%)', // 已移除，交由 className 处理
-                            transitionDelay: `${index * 50}ms` // 依次弹出动画
-                        }}
-                    >
-                        <IconComp className="w-4 h-4" />
-                    </Button>
-                );
-            })}
+            <div className="flex items-center gap-1">
+              <button 
+                onClick={toggleTimer}
+                className="p-2 rounded-full hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+              >
+                {status === 'running' ? <Pause size={18} className="fill-current" /> : <Play size={18} className="fill-current" />}
+              </button>
+              <button 
+                onClick={stopTimer}
+                className="p-2 rounded-full hover:bg-red-500/20 text-slate-300 hover:text-red-400 transition-colors"
+              >
+                <Square size={16} className="fill-current" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Divider */}
+        <div className="w-px h-6 bg-slate-700/50"></div>
+
+        {/* Right Section: Extras */}
+        <div className="flex items-center gap-1 pr-1">
+          <button className="p-2 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white transition-colors">
+            <Headphones size={18} />
+          </button>
+          <button className="p-2 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white transition-colors">
+            <Settings size={18} />
+          </button>
         </div>
 
-        {/* 核心开关按钮 */}
-        {/* 
-           Invisible: 沉底，只露头 (translate-y-[80%]), opacity-30
-           Peeking: 浮起一半 (translate-y-[40%]), opacity-100
-           Expanded: 归位 (translate-y-0), opacity-100, 嵌入扇形
-        */}
-        <div className={cn(
-            "absolute pointer-events-none z-50 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
-             isExpanded 
-                ? "bottom-1 opacity-100 translate-y-0" 
-                : isHovered 
-                    ? "bottom-0 opacity-100 translate-y-[40%]"  // Peeking: 下沉 40%，露出 60%
-                    : "bottom-0 opacity-30 translate-y-[80%]"   // Invisible: 下沉 80%，露出 ~10px
-        )}>
-             <Button
-                onClick={() => setIsExpanded(!isExpanded)}
-                size="icon"
-                className={cn(
-                    "w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-[0_0_15px_-3px_rgba(0,0,0,0.4)] border-2 border-primary-foreground/20 transition-transform hover:scale-105 active:scale-95 hover:bg-primary pointer-events-auto",
-                    // 只有在 Peeking 模式或者是 Invisible 模式下才有弹跳指引可能?
-                )}
-            >
-                <div className={cn("transition-transform duration-500", isExpanded ? "rotate-180" : "rotate-0")}>
-                     {isExpanded ? <X size={24} /> : <GripHorizontal size={24} />}
-                </div>
-            </Button>
-        </div>
       </div>
-    </>
+    </div>
   );
 }
 

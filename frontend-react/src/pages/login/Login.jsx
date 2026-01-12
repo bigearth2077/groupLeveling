@@ -1,50 +1,85 @@
-import { useNavigate, useLocation } from "react-router-dom";
-import { TomatoCrossSection } from "./components/TomatoCrossSection";
-import WelcomeTitle from "./components/WelcomeTitle";
-import Testimonial from "./components/Testimonial";
-import { LoginForm } from "@/feature/auth";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import AuthLayout from '@/layout/auth/AuthLayout';
+import { useLogin } from '@/feature/auth';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Loader2 } from 'lucide-react';
 
-function Login() {
+const Login = () => {
   const navigate = useNavigate();
-  const location = useLocation();
+  const { login, loading, error } = useLogin();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
-  const handleLoginSuccess = () => {
-    // 获取跳转前的页面路径（从 state 或 search 参数中获取）
-    const from = location.state?.from?.pathname || 
-                 new URLSearchParams(location.search).get('redirect') || 
-                 '/';
-    
-    // 跳转到之前的页面或主页
-    navigate(from, { replace: true });
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!email || !password) return;
+
+    const success = await login(email, password);
+    if (success) {
+      navigate('/', { replace: true });
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
-      {/* 装饰性圆形背景 - 左侧大圆 */}
-      <div className="absolute left-[-20vw] top-[10vh] w-[80vw] h-[80vw] max-w-[80vh] max-h-[80vh] opacity-30">
-        <TomatoCrossSection />
-      </div>
-      
-      {/* 主容器：上下布局 */}
-      <div className="container mx-auto px-4 flex flex-col min-h-screen py-12 z-10 relative">
-        {/* 上方：登录表单 */}
-        <div className="flex-1 flex items-center justify-center">
-          <div className="bg-transparent p-8 rounded-lg w-full max-w-md">
-            <WelcomeTitle />
-            <LoginForm onSuccess={handleLoginSuccess} />
+    <AuthLayout
+      title="Welcome back"
+      subtitle="Enter your email to sign in to your account"
+      footerText="Don't have an account?"
+      footerLinkText="Sign up"
+      footerLinkPath="/register"
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <label htmlFor="email" className="text-sm font-medium text-slate-700">Email</label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="name@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={loading}
+            className="h-11 rounded-xl border-slate-200 focus-visible:ring-indigo-500"
+          />
+        </div>
+        <div className="space-y-2">
+           <div className="flex items-center justify-between">
+            <label htmlFor="password" className="text-sm font-medium text-slate-700">Password</label>
+            <a href="#" className="text-xs font-medium text-indigo-600 hover:text-indigo-500">Forgot password?</a>
           </div>
+          <Input
+            id="password"
+            type="password"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={loading}
+             className="h-11 rounded-xl border-slate-200 focus-visible:ring-indigo-500"
+          />
         </div>
 
-        {/* 下方：客户评价 - 居右显示 */}
-        <div className="flex justify-end pb-12">
-          <div className="w-full max-w-md">
-            <Testimonial />
+        {error && (
+          <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm font-medium">
+            {error}
           </div>
-        </div>
-      </div>
-    </div>
+        )}
+
+        <Button 
+          type="submit" 
+          disabled={loading}
+          className="w-full h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all shadow-lg shadow-indigo-200"
+        >
+          {loading ? (
+            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Signing in...</>
+          ) : (
+            'Sign In'
+          )}
+        </Button>
+      </form>
+    </AuthLayout>
   );
-}
+};
 
 export default Login;
 

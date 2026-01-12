@@ -3,7 +3,7 @@ import { getToken, removeToken } from '@/utils/token';
 
 // 创建 axios 实例
 const request = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:4523/m1/6951145-6667911-default', // 从环境变量获取，默认值
+  baseURL: '/api', // Use proxy
   timeout: 10000, // 请求超时时间 10秒
   headers: {
     'Content-Type': 'application/json;charset=UTF-8',

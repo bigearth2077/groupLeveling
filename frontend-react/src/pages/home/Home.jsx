@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Flame, 
   Zap, 
@@ -7,32 +7,14 @@ import {
   Plus, 
   Trophy, 
   Clock, 
-  MoreHorizontal,
   Code2,
   BookOpen,
-  Coffee
+  Coffee,
+  Loader2
 } from 'lucide-react';
-
-// Mock Data
-const USER_STATS = {
-  level: 42,
-  xp: 2450,
-  nextLevelXp: 3000,
-  streak: 12,
-  todayMinutes: 45
-};
-
-const ACTIVE_ROOMS = [
-  { id: 1, name: "Deep Work Protocol", tag: "Code", icon: Code2, members: 12, max: 20, color: "bg-blue-500" },
-  { id: 2, name: "Late Night Readers", tag: "Study", icon: BookOpen, members: 5, max: 8, color: "bg-emerald-500" },
-  { id: 3, name: "Chill & Lofi", tag: "Focus", icon: Coffee, members: 28, max: 50, color: "bg-amber-500" },
-];
-
-const LEADERBOARD = [
-  { rank: 1, name: "Sarah Chen", xp: 12500, avatar: "bg-indigo-100" },
-  { rank: 2, name: "Mike Ross", xp: 11200, avatar: "bg-green-100" },
-  { rank: 3, name: "Jessica L", xp: 9800, avatar: "bg-purple-100" },
-];
+import { getMe, getUserProfile } from '@/feature/user/api';
+import { getRooms } from '@/feature/room/api';
+import { getGlobalRankings } from '@/feature/ranking/api';
 
 const ACTIVITIES = [
   { id: 1, user: "Alex", action: "reached Lvl 10", time: "2m ago" },
@@ -41,8 +23,70 @@ const ACTIVITIES = [
 
 const Home = () => {
   const [activeTab, setActiveTab] = useState('all');
+  const [loading, setLoading] = useState(true);
+  
+  const [userStats, setUserStats] = useState({
+    level: 0,
+    currentXP: 0,
+    nextLevelXP: 100,
+    levelFloorXP: 0,
+    progress: 0,
+    nickname: 'Guest'
+  });
+  
+  const [rooms, setRooms] = useState([]);
+  const [leaderboard, setLeaderboard] = useState([]);
 
-  const xpPercentage = (USER_STATS.xp / USER_STATS.nextLevelXp) * 100;
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        // 1. Fetch User Info & Profile
+        const me = await getMe();
+        if (me && me.id) {
+          // Note: getMe returns basic info. We need getPublicProfile for XP stats if getMe doesn't have it.
+          // Based on backend analysis, getMe response doesn't have LevelInfo, so we fetch profile.
+          const profile = await getUserProfile(me.id);
+          
+          if (profile && profile.levelInfo) {
+             setUserStats({
+               ...profile.levelInfo, // level, currentXP, nextLevelXP, levelFloorXP, progress
+               nickname: me.nickname,
+               streak: 0, // Backend missing streak, default 0
+               todayMinutes: 0 // Backend daily stats not easily accessible here yet
+             });
+          }
+        }
+
+        // 2. Fetch Rooms
+        const roomsResp = await getRooms({ page: 1, pageSize: 6 });
+        if (roomsResp && roomsResp.items) {
+          setRooms(roomsResp.items);
+        }
+
+        // 3. Fetch Leaderboard
+        const rankResp = await getGlobalRankings('week', 5);
+        if (rankResp && rankResp.items) {
+          setLeaderboard(rankResp.items);
+        }
+
+      } catch (error) {
+        console.error("Failed to fetch dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -58,20 +102,20 @@ const Home = () => {
             <div className="space-y-4 flex-1">
               <div className="flex items-center gap-3">
                 <span className="px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-bold uppercase tracking-wider">
-                  Level {USER_STATS.level}
+                  Level {userStats.level}
                 </span>
                 <div className="flex items-center gap-1 text-orange-500 font-bold text-sm">
                   <Flame size={16} className="fill-current" />
-                  <span>{USER_STATS.streak} Day Streak</span>
+                  <span>{userStats.streak || 0} Day Streak</span>
                 </div>
               </div>
               
               <div>
                 <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">
-                  Ready to evolve, User?
+                  Welcome back, {userStats.nickname}
                 </h1>
                 <p className="text-slate-500 mt-1">
-                  You are <span className="text-indigo-600 font-bold">{USER_STATS.nextLevelXp - USER_STATS.xp} XP</span> away from Level {USER_STATS.level + 1}.
+                  You are <span className="text-indigo-600 font-bold">{userStats.nextLevelXP - userStats.currentXP} XP</span> away from Level {userStats.level + 1}.
                 </p>
               </div>
 
@@ -79,12 +123,12 @@ const Home = () => {
               <div className="space-y-2 max-w-lg">
                 <div className="flex justify-between text-xs font-semibold text-slate-400">
                   <span>Current XP</span>
-                  <span>Target</span>
+                  <span>Target {userStats.nextLevelXP}</span>
                 </div>
                 <div className="h-4 w-full rounded-full bg-slate-100 overflow-hidden">
                   <div 
                     className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 shadow-[0_0_10px_rgba(99,102,241,0.5)] transition-all duration-1000 ease-out"
-                    style={{ width: `${xpPercentage}%` }}
+                    style={{ width: `${userStats.progress}%` }}
                   />
                 </div>
               </div>
@@ -107,7 +151,7 @@ const Home = () => {
               <Clock size={20} />
             </div>
             <div>
-              <div className="text-3xl font-bold text-slate-800">{USER_STATS.todayMinutes}m</div>
+              <div className="text-3xl font-bold text-slate-800">{userStats.todayMinutes || 0}m</div>
               <div className="text-xs font-medium text-orange-700/60 uppercase">Today's Focus</div>
             </div>
           </div>
@@ -116,7 +160,7 @@ const Home = () => {
               <Trophy size={20} />
             </div>
             <div>
-              <div className="text-3xl font-bold text-slate-800">#42</div>
+              <div className="text-3xl font-bold text-slate-800">#{userStats.globalRank || '-'}</div>
               <div className="text-xs font-medium text-slate-500 uppercase">Global Rank</div>
             </div>
           </div>
@@ -163,30 +207,37 @@ const Home = () => {
             </div>
 
             {/* Room Cards */}
-            {ACTIVE_ROOMS.map(room => (
-              <div key={room.id} className="group relative rounded-2xl bg-white p-5 border border-slate-100 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md cursor-pointer">
-                <div className="flex justify-between items-start mb-4">
-                  <div className={`p-2 rounded-xl ${room.color} bg-opacity-10 text-opacity-100`}>
-                     <room.icon size={20} className={room.color.replace('bg-', 'text-')} />
-                  </div>
-                  <div className="flex items-center gap-1 text-xs font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded-md">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    {room.members}/{room.max}
-                  </div>
-                </div>
-                
-                <h3 className="font-bold text-slate-800 mb-1 group-hover:text-indigo-600 transition-colors">{room.name}</h3>
-                <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-                  <span>#{room.tag}</span>
-                </div>
-                
-                <div className="absolute bottom-4 right-4 opacity-0 transform translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all">
-                  <div className="rounded-full bg-slate-900 p-2 text-white">
-                    <ArrowRight size={16} />
-                  </div>
-                </div>
+            {rooms.length === 0 ? (
+              <div className="col-span-1 md:col-span-2 p-8 text-center text-slate-400 bg-slate-50 rounded-2xl">
+                No active rooms found. Be the first to create one!
               </div>
-            ))}
+            ) : (
+              rooms.map(room => (
+                <div key={room.id} className="group relative rounded-2xl bg-white p-5 border border-slate-100 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md cursor-pointer">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className={`p-2 rounded-xl bg-blue-500 bg-opacity-10 text-opacity-100`}>
+                       {/* Placeholder Icon */}
+                       <Code2 size={20} className="text-blue-500" />
+                    </div>
+                    <div className="flex items-center gap-1 text-xs font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded-md">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                      {room.onlineCount || 0}/{room.maxMembers}
+                    </div>
+                  </div>
+                  
+                  <h3 className="font-bold text-slate-800 mb-1 group-hover:text-indigo-600 transition-colors">{room.name}</h3>
+                  <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+                    <span>#{room.tagId || 'General'}</span>
+                  </div>
+                  
+                  <div className="absolute bottom-4 right-4 opacity-0 transform translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all">
+                    <div className="rounded-full bg-slate-900 p-2 text-white">
+                      <ArrowRight size={16} />
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
@@ -203,20 +254,24 @@ const Home = () => {
               <button className="text-xs font-bold text-indigo-600 hover:text-indigo-700">View All</button>
             </div>
             <div className="divide-y divide-slate-50">
-              {LEADERBOARD.map((user, idx) => (
-                <div key={idx} className="p-4 flex items-center gap-3 hover:bg-slate-50 transition-colors">
-                  <div className="font-bold text-slate-300 text-sm w-4">{user.rank}</div>
-                  <div className={`h-8 w-8 rounded-full ${user.avatar} flex items-center justify-center text-xs font-bold text-slate-600`}>
-                    {user.name.charAt(0)}
+              {leaderboard.length === 0 ? (
+                <div className="p-4 text-center text-sm text-slate-400">No rankings yet.</div>
+              ) : (
+                leaderboard.map((user, idx) => (
+                  <div key={user.id || idx} className="p-4 flex items-center gap-3 hover:bg-slate-50 transition-colors">
+                    <div className="font-bold text-slate-300 text-sm w-4">{idx + 1}</div>
+                    <div className={`h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-xs font-bold text-slate-600`}>
+                      {user.nickname ? user.nickname.charAt(0).toUpperCase() : '?'}
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm font-bold text-slate-700">{user.nickname}</div>
+                      <div className="text-xs text-slate-400">{user.levelInfo?.currentXP || 0} XP</div>
+                    </div>
+                    {idx === 0 && <div className="text-lg">🥇</div>}
+                    {idx === 1 && <div className="text-lg">🥈</div>}
                   </div>
-                  <div className="flex-1">
-                    <div className="text-sm font-bold text-slate-700">{user.name}</div>
-                    <div className="text-xs text-slate-400">{user.xp} XP</div>
-                  </div>
-                  {idx === 0 && <div className="text-lg">🥇</div>}
-                  {idx === 1 && <div className="text-lg">🥈</div>}
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
