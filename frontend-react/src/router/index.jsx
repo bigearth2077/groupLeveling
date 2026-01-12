@@ -1,5 +1,5 @@
 import { createBrowserRouter } from 'react-router-dom';
-import App from '../App';
+import AppLayout from '../layout/AppLayout';
 import Login from '../pages/login/Login';
 import Register from '../pages/register/Register';
 import Auth from '../components/Auth';
@@ -25,7 +25,7 @@ const router = createBrowserRouter([
     children: [
       {
         path: '/',
-        element: <App />, // App 作为布局组件，通过 Auth 的 Outlet 渲染
+        element: <AppLayout />, // AppLayout 作为主布局组件
         children: [
           {
             index: true,
@@ -34,6 +34,18 @@ const router = createBrowserRouter([
           {
             path: 'about',
             element: <div className="p-10 text-foreground">关于页面</div>,
+          },
+          {
+            path: 'rooms',
+            element: <div className="p-10 text-foreground">Rooms Page (Coming Soon)</div>,
+          },
+          {
+            path: 'rankings',
+            element: <div className="p-10 text-foreground">Rankings Page (Coming Soon)</div>,
+          },
+          {
+            path: 'profile',
+            element: <div className="p-10 text-foreground">Profile Page (Coming Soon)</div>,
           }
         ]
       }
