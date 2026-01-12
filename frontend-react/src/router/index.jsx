@@ -5,6 +5,7 @@ import Register from '../pages/register/Register';
 import Auth from '../components/Auth';
 import Home from '../pages/home/Home';
 import Profile from '../pages/user/Profile';
+import Leaderboard from '../pages/ranking/Leaderboard';
 
 // 路由配置
 const router = createBrowserRouter([
@@ -42,7 +43,7 @@ const router = createBrowserRouter([
           },
           {
             path: 'rankings',
-            element: <div className="p-10 text-foreground">Rankings Page (Coming Soon)</div>,
+            element: <Leaderboard />,
           },
           {
             path: 'profile',
@@ -61,4 +62,3 @@ const router = createBrowserRouter([
 ]);
 
 export default router;
-

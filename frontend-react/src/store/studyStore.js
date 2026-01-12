@@ -14,9 +14,12 @@ export const useStudyStore = create(
       duration: 25, // minutes
       timeLeft: 25 * 60, // seconds
       
+      selectedTag: null, // { id, name } or null
+      
       timerInterval: null,
 
       // Actions
+      setSelectedTag: (tag) => set({ selectedTag: tag }),
       
       // Check if there is an active session from backend (e.g. on page reload)
       checkActiveSession: async () => {
@@ -27,11 +30,6 @@ export const useStudyStore = create(
              const now = new Date();
              const start = new Date(session.startTime);
              const elapsedSec = Math.floor((now - start) / 1000);
-             
-             // We don't know the intended duration from backend (it just records start). 
-             // We must infer or rely on local storage if available.
-             // If local storage has matching ID, use local duration.
-             // If not, maybe default to 25? Or just assume it's running.
              
              const currentId = get().sessionId;
              if (currentId === session.id) {
@@ -48,27 +46,21 @@ export const useStudyStore = create(
                  });
                  get().startTimer();
                } else {
-                 // Expired while away
-                 get().stopTimer(); // Just clear interval
+                 get().stopTimer();
                  set({ status: 'idle', sessionId: null }); 
-                 // Optionally auto-end?
                }
              } else {
-               // New session from another device? or cleared local storage
-               // For now, let's sync it.
                set({
                  sessionId: session.id,
                  mode: session.type,
                  status: session.type === 'learning' ? 'focusing' : 'resting',
                  startTime: session.startTime,
-                 // duration: ??? Assume 25 if unknown
                  duration: 25,
                  timeLeft: 25 * 60 - elapsedSec
                });
                get().startTimer();
              }
           } else {
-             // No active session on backend
              set({ status: 'idle', sessionId: null, timerInterval: null });
           }
         } catch (err) {
@@ -76,10 +68,10 @@ export const useStudyStore = create(
         }
       },
 
-      startFocus: async (minutes, type = 'learning') => {
+      startFocus: async (minutes, type = 'learning', tagName = null) => {
         try {
           // 1. Call Backend
-          const res = await startSession({ type });
+          const res = await startSession({ type, tagName });
           if (res && res.id) {
             // 2. Set Local State
             set({

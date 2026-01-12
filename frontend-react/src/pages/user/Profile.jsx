@@ -16,11 +16,15 @@ import {
   ArrowRight,
   Brain,
   Coffee,
-  BarChart3
+  BarChart3,
+  Tag,
+  Trash2,
+  Plus
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { getMe, getUserProfile, updateProfile, changePassword } from '@/feature/user/api';
 import { getSessions, getStatsSummary } from '@/feature/study/api';
+import { getMyTags, deleteMyTag, addMyTag } from '@/feature/tag/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -38,7 +42,7 @@ const PRESET_AVATARS = [
 
 export default function Profile() {
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'history' | 'settings'
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'history' | 'skills' | 'settings'
   const [user, setUser] = useState(null);
   const [stats, setStats] = useState(null); // LevelInfo
   
@@ -50,6 +54,10 @@ export default function Profile() {
   const [sessions, setSessions] = useState([]);
   const [sessionPage, setSessionPage] = useState(1);
   const [hasMoreSessions, setHasMoreSessions] = useState(false);
+
+  // Skills Data
+  const [myTags, setMyTags] = useState([]);
+  const [newTag, setNewTag] = useState('');
 
   // Edit Form State
   const [formData, setFormData] = useState({
@@ -77,6 +85,8 @@ export default function Profile() {
   useEffect(() => {
     if (activeTab === 'history') {
       fetchHistory(sessionPage);
+    } else if (activeTab === 'skills') {
+      fetchTags();
     }
   }, [activeTab, sessionPage]);
 
@@ -97,6 +107,14 @@ export default function Profile() {
           setStats(profile.levelInfo);
         }
         
+        // Also fetch tags for the header (Top Skills)
+        const tags = await getMyTags();
+        if (tags) {
+          // Sort by XP (TotalMinutes) desc
+          const sorted = [...tags].sort((a, b) => b.totalMinutes - a.totalMinutes);
+          setMyTags(sorted);
+        }
+
         // Initial stats fetch
         const sumResp = await getStatsSummary({ range: statsRange });
         if (sumResp) setSummary(sumResp);
@@ -129,6 +147,40 @@ export default function Profile() {
       }
     } catch (err) {
       console.error("Failed to fetch history", err);
+    }
+  };
+
+  const fetchTags = async () => {
+    try {
+      const tags = await getMyTags();
+      if (tags) {
+         const sorted = [...tags].sort((a, b) => b.totalMinutes - a.totalMinutes);
+         setMyTags(sorted);
+      }
+    } catch (err) {
+      console.error("Failed to fetch tags", err);
+    }
+  };
+
+  const handleAddTag = async (e) => {
+    e.preventDefault();
+    if (!newTag.trim()) return;
+    try {
+      await addMyTag(newTag.trim());
+      setNewTag('');
+      fetchTags(); // Refresh list
+    } catch (err) {
+      alert("Failed to add tag");
+    }
+  };
+
+  const handleDeleteTag = async (tagId) => {
+    if (!confirm("Remove this skill? Your stats will be preserved if you add it back later.")) return;
+    try {
+      await deleteMyTag(tagId);
+      setMyTags(prev => prev.filter(t => t.tagId !== tagId));
+    } catch (err) {
+      alert("Failed to delete tag");
     }
   };
 
@@ -240,11 +292,18 @@ export default function Profile() {
 
           {/* Info */}
           <div className="flex-1 space-y-2 mb-2">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-3xl font-extrabold text-slate-800">{user?.nickname}</h1>
-              <span className="px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold uppercase tracking-wider">
+              <span className="px-3 py-1 rounded-full bg-slate-900 text-white text-xs font-bold uppercase tracking-wider">
                 Lvl {stats?.level || 0}
               </span>
+              
+              {/* Top Tags Badges */}
+              {myTags.slice(0, 3).map(tag => (
+                <span key={tag.tagId} className="px-2 py-1 rounded-lg bg-indigo-50 text-indigo-600 text-xs font-bold border border-indigo-100">
+                  {tag.tagName} Lv.{tag.levelInfo?.level || 0}
+                </span>
+              ))}
             </div>
             <p className="text-slate-500 max-w-lg">
               {user?.bio || "This user prefers to keep an air of mystery about them."}
@@ -263,7 +322,7 @@ export default function Profile() {
 
           {/* Actions */}
           <div className="flex gap-2">
-             {['overview', 'history', 'settings'].map(tab => (
+             {['overview', 'history', 'skills', 'settings'].map(tab => (
                <button 
                  key={tab}
                  onClick={() => setActiveTab(tab)}
@@ -412,6 +471,70 @@ export default function Profile() {
               >
                 Next <ArrowRight size={16} className="ml-2" />
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'skills' && (
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                <Tag size={20} className="text-indigo-600" />
+                My Skills & Tags
+              </h3>
+              <form onSubmit={handleAddTag} className="flex gap-2">
+                <Input 
+                  placeholder="New skill..." 
+                  value={newTag}
+                  onChange={e => setNewTag(e.target.value)}
+                  className="h-9 w-40 text-sm rounded-xl"
+                />
+                <Button type="submit" size="sm" className="rounded-xl bg-slate-900 h-9">
+                  <Plus size={16} className="mr-1" /> Add
+                </Button>
+              </form>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {myTags.map(tag => (
+                <div key={tag.tagId} className="relative group p-5 rounded-2xl bg-slate-50 border border-slate-100 hover:shadow-md hover:border-indigo-100 transition-all">
+                   <div className="flex justify-between items-start mb-3 pl-2">
+                      <div className="font-bold text-slate-800 text-lg capitalize">{tag.tagName}</div>
+                      <div className="px-2 py-1 bg-white rounded-lg text-xs font-bold text-indigo-600 shadow-sm border border-indigo-50">
+                        Lv. {tag.levelInfo?.level || 0}
+                      </div>
+                   </div>
+                   
+                   <div className="space-y-2">
+                      <div className="flex justify-between text-xs text-slate-400 font-medium">
+                        <span>Progress</span>
+                        <span>{tag.levelInfo?.currentXP || 0} min</span>
+                      </div>
+                      <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                        <div className="h-full bg-indigo-500 transition-all duration-500" style={{ width: `${tag.levelInfo?.progress || 0}%` }}></div>
+                      </div>
+                   </div>
+
+                   {/* Delete Button moved to Top-Left */}
+                   <button 
+                     onClick={() => handleDeleteTag(tag.tagId)}
+                     className="absolute top-2 left-2 p-1.5 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity bg-white/50 rounded-full hover:bg-white"
+                     title="Remove Skill"
+                   >
+                     <Trash2 size={14} />
+                   </button>
+                </div>
+              ))}
+
+              {/* Empty State */}
+              {myTags.length === 0 && (
+                <div className="col-span-full py-12 text-center text-slate-400 bg-slate-50/50 rounded-2xl border-dashed border-2 border-slate-200">
+                  <p>No skills tracked yet.</p>
+                  <p className="text-xs mt-1">Add a skill above or start a focus session with a tag.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
