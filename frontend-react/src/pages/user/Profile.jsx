@@ -12,17 +12,29 @@ import {
   Loader2,
   Camera,
   History,
-  Clock,
   ArrowLeft,
   ArrowRight,
+  Brain,
   Coffee,
-  Brain
+  BarChart3
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { getMe, getUserProfile, updateProfile, changePassword } from '@/feature/user/api';
 import { getSessions, getStatsSummary } from '@/feature/study/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
+
+const PRESET_AVATARS = [
+  'https://api.dicebear.com/9.x/adventurer/svg?seed=Felix',
+  'https://api.dicebear.com/9.x/adventurer/svg?seed=Aneka',
+  'https://api.dicebear.com/9.x/adventurer/svg?seed=Willow',
+  'https://api.dicebear.com/9.x/adventurer/svg?seed=Midnight',
+  'https://api.dicebear.com/9.x/adventurer/svg?seed=Abby',
+  'https://api.dicebear.com/9.x/notionists/svg?seed=Leo',
+  'https://api.dicebear.com/9.x/notionists/svg?seed=Molly',
+  'https://api.dicebear.com/9.x/micah/svg?seed=Bear'
+];
 
 export default function Profile() {
   const [loading, setLoading] = useState(true);
@@ -30,9 +42,12 @@ export default function Profile() {
   const [user, setUser] = useState(null);
   const [stats, setStats] = useState(null); // LevelInfo
   
-  // Data for tabs
-  const [summary, setSummary] = useState(null); // Weekly stats
-  const [sessions, setSessions] = useState([]); // History list
+  // Stats Data
+  const [summary, setSummary] = useState(null);
+  const [statsRange, setStatsRange] = useState('7'); // '7' | '30'
+
+  // History Data
+  const [sessions, setSessions] = useState([]);
   const [sessionPage, setSessionPage] = useState(1);
   const [hasMoreSessions, setHasMoreSessions] = useState(false);
 
@@ -52,6 +67,13 @@ export default function Profile() {
     fetchData();
   }, []);
 
+  // Re-fetch stats when range changes
+  useEffect(() => {
+    if (user) {
+      fetchStatsOnly();
+    }
+  }, [statsRange]);
+
   useEffect(() => {
     if (activeTab === 'history') {
       fetchHistory(sessionPage);
@@ -70,22 +92,28 @@ export default function Profile() {
           avatarUrl: me.avatarUrl || ''
         });
         
-        // Fetch extended profile for stats
         const profile = await getUserProfile(me.id);
         if (profile) {
           setStats(profile.levelInfo);
         }
-
-        // Fetch Summary for Overview
-        const sumResp = await getStatsSummary({ range: '7' });
-        if (sumResp) {
-          setSummary(sumResp);
-        }
+        
+        // Initial stats fetch
+        const sumResp = await getStatsSummary({ range: statsRange });
+        if (sumResp) setSummary(sumResp);
       }
     } catch (error) {
       console.error("Failed to fetch profile:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchStatsOnly = async () => {
+    try {
+      const sumResp = await getStatsSummary({ range: statsRange });
+      if (sumResp) setSummary(sumResp);
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -108,8 +136,17 @@ export default function Profile() {
     e.preventDefault();
     setSaving(true);
     try {
-      await updateProfile(formData);
-      const updated = { ...user, ...formData };
+      // Sanitize payload
+      const payload = {
+        nickname: formData.nickname,
+        bio: formData.bio,
+        avatarUrl: formData.avatarUrl.trim() === '' ? null : formData.avatarUrl
+      };
+
+      await updateProfile(payload);
+      
+      // Refresh local user state
+      const updated = { ...user, ...payload, avatarUrl: payload.avatarUrl || null }; // handle null specifically
       setUser(updated);
       alert('Profile updated successfully!');
     } catch (error) {
@@ -140,13 +177,17 @@ export default function Profile() {
     const values = summary.daily.map(d => d.minutes);
 
     return {
-      title: { text: 'Weekly Focus (Minutes)', textStyle: { fontSize: 14, fontWeight: 'bold', color: '#334155' } },
+      title: { 
+        text: statsRange === '7' ? 'Weekly Focus (Minutes)' : 'Monthly Focus (Minutes)', 
+        textStyle: { fontSize: 14, fontWeight: 'bold', color: '#334155' } 
+      },
       tooltip: { trigger: 'axis' },
       grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
       xAxis: {
         type: 'category',
         data: dates,
-        axisLine: { lineStyle: { color: '#94a3b8' } }
+        axisLine: { lineStyle: { color: '#94a3b8' } },
+        axisLabel: { interval: statsRange === '30' ? 2 : 0 } // Skip labels if many points
       },
       yAxis: {
         type: 'value',
@@ -158,7 +199,7 @@ export default function Profile() {
           data: values,
           type: 'bar',
           itemStyle: { color: '#6366f1', borderRadius: [4, 4, 0, 0] },
-          barWidth: '40%'
+          barWidth: statsRange === '30' ? '60%' : '40%'
         }
       ]
     };
@@ -195,11 +236,6 @@ export default function Profile() {
                  <User size={48} />
                )}
             </div>
-            {activeTab === 'settings' && (
-              <div className="absolute inset-0 bg-black/40 rounded-3xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white font-bold">
-                <Camera size={24} />
-              </div>
-            )}
           </div>
 
           {/* Info */}
@@ -284,6 +320,27 @@ export default function Profile() {
           {/* Right Col: Charts */}
           <div className="md:col-span-2 space-y-6">
              <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm min-h-[350px]">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <BarChart3 size={20} className="text-indigo-600" />
+                    <h3 className="font-bold text-slate-800">Focus Trends</h3>
+                  </div>
+                  <div className="flex bg-slate-100 p-1 rounded-lg">
+                    <button 
+                      onClick={() => setStatsRange('7')} 
+                      className={cn("px-3 py-1 text-xs font-bold rounded-md transition-all", statsRange === '7' ? "bg-white shadow-sm text-indigo-600" : "text-slate-500")}
+                    >
+                      Week
+                    </button>
+                    <button 
+                      onClick={() => setStatsRange('30')} 
+                      className={cn("px-3 py-1 text-xs font-bold rounded-md transition-all", statsRange === '30' ? "bg-white shadow-sm text-indigo-600" : "text-slate-500")}
+                    >
+                      Month
+                    </button>
+                  </div>
+                </div>
+
                 {summary && summary.daily ? (
                   <ReactECharts option={getChartOption()} style={{ height: '320px' }} />
                 ) : (
@@ -377,6 +434,35 @@ export default function Profile() {
                    className="rounded-xl"
                  />
                </div>
+               
+               {/* Avatar Selector */}
+               <div className="space-y-2">
+                 <label className="text-sm font-bold text-slate-700">Avatar</label>
+                 <div className="grid grid-cols-4 gap-2 mb-2">
+                    {PRESET_AVATARS.map((url, idx) => (
+                      <div 
+                        key={idx}
+                        onClick={() => setFormData({...formData, avatarUrl: url})}
+                        className={cn(
+                          "aspect-square rounded-xl cursor-pointer overflow-hidden border-2 transition-all hover:scale-105 bg-slate-50",
+                          formData.avatarUrl === url ? "border-indigo-600 ring-2 ring-indigo-100" : "border-transparent hover:border-slate-200"
+                        )}
+                      >
+                        <img src={url} alt={`Avatar ${idx}`} className="w-full h-full object-cover" />
+                      </div>
+                    ))}
+                 </div>
+                 <div className="relative">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 text-xs font-bold">URL</span>
+                    <Input 
+                      value={formData.avatarUrl} 
+                      onChange={e => setFormData({...formData, avatarUrl: e.target.value})}
+                      placeholder="Or paste a custom image URL..."
+                      className="rounded-xl pl-12 text-xs"
+                    />
+                 </div>
+               </div>
+
                <div className="space-y-2">
                  <label className="text-sm font-bold text-slate-700">Bio</label>
                  <textarea 
@@ -385,15 +471,7 @@ export default function Profile() {
                    onChange={e => setFormData({...formData, bio: e.target.value})}
                  />
                </div>
-               <div className="space-y-2">
-                 <label className="text-sm font-bold text-slate-700">Avatar URL</label>
-                 <Input 
-                   value={formData.avatarUrl} 
-                   onChange={e => setFormData({...formData, avatarUrl: e.target.value})}
-                   placeholder="https://..."
-                   className="rounded-xl"
-                 />
-               </div>
+
                <Button type="submit" disabled={saving} className="w-full rounded-xl bg-slate-900">
                  {saving ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2 h-4 w-4" />}
                  Save Changes
