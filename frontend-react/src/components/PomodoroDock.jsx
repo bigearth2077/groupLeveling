@@ -1,23 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { Play, Pause, Square, Headphones, Settings, Timer as TimerIcon } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { Play, Square, Coffee, Brain, Timer, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useStudyStore } from '@/store/studyStore';
 
 export default function PomodoroDock() {
-  const [status, setStatus] = useState('idle'); // 'idle', 'running', 'paused'
-  const [timeLeft, setTimeLeft] = useState(25 * 60); // 25 minutes in seconds
+  const { 
+    status, 
+    mode, 
+    timeLeft, 
+    checkActiveSession, 
+    startFocus, 
+    endFocus 
+  } = useStudyStore();
 
   useEffect(() => {
-    let interval;
-    if (status === 'running' && timeLeft > 0) {
-      interval = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
-      }, 1000);
-    } else if (timeLeft === 0) {
-      setStatus('idle');
-      setTimeLeft(25 * 60);
+    checkActiveSession();
+    
+    if (Notification.permission === 'default') {
+      Notification.requestPermission();
     }
-    return () => clearInterval(interval);
-  }, [status, timeLeft]);
+  }, []);
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
@@ -25,15 +27,10 @@ export default function PomodoroDock() {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  const toggleTimer = () => {
-    if (status === 'idle' || status === 'paused') setStatus('running');
-    else setStatus('paused');
-  };
-
-  const stopTimer = () => {
-    setStatus('idle');
-    setTimeLeft(25 * 60);
-  };
+  // UI Config based on mode
+  const isResting = mode === 'rest';
+  const themeColor = isResting ? 'text-emerald-400' : 'text-indigo-400';
+  const bgColor = isResting ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-indigo-600 hover:bg-indigo-500';
 
   return (
     <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
@@ -43,8 +40,8 @@ export default function PomodoroDock() {
       )}>
         
         {/* Left Section: Icon */}
-        <div className="pl-3 pr-1 flex items-center text-indigo-400">
-           <TimerIcon size={20} />
+        <div className={cn("pl-3 pr-1 flex items-center transition-colors", themeColor)}>
+           {status === 'idle' ? <Timer size={20} /> : (isResting ? <Coffee size={20} /> : <Brain size={20} />)}
         </div>
 
         {/* Divider */}
@@ -52,29 +49,38 @@ export default function PomodoroDock() {
 
         {/* Middle Section: Controls & Time */}
         {status === 'idle' ? (
-          <button 
-            onClick={toggleTimer}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm transition-all active:scale-95"
-          >
-            <Play size={16} className="fill-current" />
-            <span>Start Session</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => startFocus(25, 'learning')}
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm transition-all active:scale-95"
+            >
+              <Zap size={16} className="fill-current" />
+              <span>25m</span>
+            </button>
+             <button 
+              onClick={() => startFocus(50, 'learning')}
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-sm transition-all active:scale-95"
+            >
+              <Brain size={16} />
+              <span>50m</span>
+            </button>
+          </div>
         ) : (
           <div className="flex items-center gap-4 px-2">
-            <span className="font-mono text-xl font-bold tracking-widest text-white tabular-nums">
-              {formatTime(timeLeft)}
-            </span>
+            <div className="flex flex-col items-start leading-none">
+              <span className="font-mono text-xl font-bold tracking-widest text-white tabular-nums">
+                {formatTime(timeLeft)}
+              </span>
+              <span className={cn("text-[10px] font-bold uppercase tracking-wider", themeColor)}>
+                {isResting ? 'Break Time' : 'Focusing'}
+              </span>
+            </div>
             
             <div className="flex items-center gap-1">
               <button 
-                onClick={toggleTimer}
-                className="p-2 rounded-full hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
-              >
-                {status === 'running' ? <Pause size={18} className="fill-current" /> : <Play size={18} className="fill-current" />}
-              </button>
-              <button 
-                onClick={stopTimer}
+                onClick={endFocus}
                 className="p-2 rounded-full hover:bg-red-500/20 text-slate-300 hover:text-red-400 transition-colors"
+                title="Stop Session"
               >
                 <Square size={16} className="fill-current" />
               </button>
@@ -82,19 +88,8 @@ export default function PomodoroDock() {
           </div>
         )}
 
-        {/* Divider */}
-        <div className="w-px h-6 bg-slate-700/50"></div>
-
-        {/* Right Section: Extras */}
-        <div className="flex items-center gap-1 pr-1">
-          <button className="p-2 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white transition-colors">
-            <Headphones size={18} />
-          </button>
-          <button className="p-2 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white transition-colors">
-            <Settings size={18} />
-          </button>
-        </div>
-
+        {/* Divider (Optional, keep for layout balance) */}
+        {status !== 'idle' && <div className="w-px h-6 bg-slate-700/50"></div>}
       </div>
     </div>
   );
