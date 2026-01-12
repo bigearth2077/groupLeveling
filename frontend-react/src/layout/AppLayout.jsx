@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import PomodoroDock from '@/components/PomodoroDock';
+import FriendDrawer from '@/components/friend/FriendDrawer';
 import { LayoutDashboard, Users, Trophy, User } from 'lucide-react';
 
 const AppLayout = () => {
@@ -40,8 +41,8 @@ const AppLayout = () => {
           </nav>
 
           <div className="flex items-center gap-4">
-            {/* Placeholder for User Avatar / Settings */}
-            <div className="h-8 w-8 rounded-full bg-slate-200 ring-2 ring-white cursor-pointer hover:ring-indigo-100 transition-all"></div>
+            {/* Friend Drawer & Avatar */}
+            <FriendDrawer />
           </div>
         </div>
       </header>

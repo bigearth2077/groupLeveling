@@ -4,8 +4,9 @@ export const getMe = () => {
   return request.get('/users/me');
 };
 
+// 获取公开资料 (含 LevelInfo)
 export const getUserProfile = (id) => {
-  return request.get(`/users/${id}/profile`);
+  return request.get(`/users/${id}/public`);
 };
 
 export const updateProfile = (data) => {
@@ -18,4 +19,8 @@ export const changePassword = (data) => {
 
 export const getMyTags = () => {
   return request.get('/users/me/tags');
+};
+
+export const searchUsers = (query, page = 1) => {
+  return request.get('/users/search', { params: { query, page } });
 };
