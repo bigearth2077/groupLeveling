@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 export const useRoomStore = create((set, get) => ({
   activeRoomId: null,
+  roomPassword: null, // Password for private rooms
   members: [],
   messages: [],
   socketStatus: 'disconnected', // 'disconnected' | 'connecting' | 'connected'
@@ -9,6 +10,7 @@ export const useRoomStore = create((set, get) => ({
   
   // Actions
   setActiveRoomId: (id) => set({ activeRoomId: id }),
+  setRoomPassword: (password) => set({ roomPassword: password }),
   
   setMembers: (members) => set({ members }),
   addMember: (member) => set((state) => {
@@ -33,6 +35,7 @@ export const useRoomStore = create((set, get) => ({
   
   leaveRoom: () => set({ 
     activeRoomId: null, 
+    roomPassword: null,
     members: [], 
     messages: [],
     unreadCount: 0,

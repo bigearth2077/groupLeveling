@@ -41,7 +41,7 @@ request.interceptors.response.use(
     
     // 如果后端返回的数据格式是 { code, data, message }，可以在这里统一处理
     // 根据实际后端接口规范调整
-    if (data.code !== undefined && data.code !== 200 && data.code !== 0) {
+    if (data && data.code !== undefined && data.code !== 200 && data.code !== 0) {
       // 业务错误处理
       const errorMessage = data.message || '请求失败';
       console.error('业务错误:', errorMessage);

@@ -16,6 +16,15 @@ type CreateRoomRequest struct {
 	MaxMembers  int     `json:"maxMembers"` // 默认50
 }
 
+type UpdateRoomRequest struct {
+	Name        string  `json:"name" binding:"max=50"`
+	Description *string `json:"description"`
+	TagID       *string `json:"tagId"`
+	IsPrivate   bool    `json:"isPrivate"`
+	Password    *string `json:"password"`
+	MaxMembers  int     `json:"maxMembers"`
+}
+
 type RoomResponse struct {
 	ID          string    `json:"id"`
 	Name        string    `json:"name"`
@@ -41,7 +50,8 @@ type RoomListResponse struct {
 
 // Client -> Server: join_room
 type JoinRoomPayload struct {
-	RoomID string `json:"roomId"`
+	RoomID   string  `json:"roomId"`
+	Password *string `json:"password"` // Optional: for private rooms
 }
 
 // Client -> Server: send_message
@@ -54,6 +64,11 @@ type SendMessagePayload struct {
 type UpdateStatusPayload struct {
 	RoomID string           `json:"roomId"`
 	Status model.RoomStatus `json:"status"`
+}
+
+type ValidateRoomPasswordRequest struct {
+	RoomID   string `json:"roomId" binding:"required"`
+	Password string `json:"password" binding:"required"`
 }
 
 // --- Socket Broadcast DTOs (Server -> Client) ---

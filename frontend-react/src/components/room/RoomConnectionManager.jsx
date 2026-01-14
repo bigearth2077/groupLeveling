@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { connectSocket, getSocket } from '@/lib/socket';
 import { useRoomStore } from '@/store/roomStore';
 import { useStudyStore } from '@/store/studyStore';
@@ -9,18 +9,21 @@ import { getMe } from '@/feature/user/api';
 export default function RoomConnectionManager() {
   const { 
     activeRoomId, 
+    roomPassword,
     setMembers, 
     addMember, 
     removeMember, 
     updateMemberStatus, 
     addMessage,
     setSocketStatus,
-    incrementUnread
+    incrementUnread,
+    leaveRoom
   } = useRoomStore();
 
   const { status: studyStatus } = useStudyStore();
   const location = useLocation();
   const locationRef = useRef(location);
+  const navigate = useNavigate(); // Need to import useNavigate
   
   const socketRef = useRef(null);
   const myIdRef = useRef(null);
@@ -60,8 +63,22 @@ export default function RoomConnectionManager() {
       setSocketStatus('connected');
       
       // Join
-      socket.emit('join_room', JSON.stringify({ roomId: activeRoomId }), (ack) => {
+      const payload = { roomId: activeRoomId };
+      if (roomPassword) {
+        payload.password = roomPassword;
+      }
+
+      socket.emit('join_room', JSON.stringify(payload), (ack) => {
         console.log('[RoomManager] Joined Ack:', ack);
+        const ackData = typeof ack === 'string' ? JSON.parse(ack) : ack;
+        
+        if (ackData && ackData.error) {
+           alert("Failed to join room: " + ackData.error);
+           leaveRoom(); // Reset store state
+           navigate('/rooms'); // Go back to lobby
+           return;
+        }
+
         // Load Snapshot on join success
         loadSnapshot(activeRoomId);
       });

@@ -86,8 +86,8 @@ func InitSocket() {
 		ctx := s.Context().(*SocketContext)
 		userID := ctx.UserID
 
-		// 业务逻辑：写库
-		if err := roomService.JoinRoom(userID, payload.RoomID); err != nil {
+		// 业务逻辑：写库 (校验密码、人数)
+		if err := roomService.JoinRoom(userID, payload.RoomID, payload.Password); err != nil {
 			return errorResponse(err.Error())
 		}
 

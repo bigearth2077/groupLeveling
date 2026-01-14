@@ -14,18 +14,33 @@ import { getRooms, createRoom } from '@/feature/room/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { useRoomJoin } from '@/hooks/useRoomJoin';
+import RoomPasswordModal from '@/components/room/RoomPasswordModal';
 
 export default function RoomLobby() {
   const navigate = useNavigate();
+  
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Use Custom Hook for Join Logic
+  const { 
+    passwordModalRoom, 
+    loading: joiningLoading, 
+    error: joinError,
+    handleJoinAttempt, 
+    submitPassword, 
+    closePasswordModal 
+  } = useRoomJoin();
+
   // Create Form
   const [newRoom, setNewRoom] = useState({
     name: '',
     description: '',
-    tagId: '', // Ideally use a selector, for now text or optional
+    tagId: '', 
     maxMembers: 20,
     isPrivate: false,
     password: ''
@@ -33,12 +48,12 @@ export default function RoomLobby() {
 
   useEffect(() => {
     fetchRooms();
-  }, []);
+  }, [searchQuery]); // Debounce could be added
 
   const fetchRooms = async () => {
     setLoading(true);
     try {
-      const res = await getRooms({ page: 1, pageSize: 20 });
+      const res = await getRooms({ page: 1, pageSize: 20, search: searchQuery });
       if (res && res.items) {
         setRooms(res.items);
       }
@@ -55,7 +70,14 @@ export default function RoomLobby() {
       // Basic validation
       if (!newRoom.name) return;
       
-      const payload = { ...newRoom, maxMembers: Number(newRoom.maxMembers) };
+      const payload = { 
+        ...newRoom, 
+        maxMembers: Number(newRoom.maxMembers),
+        description: newRoom.description || null,
+        tagId: newRoom.tagId || null,
+        password: newRoom.password || null
+      };
+      
       await createRoom(payload);
       setShowCreateModal(false);
       fetchRooms(); // Refresh
@@ -83,6 +105,8 @@ export default function RoomLobby() {
            <div className="relative flex-1 md:w-64">
              <Search className="absolute left-3 top-2.5 text-slate-400" size={18} />
              <input 
+               value={searchQuery}
+               onChange={(e) => setSearchQuery(e.target.value)}
                placeholder="Search rooms..." 
                className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
              />
@@ -103,7 +127,7 @@ export default function RoomLobby() {
           {rooms.map(room => (
             <div 
               key={room.id}
-              onClick={() => navigate(`/room/${room.id}`)}
+              onClick={() => handleJoinAttempt(room)}
               className="group relative bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:border-indigo-100 transition-all cursor-pointer overflow-hidden"
             >
               <div className="flex justify-between items-start mb-4">
@@ -173,8 +197,30 @@ export default function RoomLobby() {
                       className="rounded-xl" 
                     />
                  </div>
-                 {/* Placeholder for Tag Selector if needed later */}
+                 <div className="flex items-center space-x-2 pt-8">
+                    <input 
+                      type="checkbox" 
+                      id="isPrivate"
+                      checked={newRoom.isPrivate}
+                      onChange={e => setNewRoom({...newRoom, isPrivate: e.target.checked})}
+                      className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <label htmlFor="isPrivate" className="text-sm font-bold text-slate-700">Private Room</label>
+                 </div>
               </div>
+
+              {newRoom.isPrivate && (
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">Password</label>
+                  <Input 
+                    type="password"
+                    value={newRoom.password} 
+                    onChange={e => setNewRoom({...newRoom, password: e.target.value})}
+                    className="rounded-xl" 
+                    placeholder="Secret Password"
+                  />
+                </div>
+              )}
 
               <div className="pt-4 flex gap-3">
                 <Button type="button" variant="outline" onClick={() => setShowCreateModal(false)} className="flex-1 rounded-xl">Cancel</Button>
@@ -184,6 +230,15 @@ export default function RoomLobby() {
           </div>
         </div>
       )}
+
+      {/* Reusable Password Modal */}
+      <RoomPasswordModal
+        isOpen={!!passwordModalRoom}
+        onClose={closePasswordModal}
+        onConfirm={submitPassword}
+        isLoading={joiningLoading}
+        error={joinError}
+      />
     </div>
   );
 }

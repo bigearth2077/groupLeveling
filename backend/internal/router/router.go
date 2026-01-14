@@ -89,6 +89,10 @@ func SetupRouter(r *gin.Engine) {
 		{
 			roomGroup.POST("", roomHandler.CreateRoom)
 			roomGroup.GET("", roomHandler.GetRooms)
+			roomGroup.GET("/:id", roomHandler.GetRoom)       // 获取详情
+			roomGroup.PATCH("/:id", roomHandler.UpdateRoom)  // 更新房间
+			roomGroup.DELETE("/:id", roomHandler.DeleteRoom) // 删除房间
+			roomGroup.POST("/validate-password", roomHandler.ValidatePassword) // 新增验证接口
 			roomGroup.GET("/:id/members", roomHandler.GetRoomMembers)
 		}
 	}

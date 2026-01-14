@@ -2,7 +2,9 @@ version: "3.8"
 
 services:
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: dockerfile.dev
     container_name: my-backend-go
     restart: always
     ports:
@@ -15,7 +17,9 @@ services:
       - DB_PORT=5432
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - GIN_MODE=release # 生产模式
+      - GIN_MODE=debug
+    volumes:
+      - .:/app
     depends_on:
       - db
       - redis
@@ -32,10 +36,10 @@ services:
       - POSTGRES_DB=study_app
       - TZ=Asia/Shanghai
     volumes:
-      - ./pg_data:/var/lib/postgresql/data # 数据持久化挂载到本地
-      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh # 初始化脚本
+      - ./pg_data:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
     ports:
-      - "5432:5432" # 映射到主机，方便你用 Navicat 等工具连接
+      - "5432:5432"
     networks:
       - app-network
 
@@ -46,7 +50,7 @@ services:
     environment:
       - TZ=Asia/Shanghai
     volumes:
-      - ./redis_data:/data # 数据持久化
+      - ./redis_data:/data
     ports:
       - "6379:6379"
     networks:

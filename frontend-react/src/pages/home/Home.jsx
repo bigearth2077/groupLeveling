@@ -18,6 +18,8 @@ import { getMe, getUserProfile } from '@/feature/user/api';
 import { getRooms } from '@/feature/room/api';
 import { getGlobalRankings, getFriendRankings } from '@/feature/ranking/api';
 import { getStatsSummary } from '@/feature/study/api';
+import { useRoomJoin } from '@/hooks/useRoomJoin';
+import RoomPasswordModal from '@/components/room/RoomPasswordModal';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -38,6 +40,16 @@ const Home = () => {
   const [rooms, setRooms] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
   const [friendRankings, setFriendRankings] = useState([]);
+
+  // Use Custom Hook for Join Logic
+  const { 
+    passwordModalRoom, 
+    loading: joiningLoading, 
+    error: joinError,
+    handleJoinAttempt, 
+    submitPassword, 
+    closePasswordModal 
+  } = useRoomJoin();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -232,7 +244,7 @@ const Home = () => {
               rooms.map(room => (
                 <div 
                   key={room.id} 
-                  onClick={() => navigate(`/room/${room.id}`)}
+                  onClick={() => handleJoinAttempt(room)}
                   className="group relative rounded-2xl bg-white p-5 border border-slate-100 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md cursor-pointer"
                 >
                   <div className="flex justify-between items-start mb-4">
@@ -330,6 +342,14 @@ const Home = () => {
         </div>
       </div>
 
+      {/* Password Modal */}
+      <RoomPasswordModal
+        isOpen={!!passwordModalRoom}
+        onClose={closePasswordModal}
+        onConfirm={submitPassword}
+        isLoading={joiningLoading}
+        error={joinError}
+      />
     </div>
   );
 };

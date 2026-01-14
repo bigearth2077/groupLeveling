@@ -34,34 +34,35 @@ func (s *RoomService) CreateRoom(creatorID string, req dto.CreateRoomRequest) (*
 }
 
 // GetRooms 获取房间列表 (HTTP)
-func (s *RoomService) GetRooms(page, pageSize int, tagID string) (*dto.RoomListResponse, error) {
-	var rooms []model.Room
+func (s *RoomService) GetRooms(page, pageSize int, tagID, search string) (*dto.RoomListResponse, error) {
+	var results []struct {
+		model.Room
+		OnlineCount int
+	}
 	var total int64
 
-	// 过滤条件：公开房间 或者 只是隐藏了？通常私密房间不出现在大厅，或者带锁显示。
-	// 这里假设：只显示 IsPrivate=false 的，或者显示 IsPrivate=true 但需要密码的。
-	// 简单起见：显示所有，但在前端用锁图标区分。
-	db := database.DB.Model(&model.Room{}).Preload("Tag")
+	db := database.DB.Model(&model.Room{}).
+		Select("rooms.*, (SELECT count(*) FROM room_members WHERE room_members.room_id = rooms.id AND room_members.left_at IS NULL) as online_count").
+		Preload("Tag")
 
 	if tagID != "" {
 		db = db.Where("tag_id = ?", tagID)
 	}
 
+	if search != "" {
+		searchPattern := "%" + search + "%"
+		db = db.Where("name ILIKE ? OR description ILIKE ?", searchPattern, searchPattern)
+	}
+
 	db.Count(&total)
 
 	offset := (page - 1) * pageSize
-	if err := db.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&rooms).Error; err != nil {
+	if err := db.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&results).Error; err != nil {
 		return nil, err
 	}
 
-	items := make([]dto.RoomResponse, len(rooms))
-	for i, r := range rooms {
-		// 统计实时人数
-		var count int64
-		database.DB.Model(&model.RoomMember{}).
-			Where("room_id = ? AND left_at IS NULL", r.ID).
-			Count(&count)
-
+	items := make([]dto.RoomResponse, len(results))
+	for i, r := range results {
 		tagName := ""
 		if r.Tag != nil {
 			tagName = r.Tag.Name
@@ -77,7 +78,7 @@ func (s *RoomService) GetRooms(page, pageSize int, tagID string) (*dto.RoomListR
 			MaxMembers:  r.MaxMembers,
 			CreatorID:   r.CreatorID,
 			CreatedAt:   r.CreatedAt,
-			OnlineCount: int(count),
+			OnlineCount: r.OnlineCount,
 			HasPassword: r.Password != nil && *r.Password != "",
 		}
 	}
@@ -90,15 +91,128 @@ func (s *RoomService) GetRooms(page, pageSize int, tagID string) (*dto.RoomListR
 	}, nil
 }
 
+// GetRoom 获取房间详情 (HTTP)
+func (s *RoomService) GetRoom(roomID string) (*dto.RoomResponse, error) {
+	var room model.Room
+	if err := database.DB.Preload("Tag").First(&room, "id = ?", roomID).Error; err != nil {
+		return nil, errors.New("room not found")
+	}
+
+	// 统计实时人数
+	var count int64
+	database.DB.Model(&model.RoomMember{}).
+		Where("room_id = ? AND left_at IS NULL", room.ID).
+		Count(&count)
+
+	tagName := ""
+	if room.Tag != nil {
+		tagName = room.Tag.Name
+	}
+
+	resp := &dto.RoomResponse{
+		ID:          room.ID,
+		Name:        room.Name,
+		Description: room.Description,
+		TagID:       room.TagID,
+		TagName:     tagName,
+		IsPrivate:   room.IsPrivate,
+		MaxMembers:  room.MaxMembers,
+		CreatorID:   room.CreatorID,
+		CreatedAt:   room.CreatedAt,
+		OnlineCount: int(count),
+		HasPassword: room.Password != nil && *room.Password != "",
+	}
+	return resp, nil
+}
+
+// DeleteRoom 删除房间 (HTTP)
+func (s *RoomService) DeleteRoom(userID, roomID string) error {
+	var room model.Room
+	if err := database.DB.First(&room, "id = ?", roomID).Error; err != nil {
+		return errors.New("room not found")
+	}
+
+	// 权限检查: 只有房主可以删除
+	if room.CreatorID != userID {
+		return errors.New("permission denied")
+	}
+    
+    // Debug Log
+    println("Deleting room members for room:", roomID)
+
+	// 手动级联删除：先删除相关的 RoomMember 记录
+	if err := database.DB.Where("room_id = ?", roomID).Delete(&model.RoomMember{}).Error; err != nil {
+		return err
+	}
+
+	return database.DB.Delete(&room).Error
+}
+
+// UpdateRoom 更新房间 (HTTP)
+func (s *RoomService) UpdateRoom(userID, roomID string, req dto.UpdateRoomRequest) (*model.Room, error) {
+	var room model.Room
+	if err := database.DB.First(&room, "id = ?", roomID).Error; err != nil {
+		return nil, errors.New("room not found")
+	}
+
+	// 权限检查
+	if room.CreatorID != userID {
+		return nil, errors.New("permission denied")
+	}
+
+	// 更新字段
+	if req.Name != "" {
+		room.Name = req.Name
+	}
+	room.Description = req.Description // 指针类型，允许为 nil 或新值
+	room.TagID = req.TagID
+	room.IsPrivate = req.IsPrivate
+	room.Password = req.Password
+	
+	if req.MaxMembers > 0 {
+		room.MaxMembers = req.MaxMembers
+	}
+
+	if err := database.DB.Save(&room).Error; err != nil {
+		return nil, err
+	}
+	return &room, nil
+}
+
 // JoinRoom 记录加入数据库 (Socket 调用)
-func (s *RoomService) JoinRoom(userID, roomID string) error {
+func (s *RoomService) JoinRoom(userID, roomID string, password *string) error {
 	// 1. 检查房间是否存在
 	var room model.Room
 	if err := database.DB.First(&room, "id = ?", roomID).Error; err != nil {
 		return errors.New("room not found")
 	}
 
-	// 2. 创建 RoomMember 记录
+	// 2. 检查密码 (如果是私密房间)
+	if room.IsPrivate {
+		if room.Password != nil && *room.Password != "" {
+			if password == nil || *password != *room.Password {
+				return errors.New("invalid password")
+			}
+		}
+	}
+
+	// 3. 检查人数上限
+	var currentCount int64
+	database.DB.Model(&model.RoomMember{}).
+		Where("room_id = ? AND left_at IS NULL", roomID).
+		Count(&currentCount)
+
+	if int(currentCount) >= room.MaxMembers {
+		return errors.New("room is full")
+	}
+
+	// 4. 创建 RoomMember 记录 (如果已经加入过且未离开，不需要重复创建，或者更新状态)
+	var existingMember model.RoomMember
+	if err := database.DB.Where("room_id = ? AND user_id = ? AND left_at IS NULL", roomID, userID).First(&existingMember).Error; err == nil {
+		// Already in room
+		return nil
+	}
+
 	member := model.RoomMember{
 		RoomID:   roomID,
 		UserID:   userID,
@@ -152,4 +266,26 @@ func (s *RoomService) GetRoomMembers(roomID string) ([]dto.RoomMemberResponse, e
 	}
 
 	return resp, nil
+}
+
+// ValidatePassword 验证房间密码
+func (s *RoomService) ValidatePassword(roomID, password string) error {
+	var room model.Room
+	if err := database.DB.First(&room, "id = ?", roomID).Error; err != nil {
+		return errors.New("room not found")
+	}
+
+	if !room.IsPrivate {
+		return nil // 公开房间不需要密码
+	}
+
+	if room.Password == nil || *room.Password == "" {
+		return nil // 虽然是私密但没设密码？视为通过
+	}
+
+	if *room.Password != password {
+		return errors.New("invalid password")
+	}
+
+	return nil
 }

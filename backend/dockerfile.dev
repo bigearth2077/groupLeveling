@@ -1,0 +1,18 @@
+# backend/dockerfile.dev
+FROM golang:1.24-alpine
+
+# 设置国内代理
+ENV GOPROXY=https://goproxy.cn,direct
+
+# 安装 git (air 可能需要) 和 air 工具
+RUN apk add --no-cache git && \
+    go install github.com/air-verse/air@v1.61.0
+
+WORKDIR /app
+
+# 预下载依赖
+COPY go.mod go.sum ./
+RUN go mod download
+
+# 启动 air
+CMD ["air", "-c", ".air.toml"]

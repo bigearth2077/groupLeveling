@@ -9,14 +9,19 @@ import {
   Brain, 
   Coffee, 
   Loader2,
-  LogOut
+  LogOut,
+  Trash2,
+  Settings
 } from 'lucide-react';
 import { getSocket } from '@/lib/socket';
 import { useRoomStore } from '@/store/roomStore';
+import { getRoom, deleteRoom } from '@/feature/room/api';
+import { getMe } from '@/feature/user/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import UserProfileModal from '@/components/user/UserProfileModal';
+import RoomSettingsModal from '@/components/room/RoomSettingsModal';
 
 export default function RoomDetail() {
   const { id: roomId } = useParams();
@@ -33,19 +38,36 @@ export default function RoomDetail() {
 
   const [inputMsg, setInputMsg] = useState('');
   const [selectedUserId, setSelectedUserId] = useState(null);
+  
+  // Room Metadata & Host Check
+  const [roomInfo, setRoomInfo] = useState(null);
+  const [isHost, setIsHost] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
-  // Initialize Room
+  // Initialize Room & Fetch Metadata
   useEffect(() => {
-    // Only join if we are not already in this room (or in no room)
-    // We access activeRoomId from store via closure or ref if needed, 
-    // but here we trust that on mount (new roomId) we want to join.
-    // We check the store value directly or assume if we are here, we want to be here.
-    // To be safe against strict mode double-invoke or store lag, we can check inside.
-    // Using the value from the hook scope is fine as long as we don't depend on it for re-running.
     if (activeRoomId !== roomId) {
       setActiveRoomId(roomId);
     }
+    
+    fetchRoomDetails();
   }, [roomId]); // Removed activeRoomId dependency
+
+  const fetchRoomDetails = async () => {
+    try {
+      const [roomData, me] = await Promise.all([
+        getRoom(roomId),
+        getMe()
+      ]);
+      
+      setRoomInfo(roomData);
+      if (roomData && me && roomData.creatorId === me.id) {
+        setIsHost(true);
+      }
+    } catch (err) {
+      console.error("Failed to fetch room details:", err);
+    }
+  };
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -61,6 +83,17 @@ export default function RoomDetail() {
   const handleLeave = () => {
     leaveRoom();
     navigate('/rooms');
+  };
+
+  const handleDelete = async () => {
+    if (!confirm("Are you sure you want to delete this room? This cannot be undone.")) return;
+    try {
+      await deleteRoom(roomId);
+      leaveRoom(); // Cleanup store
+      navigate('/rooms');
+    } catch (err) {
+      alert("Failed to delete room");
+    }
   };
 
   const sendMessage = (e) => {
@@ -99,7 +132,7 @@ export default function RoomDetail() {
             </button>
             <div>
               <h1 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                Room #{roomId.slice(0, 4)}
+                {roomInfo ? roomInfo.name : `Room #${roomId.slice(0, 4)}`}
                 <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs">Live</span>
               </h1>
             </div>
@@ -110,6 +143,30 @@ export default function RoomDetail() {
               <Users size={18} />
               {members.length} Online
             </div>
+            
+            {isHost && (
+              <>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="rounded-xl h-9 border-slate-200 text-slate-600 hover:bg-slate-50"
+                  onClick={() => setShowSettings(true)}
+                  title="Room Settings"
+                >
+                  <Settings size={16} className="mr-2" /> Settings
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="rounded-xl h-9 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                  onClick={handleDelete}
+                  title="Delete Room"
+                >
+                  <Trash2 size={16} />
+                </Button>
+              </>
+            )}
+
             <Button 
               size="sm" 
               variant="destructive" 
@@ -212,6 +269,12 @@ export default function RoomDetail() {
         isFriend={false} 
       />
 
+      <RoomSettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        room={roomInfo}
+        onUpdate={fetchRoomDetails}
+      />
     </div>
   );
 }
