@@ -70,7 +70,7 @@ const Home = () => {
             ...prev,
             ...(profile && profile.levelInfo ? profile.levelInfo : {}),
             nickname: me.nickname,
-            // streak: stats?.currentStreak || 0, // If backend stats summary has streak, use it
+            streak: stats?.currentStreak || 0, // If backend stats summary has streak, use it
             todayMinutes: stats?.totalMinutes || 0
           }));
         }
