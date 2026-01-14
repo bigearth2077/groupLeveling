@@ -38,20 +38,20 @@ GroupLeveling 是一个专为学生与职场人士打造的多人在线自习室
 
 ## 🛠 Tech Stack / 技术栈
 **Frontend / 前端**
-- [Next.js](https://nextjs.org/) 15 (App Router)
-- [Tailwind CSS](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/)
+- [React](https://react.dev/) + [Vite](https://vitejs.dev/)
+- [Tailwind CSS](https://tailwindcss.com/)
 - Zustand (State Management)
 - Recharts (Data Visualization)
-- TipTap / React Quill (Rich Text Editor)
+- Socket.io-client (Real-time)
 
 **Backend / 后端**
-- [NestJS](https://nestjs.com/)
-- PostgreSQL + Prisma ORM
-- Redis (Cache, Leaderboard)
+- [Go (Golang)](https://go.dev/)
+- [Gin](https://gin-gonic.com/) (Web Framework)
+- [GORM](https://gorm.io/) (PostgreSQL ORM)
+- Redis (Cache, Leaderboard, Session Heartbeats)
 - Socket.io (Real-time Communication)
-- OpenAI API (AI Analysis)
 
-**Deployment / 部署**
-- Vercel (Frontend)
-- Render / Railway (Backend)
-- Supabase / Neon (Database Hosting)
+**Database & DevOps / 数据库与运维**
+- PostgreSQL
+- Redis
+- Docker & Docker Compose
