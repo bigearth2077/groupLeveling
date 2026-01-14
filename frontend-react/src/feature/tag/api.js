@@ -1,5 +1,10 @@
 import request from '@/lib/request';
 
+// 获取热门标签
+export const getPopularTags = () => {
+  return request.get('/tags/popular');
+};
+
 // 搜索标签 (或获取热门)
 export const searchTags = (q) => {
   return request.get('/tags/search', { params: { q } });

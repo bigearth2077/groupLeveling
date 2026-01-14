@@ -7,10 +7,12 @@ import {
   Unlock, 
   ArrowRight, 
   Loader2,
-  X
+  X,
+  Hash
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getRooms, createRoom } from '@/feature/room/api';
+import { getMyTags, addMyTag } from '@/feature/tag/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -25,6 +27,8 @@ export default function RoomLobby() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   
   const [searchQuery, setSearchQuery] = useState('');
+  const [myTags, setMyTags] = useState([]);
+  const [tagNameInput, setTagNameInput] = useState('');
   
   // Use Custom Hook for Join Logic
   const { 
@@ -40,7 +44,7 @@ export default function RoomLobby() {
   const [newRoom, setNewRoom] = useState({
     name: '',
     description: '',
-    tagId: '', 
+    tagId: '', // Will be resolved from tagNameInput
     maxMembers: 20,
     isPrivate: false,
     password: ''
@@ -48,7 +52,20 @@ export default function RoomLobby() {
 
   useEffect(() => {
     fetchRooms();
-  }, [searchQuery]); // Debounce could be added
+    fetchUserTags();
+  }, [searchQuery]); 
+
+  const fetchUserTags = async () => {
+    try {
+      const res = await getMyTags();
+      // res is array of UserTagResponse { tagId, tagName, ... }
+      if (Array.isArray(res)) {
+        setMyTags(res);
+      }
+    } catch (err) {
+      console.error("Failed to fetch tags", err);
+    }
+  };
 
   const fetchRooms = async () => {
     setLoading(true);
@@ -70,18 +87,35 @@ export default function RoomLobby() {
       // Basic validation
       if (!newRoom.name) return;
       
+      // Resolve Tag ID
+      let finalTagId = null;
+      if (tagNameInput.trim()) {
+        const existing = myTags.find(t => t.tagName.toLowerCase() === tagNameInput.trim().toLowerCase());
+        if (existing) {
+          finalTagId = existing.tagId;
+        } else {
+          // Create new tag (attach to user)
+          const tagRes = await addMyTag(tagNameInput.trim());
+          if (tagRes && tagRes.tagId) {
+            finalTagId = tagRes.tagId;
+          }
+        }
+      }
+
       const payload = { 
         ...newRoom, 
         maxMembers: Number(newRoom.maxMembers),
         description: newRoom.description || null,
-        tagId: newRoom.tagId || null,
+        tagId: finalTagId,
         password: newRoom.password || null
       };
       
       await createRoom(payload);
       setShowCreateModal(false);
       fetchRooms(); // Refresh
+      fetchUserTags(); // Refresh tags in case new one was added
     } catch (err) {
+      console.error(err);
       alert("Failed to create room");
     }
   };
@@ -197,7 +231,27 @@ export default function RoomLobby() {
                       className="rounded-xl" 
                     />
                  </div>
-                 <div className="flex items-center space-x-2 pt-8">
+                 <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700">Topic Tag</label>
+                    <div className="relative">
+                      <Hash className="absolute left-3 top-2.5 text-slate-400" size={16} />
+                      <Input 
+                        list="my-tags-list"
+                        value={tagNameInput}
+                        onChange={e => setTagNameInput(e.target.value)}
+                        placeholder="Select or type tag..."
+                        className="pl-9 rounded-xl"
+                      />
+                      <datalist id="my-tags-list">
+                        {myTags.map(tag => (
+                          <option key={tag.tagId} value={tag.tagName} />
+                        ))}
+                      </datalist>
+                    </div>
+                 </div>
+              </div>
+
+              <div className="flex items-center space-x-2 pt-2">
                     <input 
                       type="checkbox" 
                       id="isPrivate"
@@ -206,7 +260,6 @@ export default function RoomLobby() {
                       className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                     />
                     <label htmlFor="isPrivate" className="text-sm font-bold text-slate-700">Private Room</label>
-                 </div>
               </div>
 
               {newRoom.isPrivate && (
