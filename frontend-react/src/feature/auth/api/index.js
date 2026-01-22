@@ -30,3 +30,12 @@ export const registerAPI = async (email, password, nickname) => {
   return response;
 };
 
+/**
+ * 刷新 Token API
+ * @param {string} refreshToken 
+ * @returns {Promise}
+ */
+export const refreshTokenAPI = async (refreshToken) => {
+  return request.post('/auth/refresh', { refreshToken });
+};
+

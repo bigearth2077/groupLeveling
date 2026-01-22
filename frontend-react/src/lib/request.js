@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getToken, removeToken } from '@/utils/token';
+import { getToken, removeToken, setToken } from '@/utils/token';
 
 // 创建 axios 实例
 const request = axios.create({
@@ -33,38 +33,84 @@ request.interceptors.request.use(
   }
 );
 
+// 导出封装好的 axios 实例
+export default request;
+
+// 是否正在刷新 Token
+let isRefreshing = false;
+// 重试队列，用于存储在刷新 Token 期间挂起的请求
+let requestsQueue = [];
+
 // 响应拦截器 - 统一处理响应
 request.interceptors.response.use(
   (response) => {
     // 2xx 范围内的状态码都会触发该函数
     const { data } = response;
-    
-    // 如果后端返回的数据格式是 { code, data, message }，可以在这里统一处理
-    // 根据实际后端接口规范调整
-    if (data.code !== undefined && data.code !== 200 && data.code !== 0) {
-      // 业务错误处理
-      const errorMessage = data.message || '请求失败';
-      console.error('业务错误:', errorMessage);
-      return Promise.reject(new Error(errorMessage));
-    }
-    
-    // 返回实际数据
     return data;
   },
-  (error) => {
-    // 超出 2xx 范围的状态码都会触发该函数
-    const { response } = error;
+  async (error) => {
+    const { response, config } = error;
     
     if (response) {
-      // 服务器返回了错误状态码
-      switch (response.status) {
-        case 401:
-          // 未授权，清除 token 并跳转到登录页
+      // 401 处理：Token 过期或未授权
+      if (response.status === 401 && !config._retry) {
+        // 如果是刷新 Token 的接口本身报错，或者没有 RefreshToken，则直接跳转登录
+        const refreshToken = localStorage.getItem('refreshToken'); // 避免循环引用，直接读 storage
+        if (config.url.includes('/auth/refresh') || !refreshToken) {
           removeToken();
-          // 可以在这里添加路由跳转到登录页
-          // window.location.href = '/login';
-          console.error('未授权，请重新登录');
-          break;
+          window.location.href = '/login';
+          return Promise.reject(error);
+        }
+
+        if (isRefreshing) {
+          // 如果正在刷新，将当前请求加入队列等待
+          return new Promise((resolve) => {
+            requestsQueue.push((token) => {
+              config.headers.Authorization = `Bearer ${token}`;
+              resolve(request(config));
+            });
+          });
+        }
+
+        config._retry = true;
+        isRefreshing = true;
+
+        try {
+          // 尝试刷新 Token
+          // 使用原生 axios 实例避免拦截器死循环
+          // 注意：需要手动拼接完整 URL
+          const baseURL = request.defaults.baseURL;
+          const refreshResponse = await axios.post(`${baseURL}/auth/refresh`, {
+            refreshToken
+          });
+          
+          const { accessToken, refreshToken: newRefreshToken } = refreshResponse.data;
+          
+          if (accessToken) {
+            // 更新本地 Token
+            setToken(accessToken, newRefreshToken);
+            
+            // 执行队列中的请求
+            requestsQueue.forEach((cb) => cb(accessToken));
+            requestsQueue = []; // 清空队列
+            
+            // 重试当前请求
+            config.headers.Authorization = `Bearer ${accessToken}`;
+            return request(config);
+          }
+        } catch (refreshError) {
+          // 刷新失败，清空 Token 并跳转登录
+          console.error('Token 刷新失败:', refreshError);
+          removeToken();
+          window.location.href = '/login';
+          return Promise.reject(refreshError);
+        } finally {
+          isRefreshing = false;
+        }
+      }
+
+      // 其他错误状态码处理
+      switch (response.status) {
         case 403:
           console.error('拒绝访问');
           break;
@@ -78,21 +124,15 @@ request.interceptors.response.use(
           console.error('请求失败:', response.statusText);
       }
       
-      // 返回错误信息
       const errorMessage = response.data?.message || response.statusText || '请求失败';
       return Promise.reject(new Error(errorMessage));
     } else if (error.request) {
-      // 请求已发出，但没有收到响应
       console.error('网络错误，请检查网络连接');
       return Promise.reject(new Error('网络错误，请检查网络连接'));
     } else {
-      // 在设置请求时触发了一个错误
       console.error('请求配置错误:', error.message);
       return Promise.reject(error);
     }
   }
 );
-
-// 导出封装好的 axios 实例
-export default request;
 

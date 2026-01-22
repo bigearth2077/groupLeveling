@@ -1,5 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom';
 import App from '../App';
+import GuestGuard from '../components/auth/GuestGuard';
 import Login from '../pages/login/Login';
 import Register from '../pages/register/Register';
 import Auth from '../components/Auth';
@@ -7,15 +8,19 @@ import Home from '../pages/home/Home';
 
 // 路由配置
 const router = createBrowserRouter([
-  // 公开路由：登录页面 - 独立布局（不包含导航栏）
+  // 游客路由：仅未登录用户可访问
   {
-    path: '/login',
-    element: <Login />,
-  },
-  // 公开路由：注册页面
-  {
-    path: '/register',
-    element: <Register />,
+    element: <GuestGuard />,
+    children: [
+      {
+        path: '/login',
+        element: <Login />,
+      },
+      {
+        path: '/register',
+        element: <Register />,
+      },
+    ]
   },
   
   // 受保护路由：需要登录才能访问

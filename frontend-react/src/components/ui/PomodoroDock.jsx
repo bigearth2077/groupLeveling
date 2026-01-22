@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useLogout } from '../feature/auth/hooks/useLogout';
+import { useLogout } from '../../feature/auth/hooks/useLogout';
 
 const RADIUS = 80;
 const DOCK_WIDTH = 220;
@@ -48,7 +48,7 @@ export default function PomodoroDock() {
   };
 
   return (
-    <>                                                                                                                                                                       
+    <>
       {/* 全屏遮罩 - 仅在展开时显示，点击收起 */}
       {isExpanded && (
         <div 
@@ -94,7 +94,7 @@ export default function PomodoroDock() {
                         className={cn(
                             "absolute w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all duration-300 shadow-sm border border-white/10",
                             "translate-x-[-50%] translate-y-[50%]", // 替代 style 里的 transform
-                            "active:scale-90 active:!duration-75 active:!delay-0 hover:text-white", // 强制无延迟，瞬间响应
+                            "active:scale-90 active:duration-75! active:delay-0! hover:text-white", // 强制无延迟，瞬间响应 修正了 ! 的位置
                             isExpanded ? "scale-100 opacity-100" : "scale-0 opacity-0"
                         )}
                         style={{

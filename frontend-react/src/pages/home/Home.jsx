@@ -1,5 +1,5 @@
 import React from 'react';
-import PomodoroDock from '@/components/PomodoroDock';
+import PomodoroDock from '@/components/ui/PomodoroDock';
 import { TimerComponent } from '../../feature/Timer/TimerComponent';
 import { useTimerStore } from '../../store/timerStore';
 import { cn } from '../../lib/utils';
