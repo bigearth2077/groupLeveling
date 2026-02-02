@@ -25,7 +25,7 @@ func SetupRouter(r *gin.Engine) {
 	r.POST("/socket.io/*any", gin.WrapH(socket.Server))
 
 	// 公开路由
-	r.GET("/tags/search", tagHandler.Search) // 公开搜索
+	r.GET("/tags/search", tagHandler.Search)      // 公开搜索
 	r.GET("/tags/popular", tagHandler.GetPopular) // 热门标签
 
 	authGroup := r.Group("/auth")
@@ -61,13 +61,14 @@ func SetupRouter(r *gin.Engine) {
 		studyGroup := protected.Group("/study")
 		{
 			studyGroup.POST("/sessions/start", studyHandler.StartSession)
-			studyGroup.POST("/sessions/:id/end", studyHandler.EndSession) // 注意 :id
+			studyGroup.POST("/sessions/:id/end", studyHandler.EndSession)      // 注意 :id
 			studyGroup.POST("/sessions/:id/heartbeat", studyHandler.Heartbeat) // 心跳
 			studyGroup.GET("/sessions/active", studyHandler.GetActiveSession)
 			studyGroup.DELETE("/sessions/active", studyHandler.CancelActiveSession)
 			studyGroup.GET("/sessions", studyHandler.GetSessions) // 历史记录
 
 			studyGroup.GET("/stats/summary", studyHandler.GetStatsSummary)
+			studyGroup.GET("/stats/screen-time", studyHandler.GetScreenTimeStats)
 		}
 
 		// Friends 路由

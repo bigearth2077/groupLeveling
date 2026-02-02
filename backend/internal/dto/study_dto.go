@@ -33,6 +33,10 @@ type GetStatsQuery struct {
 	Tz    string `form:"tz,default=Asia/Shanghai"` // 时区
 }
 
+type ScreenTimeQuery struct {
+	Tz string `form:"tz,default=Asia/Shanghai"`
+}
+
 // --- Response DTOs ---
 
 type StudySessionResponse struct {
@@ -75,6 +79,17 @@ type StatsSummaryResponse struct {
 	LevelInfo     LevelInfo   `json:"levelInfo"`
 	CurrentStreak int         `json:"currentStreak"`
 	LongestStreak int         `json:"longestStreak"` // 这通常需要更复杂的计算，MVP 先不做或者简化
+}
+
+type TimePoint struct {
+	Label   string `json:"label"`   // "Jan", "Mon", "09:00"
+	Minutes int    `json:"minutes"`
+}
+
+type ScreenTimeResponse struct {
+	Daily  []TimePoint `json:"daily"`  // 日视图 (按小时)
+	Weekly []TimePoint `json:"weekly"` // 周视图 (按天)
+	Yearly []TimePoint `json:"yearly"` // 年视图 (按月)
 }
 
 type LevelInfo struct {
