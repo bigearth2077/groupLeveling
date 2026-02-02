@@ -157,3 +157,22 @@ func (h *StudyHandler) GetStatsSummary(c *gin.Context) {
 
 	c.JSON(http.StatusOK, resp)
 }
+
+// GetScreenTimeStats
+func (h *StudyHandler) GetScreenTimeStats(c *gin.Context) {
+	userID := c.GetString("userId")
+	var query dto.ScreenTimeQuery
+
+	if err := c.ShouldBindQuery(&query); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	resp, err := h.Service.GetScreenTimeStats(userID, query.Tz)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}

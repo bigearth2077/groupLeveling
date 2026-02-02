@@ -336,149 +336,118 @@ func (s *StudyService) GetStatsSummary(userID string, q dto.GetStatsQuery) (*dto
 		grandTotal += s.TotalMinutes
 	}
 
-		// 循环补全日期
+	// 循环补全日期
 
-		for d := startTime; !d.After(endTime); d = d.AddDate(0, 0, 1) {
+	for d := startTime; !d.After(endTime); d = d.AddDate(0, 0, 1) {
 
-			dateStr := d.Format("2006-01-02")
+		dateStr := d.Format("2006-01-02")
 
-			minutes := 0
+		minutes := 0
 
-			if val, ok := statsMap[dateStr]; ok {
+		if val, ok := statsMap[dateStr]; ok {
 
-				minutes = val
-
-			}
-
-			dailyStats = append(dailyStats, dto.DailyStat{
-
-				Date:	dateStr,
-
-				Minutes: minutes,
-
-			})
+			minutes = val
 
 		}
 
-	
+		dailyStats = append(dailyStats, dto.DailyStat{
 
-		// --- Gamification Calculations ---
+			Date: dateStr,
 
-	
+			Minutes: minutes,
+		})
 
-		// 1. Calculate Total XP & Level
+	}
 
-		var totalXP int64
+	// --- Gamification Calculations ---
 
-		// 这是一个快速聚合查询
+	// 1. Calculate Total XP & Level
 
-		database.DB.Model(&model.DailyStat{}).
+	var totalXP int64
 
-			Where("user_id = ?", userID).
+	// 这是一个快速聚合查询
 
-			Select("COALESCE(SUM(total_minutes), 0)").
+	database.DB.Model(&model.DailyStat{}).
+		Where("user_id = ?", userID).
+		Select("COALESCE(SUM(total_minutes), 0)").
+		Scan(&totalXP)
 
-			Scan(&totalXP)
+	levelService := &LevelService{}
 
-	
+	levelInfo := levelService.CalculateLevel(int(totalXP))
 
-		levelService := &LevelService{}
+	// 2. Calculate Streak
 
-		levelInfo := levelService.CalculateLevel(int(totalXP))
+	// 我们需要查找最近的连续打卡记录。
 
-	
+	// 定义：Streak = 连续多少天 total_minutes > 0。
 
-		// 2. Calculate Streak
+	// 从今天(或昨天)开始倒推。
 
-		// 我们需要查找最近的连续打卡记录。
+	var streakStats []model.DailyStat
 
-		// 定义：Streak = 连续多少天 total_minutes > 0。
+	// 查最近 100 条非零记录即可，大多数人 streak 不会太夸张，或者分批查。
 
-		// 从今天(或昨天)开始倒推。
+	// 这里为了性能，先查最近 365 天。
 
-		var streakStats []model.DailyStat
+	yesterday := now.AddDate(0, 0, -1)
 
-		// 查最近 100 条非零记录即可，大多数人 streak 不会太夸张，或者分批查。
+	oneYearAgo := now.AddDate(-1, 0, 0)
 
-		// 这里为了性能，先查最近 365 天。
+	// 注意：这里需要查所有日期的记录，而不仅是 daily_stats 存在的记录（因为 daily_stats 只有有学习才有记录）。
 
-		yesterday := now.AddDate(0, 0, -1)
+	// 利用 daily_stats 的特性：只有有学习才有记录。
 
-		oneYearAgo := now.AddDate(-1, 0, 0)
+	// 那么如果是连续的，date 应该是连续的 (差距 24h)。
 
-		
+	database.DB.Model(&model.DailyStat{}).
+		Where("user_id = ? AND date >= ?", userID, oneYearAgo).
+		Order("date DESC").
+		Find(&streakStats)
 
-		// 注意：这里需要查所有日期的记录，而不仅是 daily_stats 存在的记录（因为 daily_stats 只有有学习才有记录）。
+	currentStreak := 0
 
-		// 利用 daily_stats 的特性：只有有学习才有记录。
+	// 今天的日期字符串 (UTC)
 
-		// 那么如果是连续的，date 应该是连续的 (差距 24h)。
+	todayStr := now.UTC().Format("2006-01-02")
 
-		
+	yesterdayStr := yesterday.UTC().Format("2006-01-02")
 
-		database.DB.Model(&model.DailyStat{}).
+	// 检查 streak
 
-			Where("user_id = ? AND date >= ?", userID, oneYearAgo).
+	// 逻辑：如果最近的一条是今天，streak++，继续看上一条是否是昨天。
 
-			Order("date DESC").
+	// 如果最近的一条是昨天，streak++，继续看上一条是否是前天。
 
-			Find(&streakStats)
+	// 如果最近的一条是前天，说明今天和昨天都断了，streak = 0。
 
-			
+	if len(streakStats) > 0 {
 
-		currentStreak := 0
+		lastDate := streakStats[0].Date.Format("2006-01-02")
 
-		// 今天的日期字符串 (UTC)
+		// 只有当最近一次学习是“今天”或“昨天”时，Streak 才有效
 
-		todayStr := now.UTC().Format("2006-01-02")
+		if lastDate == todayStr || lastDate == yesterdayStr {
 
-		yesterdayStr := yesterday.UTC().Format("2006-01-02")
+			currentStreak = 1
 
-		
+			expectedDate := streakStats[0].Date.AddDate(0, 0, -1) // 期望的下一条日期
 
-		// 检查 streak
+			for i := 1; i < len(streakStats); i++ {
 
-		// 逻辑：如果最近的一条是今天，streak++，继续看上一条是否是昨天。
+				thisDate := streakStats[i].Date
 
-		// 如果最近的一条是昨天，streak++，继续看上一条是否是前天。
+				// 比较 thisDate 和 expectedDate (忽略时分秒，只比年月日)
 
-		// 如果最近的一条是前天，说明今天和昨天都断了，streak = 0。
+				if thisDate.Format("2006-01-02") == expectedDate.Format("2006-01-02") {
 
-		
+					currentStreak++
 
-		if len(streakStats) > 0 {
+					expectedDate = expectedDate.AddDate(0, 0, -1)
 
-			lastDate := streakStats[0].Date.Format("2006-01-02")
+				} else {
 
-			
-
-			// 只有当最近一次学习是“今天”或“昨天”时，Streak 才有效
-
-			if lastDate == todayStr || lastDate == yesterdayStr {
-
-				currentStreak = 1
-
-				expectedDate := streakStats[0].Date.AddDate(0, 0, -1) // 期望的下一条日期
-
-				
-
-				for i := 1; i < len(streakStats); i++ {
-
-					thisDate := streakStats[i].Date
-
-					// 比较 thisDate 和 expectedDate (忽略时分秒，只比年月日)
-
-					if thisDate.Format("2006-01-02") == expectedDate.Format("2006-01-02") {
-
-						currentStreak++
-
-						expectedDate = expectedDate.AddDate(0, 0, -1)
-
-					} else {
-
-						break // 断了
-
-					}
+					break // 断了
 
 				}
 
@@ -486,29 +455,169 @@ func (s *StudyService) GetStatsSummary(userID string, q dto.GetStatsQuery) (*dto
 
 		}
 
-	
-
-		return &dto.StatsSummaryResponse{
-
-			Type:			 q.Type,
-
-			Tz:				 "UTC",
-
-			From:			 startTime,
-
-			To:				 endTime,
-
-			TotalMinutes:	 grandTotal, // 这是 Range 内的总时间，不是生涯总时间
-
-			Daily:			 dailyStats,
-
-			LevelInfo:		 levelInfo,
-
-			CurrentStreak:	 currentStreak,
-
-			LongestStreak:	 0, // MVP 暂不计算，需要全表扫描
-
-		}, nil
-
 	}
 
+	return &dto.StatsSummaryResponse{
+
+		Type: q.Type,
+
+		Tz: "UTC",
+
+		From: startTime,
+
+		To: endTime,
+
+		TotalMinutes: grandTotal, // 这是 Range 内的总时间，不是生涯总时间
+
+		Daily: dailyStats,
+
+		LevelInfo: levelInfo,
+
+		CurrentStreak: currentStreak,
+
+		LongestStreak: 0, // MVP 暂不计算，需要全表扫描
+
+	}, nil
+
+}
+
+// GetScreenTimeStats 获取屏幕使用时间统计 (日/周/年)
+func (s *StudyService) GetScreenTimeStats(userID string, tz string) (*dto.ScreenTimeResponse, error) {
+	// 验证时区，如果无效则回退到 UTC
+	loc, err := time.LoadLocation(tz)
+	if err != nil {
+		loc = time.UTC
+		tz = "UTC"
+	}
+	now := time.Now().In(loc)
+
+	resp := &dto.ScreenTimeResponse{
+		Daily:  make([]dto.TimePoint, 0),
+		Weekly: make([]dto.TimePoint, 0),
+		Yearly: make([]dto.TimePoint, 0),
+	}
+
+	// 1. Daily (Today 00:00 - 23:59)
+	// 聚合: 按小时 (0-23)
+	// Query: start_time >= Today 00:00
+	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
+
+	type DailyRow struct {
+		Hour    int
+		Minutes int
+	}
+	var dailyRows []DailyRow
+
+	// Postgres: extract(hour from (start_time at time zone tz))
+	err = database.DB.Raw(`
+		SELECT 
+			EXTRACT(HOUR FROM (start_time AT TIME ZONE ?)) as hour, 
+			SUM(duration_minutes) as minutes
+		FROM study_sessions 
+		WHERE user_id = ? 
+		  AND type = 'learning' 
+		  AND start_time >= ?
+		  AND duration_minutes IS NOT NULL
+		GROUP BY 1
+		ORDER BY 1
+	`, tz, userID, todayStart).Scan(&dailyRows).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// 填充 0-23 小时
+	dailyMap := make(map[int]int)
+	for _, r := range dailyRows {
+		dailyMap[r.Hour] = r.Minutes
+	}
+	for h := 0; h < 24; h++ {
+		resp.Daily = append(resp.Daily, dto.TimePoint{
+			Label:   fmt.Sprintf("%02d:00", h),
+			Minutes: dailyMap[h],
+		})
+	}
+
+	// 2. Weekly (This Week Mon - Sun)
+	// Requirement: "本周". Usually starts Monday.
+	offset := int(now.Weekday())
+	if offset == 0 {
+		offset = 7
+	} // Sunday = 7
+	weekStart := todayStart.AddDate(0, 0, -offset+1) // Monday
+
+	type WeeklyRow struct {
+		IsoDow  int
+		Minutes int
+	}
+	var weeklyRows []WeeklyRow
+
+	// Postgres: isodow (1=Mon, 7=Sun)
+	err = database.DB.Raw(`
+		SELECT 
+			EXTRACT(ISODOW FROM (start_time AT TIME ZONE ?)) as iso_dow,
+			SUM(duration_minutes) as minutes
+		FROM study_sessions
+		WHERE user_id = ?
+		  AND type = 'learning'
+		  AND start_time >= ?
+		  AND duration_minutes IS NOT NULL
+		GROUP BY 1
+		ORDER BY 1
+	`, tz, userID, weekStart).Scan(&weeklyRows).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// Fill Mon-Sun
+	weeklyMap := make(map[int]int)
+	daysLabels := []string{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}
+	for _, r := range weeklyRows {
+		weeklyMap[r.IsoDow] = r.Minutes
+	}
+	for i := 1; i <= 7; i++ {
+		resp.Weekly = append(resp.Weekly, dto.TimePoint{
+			Label:   daysLabels[i-1],
+			Minutes: weeklyMap[i],
+		})
+	}
+
+	// 3. Yearly (This Year Jan - Dec)
+	yearStart := time.Date(now.Year(), 1, 1, 0, 0, 0, 0, loc)
+
+	type YearlyRow struct {
+		Month   int // 1-12
+		Minutes int
+	}
+	var yearlyRows []YearlyRow
+
+	err = database.DB.Raw(`
+		SELECT 
+			EXTRACT(MONTH FROM (start_time AT TIME ZONE ?)) as month,
+			SUM(duration_minutes) as minutes
+		FROM study_sessions
+		WHERE user_id = ?
+		  AND type = 'learning'
+		  AND start_time >= ?
+		  AND duration_minutes IS NOT NULL
+		GROUP BY 1
+		ORDER BY 1
+	`, tz, userID, yearStart).Scan(&yearlyRows).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// Fill Jan-Dec
+	yearlyMap := make(map[int]int)
+	monthLabels := []string{"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"}
+	for _, r := range yearlyRows {
+		yearlyMap[r.Month] = r.Minutes
+	}
+	for i := 1; i <= 12; i++ {
+		resp.Yearly = append(resp.Yearly, dto.TimePoint{
+			Label:   monthLabels[i-1],
+			Minutes: yearlyMap[i],
+		})
+	}
+
+	return resp, nil
+}
