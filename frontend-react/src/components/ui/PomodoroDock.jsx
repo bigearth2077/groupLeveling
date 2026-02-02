@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useLogout } from '../../feature/auth/hooks/useLogout';
+import { useNavigate } from 'react-router-dom';
 
 const RADIUS = 80;
 const DOCK_WIDTH = 220;
@@ -19,9 +20,10 @@ export default function PomodoroDock() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const { logout } = useLogout();
+  const navigate = useNavigate();
 
   const icons = [
-    { icon: LayoutDashboard, label: '仪表盘', id: 'dashboard' },
+    { icon: LayoutDashboard, label: '仪表盘', id: 'dashboard', onClick: () => navigate('/dashboard') },
     { icon: Trophy, label: '排行榜', id: 'leaderboard' },
     { icon: Timer, label: '番茄钟', id: 'timer' },
     { icon: NotebookPen, label: '日志', id: 'journal' },
