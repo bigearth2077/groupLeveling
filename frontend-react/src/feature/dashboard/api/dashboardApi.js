@@ -85,15 +85,70 @@ export const MOCK_DASHBOARD_DATA = {
     }
   };
   
-  /**
-   * 模拟 API 调用获取数据
-   * @returns {Promise<import('../types/types').DashboardData>}
-   */
-  export const fetchDashboardData = async () => {
+/**
+ * 模拟 API 调用获取数据
+ * @returns {Promise<import('../types/types').DashboardData>}
+ */
+export const fetchDashboardData = async () => {
     // Simulate network delay
     return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(MOCK_DASHBOARD_DATA);
-      }, 300); 
+        setTimeout(() => {
+            resolve(MOCK_DASHBOARD_DATA);
+        }, 300);
     });
-  };
+};
+
+/**
+ * 模拟钻取详情 API
+ * GET /api/dashboard/details
+ * @param {'month' | 'day'} type - 钻取类型
+ * @param {string} date - 日期 ID (e.g. "2024-01" or "2024-01-29")
+ */
+export const fetchDashboardDetails = async (type, date) => {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            // Simple hash seed based on date string
+            // 确保同一个 date 总是生成相同的 seed
+            const seed = date ? date.split('').reduce((a, b) => a + b.charCodeAt(0), 0) : 0;
+            
+            if (type === 'month') {
+                // Return ~30 days for calendar
+                const days = Array.from({ length: 30 }).map((_, i) => ({
+                    day: i + 1,
+                    fullDate: `${date}-${i + 1}`,
+                    // Deterministic variation: (seed + index) based math
+                    studyDuration: (seed + i * 13) % 120, 
+                    restDuration: (seed + i * 7) % 30,
+                }));
+                
+                resolve({
+                    type: 'month',
+                    date: date,
+                    items: days
+                });
+            } else {
+                // Return 24 hours for chart
+                const hours = Array.from({ length: 24 }).map((_, i) => {
+                    // Deterministic Curve
+                    // Peak around 10am (index 10) and 3pm (index 15)
+                    const base = (i > 8 && i < 22) ? 40 : 5;
+                    // Variation based on seed
+                    const variation = (seed % 15) * (i % 2 === 0 ? 1 : -1);
+                    const randomLike = ((seed * (i + 1)) % 20); 
+                    
+                    return {
+                        label: `${i}:00`,
+                        studyDuration: Math.max(0, base + randomLike + variation),
+                        restDuration: (seed * i) % 15
+                    };
+                });
+
+                resolve({
+                    type: 'day',
+                    date: date,
+                    items: hours
+                });
+            }
+        }, 400); 
+    });
+};

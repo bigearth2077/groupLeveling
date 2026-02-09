@@ -85,9 +85,9 @@
   --color-sidebar-border: var(--sidebar-border);
 
   --color-sidebar-ring: var(--sidebar-ring);
-  --color-study-primary: oklch(0.6 0.18 295);
-  --color-rest-light: oklch(0.85 0.1 200);
-  --color-ghost-gray: oklch(0.7 0 0);
+  --color-study-primary: var(--primary);
+  --color-rest-light: var(--chart-1);
+  --color-ghost-gray: var(--muted-foreground);
 }
 
 :root {
@@ -161,7 +161,7 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-transparent;
   }
   body {
     @apply bg-background text-foreground;

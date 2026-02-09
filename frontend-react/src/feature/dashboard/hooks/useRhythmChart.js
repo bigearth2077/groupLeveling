@@ -31,8 +31,8 @@ export const useRhythmChart = (onDrillDown, onViewModeChange) => {
   const handleBarClick = (data, index) => {
     setActiveIndex(index);
     if (onDrillDown && data) {
-      // 传递 drill target type 和 data payload
-      onDrillDown(viewMode === 'week' ? 'day' : 'month', data);
+      const targetMode = viewMode === 'week' ? 'day' : 'month';
+      onDrillDown(targetMode, data);
     }
   };
 
@@ -45,12 +45,25 @@ export const useRhythmChart = (onDrillDown, onViewModeChange) => {
     }
   };
 
+  const handleChartClick = (e) => {
+    // Recharts Event structure is quirky.
+    // Sometimes activePayload is missing but activeIndex is present.
+    if (e && e.activePayload && e.activePayload.length > 0) {
+        handleBarClick(e.activePayload[0].payload, e.activeTooltipIndex);
+    } else if (e && e.activeTooltipIndex !== undefined && currentData && currentData[e.activeTooltipIndex]) {
+        // Fallback: Use the index to manually find the data from the 'data' prop
+        const item = currentData[e.activeTooltipIndex];
+        handleBarClick(item, e.activeTooltipIndex);
+    } 
+  };
+
   return {
     viewMode,
     activeIndex,
     data: currentData,
     loading,
-    handleBarClick,
+    handleBarClick,     // Still exposed if needed for manual testing
+    handleChartClick,   // New: Encapsulated event handler for Recharts
     handleViewModeChange
   };
 };

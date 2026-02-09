@@ -1,10 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Area, AreaChart, ResponsiveContainer, XAxis, Tooltip as RechartsTooltip } from 'recharts';
 import { ChartTooltip } from '@/components/ui/chart-tooltip';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
-import { getStaticCalendarData, MOCK_DASHBOARD_DATA } from '../api/dashboardApi';
+import { fetchDashboardDetails } from '../api/dashboardApi';
 
 // --- View 1: Month View - Calendar Grid ---
 const CalendarGrid = ({ data }) => {
@@ -23,7 +23,7 @@ const CalendarGrid = ({ data }) => {
               className="w-10 h-10 rounded-lg flex items-center justify-center text-xs relative group cursor-pointer"
               style={{
                   backgroundColor: day.studyDuration > 0 
-                    ? `oklch(0.6 0.18 295 / ${Math.min(day.studyDuration / 120, 1)})` 
+                    ? `color-mix(in oklch, var(--color-study-primary) ${Math.min(day.studyDuration / 120, 1) * 100}%, transparent)` 
                     : 'var(--muted)'
               }}
           >
@@ -55,7 +55,6 @@ const CalendarGrid = ({ data }) => {
 };
 
 // --- View 2: Day View - 24h Area Chart ---
-
 const HourlyChart = ({ data }) => {
     return (
         <div className="h-[200px] w-full">
@@ -94,22 +93,49 @@ const HourlyChart = ({ data }) => {
 };
 
 export const DetailList = ({ level, selectedData }) => {
-  // Generate data based on level
+  const [detailData, setDetailData] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch data when level or selectedData changes
+  useEffect(() => {
+    const loadDetails = async () => {
+        setLoading(true);
+        try {
+            // Use selectedData.fullDate to fetch specific details
+            // If no selectedData (initial state), fetch default for 'today' or 'current month'
+            const dateQuery = selectedData?.fullDate || new Date().toISOString().split('T')[0];
+            const data = await fetchDashboardDetails(level, dateQuery);
+            setDetailData(data.items);
+        } catch (error) {
+            console.error("Failed to fetch details", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+    
+    loadDetails();
+  }, [level, selectedData]);
+
   const content = useMemo(() => {
-    if (level === 'month') {
-        // Mock generating calendar days for the selected month
+    if (loading) {
         return {
-            title: `${selectedData?.label || 'Month'} Daily Log`,
-            component: <CalendarGrid data={getStaticCalendarData(selectedData?.label)} />
-        };
-    } else {
-        // level === 'day' or default
-        return {
-            title: `${selectedData?.label || 'Today'} Hourly Focus`,
-            component: <HourlyChart data={MOCK_DASHBOARD_DATA.dayDetails['DEFAULT']} />
+            title: 'Loading...',
+            component: <div className="h-[200px] flex items-center justify-center text-muted-foreground">Loading data...</div>
         };
     }
-  }, [level, selectedData]);
+
+    if (level === 'month') {
+        return {
+            title: `${selectedData?.label || 'Month'} Daily Log`,
+            component: <CalendarGrid data={detailData} />
+        };
+    } else {
+        return {
+            title: `${selectedData?.label || 'Today'} Hourly Focus`,
+            component: <HourlyChart data={detailData} />
+        };
+    }
+  }, [level, selectedData, detailData, loading]);
 
   return (
     <Card className="rounded-3xl border-border/50 shadow-sm overflow-hidden min-h-[300px]">
@@ -121,7 +147,7 @@ export const DetailList = ({ level, selectedData }) => {
       <CardContent>
         <AnimatePresence mode="wait">
             <motion.div
-                key={level + (selectedData?.label || 'default')}
+                key={level + (selectedData?.label || 'default') + loading}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}

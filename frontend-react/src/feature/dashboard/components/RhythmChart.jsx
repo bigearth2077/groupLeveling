@@ -20,7 +20,7 @@ export const RhythmChart = ({ onDrillDown, onViewModeChange }) => {
     viewMode, 
     data, 
     loading, 
-    handleBarClick, 
+    handleChartClick,
     handleViewModeChange 
   } = useRhythmChart(onDrillDown, onViewModeChange);
 
@@ -58,15 +58,11 @@ export const RhythmChart = ({ onDrillDown, onViewModeChange }) => {
       <CardContent>
         <div className="w-full h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart 
-              data={data} 
-              margin={{ top: 20, right: 10, left: -20, bottom: 0 }}
-              onClick={(e) => {
-                if (e && e.activePayload) {
-                 handleBarClick(e.activePayload[0].payload, e.activeTooltipIndex);
-                }
-              }}
-            >
+              <ComposedChart 
+                data={data} 
+                margin={{ top: 20, right: 10, left: -20, bottom: 0 }}
+                onClick={handleChartClick}
+              >
               <defs>
                 <linearGradient id="colorStudy" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="var(--color-study-primary)" stopOpacity={0.8}/>
