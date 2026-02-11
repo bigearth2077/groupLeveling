@@ -5,13 +5,15 @@ import {
   Trophy, 
   NotebookPen, 
   LogOut,
+  User,
   GripHorizontal, 
   X 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useLogout } from '../../feature/auth/hooks/useLogout';
 import { useNavigate } from 'react-router-dom';
+import { useLogout } from '../../feature/auth/hooks/useLogout';
+import ProfileCard from '../profile/ProfileCard';
 
 const RADIUS = 80;
 const DOCK_WIDTH = 220;
@@ -19,6 +21,7 @@ const DOCK_WIDTH = 220;
 export default function PomodoroDock() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const { logout } = useLogout();
   const navigate = useNavigate();
 
@@ -27,7 +30,11 @@ export default function PomodoroDock() {
     { icon: Trophy, label: '排行榜', id: 'leaderboard' },
     { icon: Timer, label: '番茄钟', id: 'timer' },
     { icon: NotebookPen, label: '日志', id: 'journal' },
-    { icon: LogOut, label: '退出', id: 'logout', onClick: logout },
+    { icon: User, label: '个人中心', id: 'profile', onClick: () => {
+      setShowProfile(true);
+      setIsExpanded(false);
+      setIsHovered(false);
+    }},
   ];
 
   // 避免地平线贴底：15°, 52.5°, 90°, 127.5°, 165°
@@ -139,6 +146,8 @@ export default function PomodoroDock() {
             </Button>
         </div>
       </div>
+      
+      <ProfileCard isOpen={showProfile} onClose={() => setShowProfile(false)} onLogout={logout} />
     </>
   );
 }
