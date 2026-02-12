@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   Timer, 
   LayoutDashboard, 
@@ -6,7 +7,8 @@ import {
   NotebookPen, 
   Library, 
   GripHorizontal, 
-  X 
+  X,
+  Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -14,7 +16,7 @@ import { cn } from '@/lib/utils';
 const icons = [
   { icon: LayoutDashboard, label: '仪表盘' },
   { icon: Trophy, label: '排行榜' },
-  { icon: Timer, label: '番茄钟' },
+  { icon: Sparkles, label: 'DeepSeek' },
   { icon: NotebookPen, label: '日志' },
   { icon: Library, label: '自习室' },
 ];
@@ -78,27 +80,32 @@ export default function PomodoroDock() {
             {icons.map((item, index) => {
                 const { x, y } = getPosition(index);
                 const IconComp = item.icon;
-                return (
-                    <Button
-                        key={index}
-                        variant="ghost"
-                        size="icon"
-                        className={cn(
-                            "absolute w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all duration-300 shadow-sm border border-white/10",
-                            "translate-x-[-50%] translate-y-[50%]", // 替代 style 里的 transform
-                            "active:scale-90 active:!duration-75 active:!delay-0 hover:text-white", // 强制无延迟，瞬间响应
-                            isExpanded ? "scale-100 opacity-100" : "scale-0 opacity-0"
-                        )}
-                        style={{
-                            left: `calc(50% + ${x}px)`, 
-                            bottom: `${y}px`,
-                            // transform: 'translate(-50%, 50%)', // 已移除，交由 className 处理
-                            transitionDelay: `${index * 50}ms` // 依次弹出动画
-                        }}
-                    >
-                        <IconComp className="w-4 h-4" />
-                    </Button>
-                );
+                const button = (
+                  <Button
+                      key={index}
+                      variant="ghost"
+                      size="icon"
+                      className={cn(
+                          "absolute w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all duration-300 shadow-sm border border-white/10",
+                          "translate-x-[-50%] translate-y-[50%]", // 替代 style 里的 transform
+                          "active:scale-90 active:!duration-75 active:!delay-0 hover:text-white", // 强制无延迟，瞬间响应
+                          isExpanded ? "scale-100 opacity-100" : "scale-0 opacity-0"
+                      )}
+                      style={{
+                          left: `calc(50% + ${x}px)`,
+                          bottom: `${y}px`,
+                          transitionDelay: `${index * 50}ms`
+                      }}
+                  >
+                      <IconComp className="w-4 h-4" />
+                  </Button>
+              );
+
+              if (item.label === 'DeepSeek') {
+                  return <Link to="/ai-analysis">{button}</Link>;
+              }
+
+              return button;
             })}
         </div>
 

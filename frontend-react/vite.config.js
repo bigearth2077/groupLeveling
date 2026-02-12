@@ -9,4 +9,14 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    proxy: {
+      '/ws': {
+        target: 'wss://spark-api.xf-yun.com',
+        changeOrigin: true,
+        ws: true,
+        rewrite: (path) => path.replace(/^\/ws/, '/v1.1/chat'),
+      },
+    },
+  },
 })

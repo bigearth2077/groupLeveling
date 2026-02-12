@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import PomodoroDock from '@/components/PomodoroDock';
 import { TimerComponent } from '../../feature/Timer/TimerComponent';
 import { useTimerStore } from '../../store/timerStore';
@@ -19,6 +20,8 @@ const Home = () => {
       
       <div className="flex flex-col items-center justify-center min-h-[85vh] gap-8 relative">
         
+
+
         {/* Timer 组件区域 */}
         <div className="w-full flex justify-center">
            <TimerComponent />
