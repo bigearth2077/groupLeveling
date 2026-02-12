@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { useLogout } from '../../feature/auth/hooks/useLogout';
-import ProfileCard from '../profile/ProfileCard';
+import ProfileCard from '../../feature/profile';
 
 const RADIUS = 80;
 const DOCK_WIDTH = 220;
