@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { 
   Timer, 
   LayoutDashboard, 
-  Trophy, 
   NotebookPen, 
   LogOut,
   User,
+  Users,
   GripHorizontal, 
   X 
 } from 'lucide-react';
@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { useLogout } from '../../feature/auth/hooks/useLogout';
 import ProfileCard from '../../feature/profile';
+import SocialDrawer from '../../feature/social';
 
 const RADIUS = 80;
 const DOCK_WIDTH = 220;
@@ -22,14 +23,19 @@ export default function PomodoroDock() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [showSocialDrawer, setShowSocialDrawer] = useState(false);
   const { logout } = useLogout();
   const navigate = useNavigate();
 
   const icons = [
     { icon: LayoutDashboard, label: '仪表盘', id: 'dashboard', onClick: () => navigate('/dashboard') },
-    { icon: Trophy, label: '排行榜', id: 'leaderboard' },
-    { icon: Timer, label: '番茄钟', id: 'timer' },
     { icon: NotebookPen, label: '日志', id: 'journal' },
+    { icon: Timer, label: '番茄钟', id: 'timer' },
+    { icon: Users, label: '社交', id: 'social', onClick: () => {
+      setShowSocialDrawer(true);
+      setIsExpanded(false);
+      setIsHovered(false);
+    }},
     { icon: User, label: '个人中心', id: 'profile', onClick: () => {
       setShowProfile(true);
       setIsExpanded(false);
@@ -37,7 +43,7 @@ export default function PomodoroDock() {
     }},
   ];
 
-  // 避免地平线贴底：15°, 52.5°, 90°, 127.5°, 165°
+  // 避免地平线贴底：5个图标均匀分布
   const fixedAngles = [165, 127.5, 90, 52.5, 15];
 
   const getPosition = (index) => {
@@ -148,6 +154,7 @@ export default function PomodoroDock() {
       </div>
       
       <ProfileCard isOpen={showProfile} onClose={() => setShowProfile(false)} onLogout={logout} />
+      <SocialDrawer isOpen={showSocialDrawer} onClose={() => setShowSocialDrawer(false)} />
     </>
   );
 }
