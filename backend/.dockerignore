@@ -1,0 +1,11 @@
+pg_data/
+redis_data/
+tmp/
+.git
+.env
+.env.*
+*.md
+.air.toml
+dockerfile.dev
+.vscode/
+.idea/
