@@ -160,9 +160,10 @@ type RoomMember struct {
 
 type HealthData struct {
 	ID              string    `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
-	UserID          string    `gorm:"type:uuid;not null"`
-	Date            time.Time `gorm:"not null"`
+	UserID          string    `gorm:"type:uuid;not null;index:idx_user_health_date,unique"`
+	Date            time.Time `gorm:"type:date;not null;index:idx_user_health_date,unique"`
 	SleepHours      *float64  `gorm:"default:null"`
+	SleepQuality    *string   `gorm:"type:varchar(20);default:null"` // e.g., 'bad', 'okay', 'great'
 	ExerciseMinutes *int      `gorm:"default:null"`
 	CreatedAt       time.Time `gorm:"autoCreateTime"`
 

@@ -23,6 +23,9 @@ func SetupRouter(r *gin.Engine) {
 	matchingService := &service.MatchingService{AnalyticsService: analyticsService}
 	matchingHandler := handler.NewMatchingHandler(matchingService)
 
+	healthService := &service.HealthService{}
+	healthHandler := handler.NewHealthHandler(healthService)
+
 	// --- Socket.IO 路由挂载 ---
 	// 必须在 main 中先 InitSocket()
 	// 注意 CORS：Socket.IO 需要专门处理 CORS，或者在 Nginx 层处理
@@ -109,6 +112,12 @@ func SetupRouter(r *gin.Engine) {
 		{
 			analyticsGroup.GET("/activity-heatmap", analyticsHandler.GetActivityHeatmap)
 			analyticsGroup.GET("/time-matrix", analyticsHandler.GetTimeMatrix)
+		}
+
+		// Health 路由
+		healthGroup := protected.Group("/health")
+		{
+			healthGroup.POST("/check-in", healthHandler.CheckIn)
 		}
 	}
 }

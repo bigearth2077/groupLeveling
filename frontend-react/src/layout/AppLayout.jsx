@@ -3,6 +3,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import PomodoroDock from '@/components/PomodoroDock';
 import FriendDrawer from '@/components/friend/FriendDrawer';
 import RoomConnectionManager from '@/components/room/RoomConnectionManager';
+import MorningCheckIn from '@/feature/health/components/MorningCheckIn';
 import { LayoutDashboard, Users, Trophy, User } from 'lucide-react';
 
 const AppLayout = () => {
@@ -58,6 +59,9 @@ const AppLayout = () => {
 
       {/* Floating Dock (Always Visible) */}
       <PomodoroDock />
+
+      {/* Global Modals / Micro-Interactions */}
+      <MorningCheckIn />
     </div>
   );
 };
