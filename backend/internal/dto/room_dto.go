@@ -37,6 +37,7 @@ type RoomResponse struct {
 	CreatedAt   time.Time `json:"createdAt"`
 	OnlineCount int       `json:"onlineCount"`
 	HasPassword bool      `json:"hasPassword"` // 不返回真实密码，只返回是否有密码
+	MatchScore  float64   `json:"matchScore,omitempty"` // 匹配度评分 (0-100)
 }
 
 type RoomListResponse struct {

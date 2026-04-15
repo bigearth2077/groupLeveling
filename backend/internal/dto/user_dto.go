@@ -48,3 +48,14 @@ type SearchUserResult struct {
 	Page     int              `json:"page"`
 	PageSize int              `json:"pageSize"`
 }
+
+// AmbientBuddyResponse 
+type AmbientBuddyResponse struct {
+	ID         string   `json:"id"`
+	Nickname   string   `json:"nickname"`
+	AvatarURL  *string  `json:"avatarUrl"`
+	Bio        *string  `json:"bio"`
+	MatchScore float64  `json:"matchScore"`
+	SharedTags []string `json:"sharedTags"`
+}
+

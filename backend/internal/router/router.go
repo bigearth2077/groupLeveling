@@ -20,6 +20,9 @@ func SetupRouter(r *gin.Engine) {
 	analyticsService := &service.AnalyticsService{}
 	analyticsHandler := handler.NewAnalyticsHandler(analyticsService)
 
+	matchingService := &service.MatchingService{AnalyticsService: analyticsService}
+	matchingHandler := handler.NewMatchingHandler(matchingService)
+
 	// --- Socket.IO 路由挂载 ---
 	// 必须在 main 中先 InitSocket()
 	// 注意 CORS：Socket.IO 需要专门处理 CORS，或者在 Nginx 层处理
@@ -52,6 +55,7 @@ func SetupRouter(r *gin.Engine) {
 			userGroup.DELETE("/me", userHandler.DeleteAccount)
 
 			userGroup.GET("/search", userHandler.SearchUsers) // 对应 /users/search?query=xxx
+			userGroup.GET("/ambient", matchingHandler.GetAmbientBuddies) // 智能同频学伴推荐
 			userGroup.GET("/:id/public", userHandler.GetPublicProfile)
 
 			// 用户的标签管理
@@ -92,6 +96,7 @@ func SetupRouter(r *gin.Engine) {
 		{
 			roomGroup.POST("", roomHandler.CreateRoom)
 			roomGroup.GET("", roomHandler.GetRooms)
+			roomGroup.GET("/recommended", matchingHandler.GetRecommendedRooms) // 算法推荐高分大厅
 			roomGroup.GET("/:id", roomHandler.GetRoom)       // 获取详情
 			roomGroup.PATCH("/:id", roomHandler.UpdateRoom)  // 更新房间
 			roomGroup.DELETE("/:id", roomHandler.DeleteRoom) // 删除房间
