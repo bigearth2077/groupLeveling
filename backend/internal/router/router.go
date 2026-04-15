@@ -16,6 +16,9 @@ func SetupRouter(r *gin.Engine) {
 	rankingHandler := &handler.RankingHandler{}
 	roomHandler := &handler.RoomHandler{}
 	tagHandler := &handler.TagHandler{}
+	
+	analyticsService := &service.AnalyticsService{}
+	analyticsHandler := handler.NewAnalyticsHandler(analyticsService)
 
 	// --- Socket.IO 路由挂载 ---
 	// 必须在 main 中先 InitSocket()
@@ -94,6 +97,13 @@ func SetupRouter(r *gin.Engine) {
 			roomGroup.DELETE("/:id", roomHandler.DeleteRoom) // 删除房间
 			roomGroup.POST("/validate-password", roomHandler.ValidatePassword) // 新增验证接口
 			roomGroup.GET("/:id/members", roomHandler.GetRoomMembers)
+		}
+
+		// Analytics 路由
+		analyticsGroup := protected.Group("/analytics")
+		{
+			analyticsGroup.GET("/activity-heatmap", analyticsHandler.GetActivityHeatmap)
+			analyticsGroup.GET("/time-matrix", analyticsHandler.GetTimeMatrix)
 		}
 	}
 }
