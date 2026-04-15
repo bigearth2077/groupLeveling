@@ -20,6 +20,8 @@ import { getGlobalRankings, getFriendRankings } from '@/feature/ranking/api';
 import { getStatsSummary } from '@/feature/study/api';
 import { useRoomJoin } from '@/hooks/useRoomJoin';
 import RoomPasswordModal from '@/components/room/RoomPasswordModal';
+import ActivityHeatmap from '@/feature/analytics/components/ActivityHeatmap';
+import TimeMatrix from '@/feature/analytics/components/TimeMatrix';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -200,6 +202,26 @@ const Home = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Analytics Section (New Heatmaps) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+         <div className="lg:col-span-12 xl:col-span-5 rounded-3xl bg-white border border-slate-100 p-6 shadow-sm">
+            <h3 className="font-bold text-slate-800 mb-1 text-lg flex items-center gap-2">
+              <Zap size={18} className="text-orange-500" />
+              Activity Calendar
+            </h3>
+            <p className="text-xs text-slate-400 mb-4">Your daily study footprint for the year</p>
+            <ActivityHeatmap />
+         </div>
+         <div className="lg:col-span-12 xl:col-span-7 rounded-3xl bg-white border border-slate-100 p-6 shadow-sm">
+            <h3 className="font-bold text-slate-800 mb-1 text-lg flex items-center gap-2">
+              <Clock size={18} className="text-indigo-500" />
+              Peak Focus Hours
+            </h3>
+            <p className="text-xs text-slate-400 mb-4">Your 24-hour efficiency matrix over the last 30 days</p>
+            <TimeMatrix />
+         </div>
       </div>
 
       {/* 2. Main Layout: Active Rooms vs Sidebar */}
