@@ -4,6 +4,7 @@ import PomodoroDock from '@/components/PomodoroDock';
 import FriendDrawer from '@/components/friend/FriendDrawer';
 import RoomConnectionManager from '@/components/room/RoomConnectionManager';
 import MorningCheckIn from '@/feature/health/components/MorningCheckIn';
+import AmbientBuddyRing from '@/feature/matching/components/AmbientBuddyRing';
 import { LayoutDashboard, Users, Trophy, User } from 'lucide-react';
 
 const AppLayout = () => {
@@ -62,6 +63,7 @@ const AppLayout = () => {
 
       {/* Global Modals / Micro-Interactions */}
       <MorningCheckIn />
+      <AmbientBuddyRing />
     </div>
   );
 };

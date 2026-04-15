@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { getMe, getUserProfile } from '@/feature/user/api';
 import { getRooms } from '@/feature/room/api';
+import { getRecommendedRooms } from '@/feature/matching/api';
 import { getGlobalRankings, getFriendRankings } from '@/feature/ranking/api';
 import { getStatsSummary } from '@/feature/study/api';
 import { useRoomJoin } from '@/hooks/useRoomJoin';
@@ -77,10 +78,11 @@ const Home = () => {
           }));
         }
 
-        // 2. Fetch Rooms
-        const roomsResp = await getRooms({ page: 1, pageSize: 4 });
+        // 2. Fetch Rooms (Using Algorithm Recommendation)
+        const roomsResp = await getRecommendedRooms();
         if (roomsResp && roomsResp.items) {
-          setRooms(roomsResp.items);
+          // Take top 4 highly matched rooms
+          setRooms(roomsResp.items.slice(0, 4));
         }
 
         // 3. Fetch Leaderboards
@@ -231,8 +233,10 @@ const Home = () => {
         <div className="lg:col-span-8 space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-              <Users className="text-indigo-600" size={20} />
-              Active Squads
+              <span className="p-1.5 bg-orange-100 rounded-lg">
+                <Flame className="text-orange-600" size={18} />
+              </span>
+              Top Recommended Squads
             </h2>
             <button 
               onClick={() => navigate('/rooms')}
@@ -270,8 +274,16 @@ const Home = () => {
                   className="group relative rounded-2xl bg-white p-5 border border-slate-100 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md cursor-pointer"
                 >
                   <div className="flex justify-between items-start mb-4">
-                    <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600">
-                       {room.isPrivate ? <Lock size={20} /> : <Code2 size={20} />}
+                    <div className="flex gap-2">
+                      <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600">
+                         {room.isPrivate ? <Lock size={20} /> : <Code2 size={20} />}
+                      </div>
+                      {room.matchScore > 0 && (
+                        <div className="flex flex-col justify-center">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase leading-none">Match</span>
+                          <span className="text-sm font-black text-orange-500 leading-none">{Math.round(room.matchScore)}%</span>
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-1 text-xs font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded-md">
                       <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
