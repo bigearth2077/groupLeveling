@@ -8,5 +8,5 @@ import request from '@/lib/request';
  */
 export const checkInHealth = async (data) => {
   const response = await request.post('/health/check-in', data);
-  return response.data;
+  return response;
 };

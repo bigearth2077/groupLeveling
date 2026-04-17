@@ -3,6 +3,7 @@ package router
 import (
 	"backend/internal/handler"
 	"backend/internal/middleware"
+	"backend/internal/service"
 	"backend/internal/socket"
 
 	"github.com/gin-gonic/gin"

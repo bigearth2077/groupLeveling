@@ -10,7 +10,7 @@ export const getActivityHeatmap = async (year) => {
   if (year) params.year = year;
   
   const response = await request.get('/analytics/activity-heatmap', { params });
-  return response.data;
+  return response;
 };
 
 /**
@@ -23,5 +23,5 @@ export const getTimeMatrix = async (days) => {
   if (days) params.days = days;
   
   const response = await request.get('/analytics/time-matrix', { params });
-  return response.data;
+  return response;
 };

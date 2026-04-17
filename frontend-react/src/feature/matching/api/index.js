@@ -5,7 +5,7 @@ import request from '@/lib/request';
  */
 export const getRecommendedRooms = async () => {
   const response = await request.get('/rooms/recommended');
-  return response.data;
+  return response;
 };
 
 /**
@@ -14,5 +14,5 @@ export const getRecommendedRooms = async () => {
  */
 export const getAmbientBuddies = async (limit = 10) => {
   const response = await request.get('/users/ambient', { params: { limit } });
-  return response.data;
+  return response;
 };
