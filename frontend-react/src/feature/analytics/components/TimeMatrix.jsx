@@ -110,7 +110,7 @@ const TimeMatrix = () => {
         itemStyle: {
           borderWidth: 2,
           borderColor: '#fff',
-          borderRadius: 4 // Soft squares
+          borderRadius: 4 
         },
         emphasis: {
           itemStyle: {
@@ -123,12 +123,16 @@ const TimeMatrix = () => {
   };
 
   return (
-    <div className="w-full h-[240px]">
-      <ReactECharts 
-        option={option} 
-        style={{ height: '100%', width: '100%' }} 
-        opts={{ renderer: 'svg' }}
-      />
+    <div className="w-full overflow-x-auto no-scrollbar py-2">
+      <div style={{ minWidth: '600px' }}>
+        <div className="h-[200px]">
+          <ReactECharts 
+            option={option} 
+            style={{ height: '100%', width: '100%' }} 
+            opts={{ renderer: 'svg' }}
+          />
+        </div>
+      </div>
     </div>
   );
 };

@@ -12,5 +12,11 @@
     "roomLive": "Room Live",
     "backToRoom": "Back to Room",
     "customTag": "Custom tag..."
+  },
+  "analytics": {
+    "activityHeatmap": "Activity Heatmap (Monthly)",
+    "months": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    "days": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    "minutes": "mins"
   }
 }
