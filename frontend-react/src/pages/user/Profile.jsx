@@ -22,7 +22,8 @@ import {
   Plus,
   Activity,
   HeartPulse,
-  AlertTriangle
+  AlertTriangle,
+  LogOut
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { getMe, getUserProfile, updateProfile, changePassword } from '@/feature/user/api';
@@ -32,6 +33,9 @@ import { getAIHealthReport } from '@/feature/health/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { removeToken } from '@/utils/token';
 
 const PRESET_AVATARS = [
   'https://api.dicebear.com/9.x/adventurer/svg?seed=Felix',
@@ -45,6 +49,7 @@ const PRESET_AVATARS = [
 ];
 
 export default function Profile() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'history' | 'skills' | 'health' | 'settings'
   const [user, setUser] = useState(null);
@@ -755,6 +760,32 @@ export default function Profile() {
                  Update Password
                </Button>
             </form>
+          </div>
+
+          {/* Danger Zone */}
+          <div className="bg-white p-8 rounded-3xl border border-red-100 shadow-sm space-y-6 md:col-span-2 mt-4">
+            <h3 className="text-xl font-bold text-red-600 flex items-center gap-2">
+              <LogOut size={20} />
+              Danger Zone
+            </h3>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-red-50 rounded-2xl border border-red-100 gap-4">
+              <div>
+                <h4 className="font-bold text-red-800">Sign Out</h4>
+                <p className="text-sm text-red-600/80">Log out of your account on this device. Your data will be kept safe.</p>
+              </div>
+              <Button 
+                onClick={() => {
+                  removeToken();
+                  localStorage.removeItem('study-storage');
+                  localStorage.removeItem('room-storage');
+                  toast.success('已成功登出 👋');
+                  navigate('/login', { replace: true });
+                }}
+                className="bg-red-500 hover:bg-red-600 text-white rounded-xl whitespace-nowrap"
+              >
+                Sign Out
+              </Button>
+            </div>
           </div>
         </div>
       )}

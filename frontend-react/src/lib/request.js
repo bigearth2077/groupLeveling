@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { getToken, removeToken } from '@/utils/token';
+import { toast } from 'sonner';
 
 // 创建 axios 实例
 const request = axios.create({
@@ -44,7 +45,7 @@ request.interceptors.response.use(
     if (data && data.code !== undefined && data.code !== 200 && data.code !== 0) {
       // 业务错误处理
       const errorMessage = data.message || '请求失败';
-      console.error('业务错误:', errorMessage);
+      toast.error(errorMessage);
       return Promise.reject(new Error(errorMessage));
     }
     
@@ -61,21 +62,22 @@ request.interceptors.response.use(
         case 401:
           // 未授权，清除 token 并跳转到登录页
           removeToken();
-          // 可以在这里添加路由跳转到登录页
-          // window.location.href = '/login';
-          console.error('未授权，请重新登录');
+          toast.error('登录已过期，请重新登录');
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 1500);
           break;
         case 403:
-          console.error('拒绝访问');
+          toast.error('拒绝访问，权限不足');
           break;
         case 404:
-          console.error('请求的资源不存在');
+          toast.error('请求的资源不存在');
           break;
         case 500:
-          console.error('服务器内部错误');
+          toast.error('服务器内部出错了，请稍后再试');
           break;
         default:
-          console.error('请求失败:', response.statusText);
+          toast.error(`请求失败: ${response.statusText}`);
       }
       
       // 返回错误信息
@@ -83,7 +85,7 @@ request.interceptors.response.use(
       return Promise.reject(new Error(errorMessage));
     } else if (error.request) {
       // 请求已发出，但没有收到响应
-      console.error('网络错误，请检查网络连接');
+      toast.error('网络错误，请检查网络连接');
       return Promise.reject(new Error('网络错误，请检查网络连接'));
     } else {
       // 在设置请求时触发了一个错误
