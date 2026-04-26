@@ -1,55 +1,49 @@
-# Analytics Module API Documentation
+# 数据分析模块 API 文档
 
-## 1. Overview
-The Analytics module provides data aggregation endpoints to support advanced study visualization components such as the GitHub-style Contribution Heatmap and the 24-hour Time-of-Day distribution matrix.
+## 1. 概述
+数据分析模块提供高级学习数据可视化所需的聚合接口，用于驱动前端的 GitHub 风格活动热力图和 24 小时时段分布矩阵等可视化组件。
 
-**Base URL**: `/api/analytics`
+**基础路径**：`/analytics`
 
 ---
 
 ## 2. HTTP REST API
 
-### 2.1. Get Activity Heatmap
-Retrieve total study minutes per day for an entire year to render a contribution heatmap. Only includes days with >0 minutes.
+### 2.1. 获取活动热力图数据
+返回指定年份每日的学习总分钟数，用于渲染年度贡献热力图。仅包含学习时长大于 0 的日期。
 
-- **Endpoint**: `GET /analytics/activity-heatmap`
-- **Auth**: Required (Bearer Token)
-- **Query Parameters**:
-  - `year`: The year to fetch data for (e.g. 2024). Defaults to the current year if not provided.
-- **Response** (`200 OK`):
+- **接口**：`GET /analytics/activity-heatmap`
+- **鉴权**：必需（Bearer Token）
+- **查询参数**：
+  - `year`：查询年份（如 2024），不传则默认当前年
+- **响应**（`200 OK`）：
   ```json
   {
     "items": [
-      {
-        "date": "2024-03-01",
-        "count": 120
-      },
-      {
-        "date": "2024-03-05",
-        "count": 45
-      }
+      { "date": "2024-03-01", "count": 120 },
+      { "date": "2024-03-05", "count": 45 }
     ]
   }
   ```
 
-### 2.2. Get Time-of-Day Matrix
-Retrieve study duration distributed across a 24-hour x 7-day grid based on the past N days. This is used to visualize a user's "peak focus hours" and their study biological clock.
+### 2.2. 获取时段分布矩阵
+返回过去 N 天内按"星期 × 小时"维度聚合的学习时长数据，用于可视化用户的"高效时段"和学习生物钟。
 
-- **Endpoint**: `GET /analytics/time-matrix`
-- **Auth**: Required
-- **Query Parameters**:
-  - `days`: Look-back window in days (e.g. 30). Defaults to 30 if not provided.
-- **Response** (`200 OK`):
+- **接口**：`GET /analytics/time-matrix`
+- **鉴权**：必需（Bearer Token）
+- **查询参数**：
+  - `days`：回溯天数，默认 30
+- **响应**（`200 OK`）：
   ```json
   {
     "items": [
       {
-        "day": 0, // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-        "hour": 22, // 0 - 23 
-        "count": 40 // Total minutes focused in this specific hour slot over the period
+        "day": 0,       // 0=周日, 1=周一, ..., 6=周六
+        "hour": 22,     // 0-23 小时
+        "count": 40     // 该时段累计学习分钟数
       },
       {
-        "day": 1, 
+        "day": 1,
         "hour": 10,
         "count": 150
       }
