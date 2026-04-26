@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Play, Square, Coffee, Brain, Timer, Zap, Tag as TagIcon, ChevronUp, ChevronDown, Plus, Search, Users, X } from 'lucide-react';
+import { Play, Square, Coffee, Brain, Timer, Zap, Tag as TagIcon, ChevronUp, ChevronDown, Plus, Search, Users, X, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useStudyStore } from '@/store/studyStore';
 import { useRoomStore } from '@/store/roomStore';
@@ -15,7 +15,11 @@ export default function PomodoroDock() {
     startFocus, 
     endFocus,
     selectedTag,
-    setSelectedTag
+    setSelectedTag,
+    defaultFocusDuration,
+    defaultBreakDuration,
+    setDefaultFocusDuration,
+    setDefaultBreakDuration
   } = useStudyStore();
 
   const { activeRoomId, unreadCount, resetUnread, leaveRoom } = useRoomStore();
@@ -23,6 +27,7 @@ export default function PomodoroDock() {
   const navigate = useNavigate();
 
   const [showTagPicker, setShowTagPicker] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [myTags, setMyTags] = useState([]);
   const [newTagName, setNewTagName] = useState('');
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -51,6 +56,7 @@ export default function PomodoroDock() {
   const handleStart = (mins) => {
     startFocus(mins, 'learning', selectedTag?.name || null);
     setShowTagPicker(false);
+    setShowSettings(false);
     setIsCollapsed(true);
   };
 
@@ -199,6 +205,44 @@ export default function PomodoroDock() {
         </div>
       )}
 
+      {/* Settings Bubble */}
+      {status === 'idle' && showSettings && (
+        <div className="bg-slate-900/95 backdrop-blur-xl border border-slate-700 rounded-2xl p-4 shadow-2xl w-64 animate-in fade-in slide-in-from-bottom-4 duration-200 mb-2">
+          <div className="mb-4">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs font-bold text-slate-300 flex items-center gap-1"><Brain size={12}/>专注时长</span>
+              <span className="text-xs text-indigo-400 font-mono font-bold bg-indigo-500/10 px-2 py-0.5 rounded">{defaultFocusDuration}m</span>
+            </div>
+            <input 
+              type="range" 
+              min="10" max="120" step="5"
+              value={defaultFocusDuration}
+              onChange={(e) => setDefaultFocusDuration(parseInt(e.target.value))}
+              className="w-full accent-indigo-500 cursor-pointer"
+            />
+            <div className="flex justify-between text-[10px] text-slate-500 mt-1 font-mono">
+              <span>10m</span><span>120m</span>
+            </div>
+          </div>
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs font-bold text-slate-300 flex items-center gap-1"><Coffee size={12}/>休息时长</span>
+              <span className="text-xs text-emerald-400 font-mono font-bold bg-emerald-500/10 px-2 py-0.5 rounded">{defaultBreakDuration}m</span>
+            </div>
+            <input 
+              type="range" 
+              min="5" max="30" step="1"
+              value={defaultBreakDuration}
+              onChange={(e) => setDefaultBreakDuration(parseInt(e.target.value))}
+              className="w-full accent-emerald-500 cursor-pointer"
+            />
+            <div className="flex justify-between text-[10px] text-slate-500 mt-1 font-mono">
+              <span>5m</span><span>30m</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Dock */}
       <div className={cn(
         "relative flex items-center gap-4 px-3 py-2.5 rounded-full border shadow-2xl transition-all duration-300",
@@ -218,7 +262,12 @@ export default function PomodoroDock() {
 
         {/* Left Section: Icon & Current Tag */}
         <button 
-          onClick={() => status === 'idle' && setShowTagPicker(!showTagPicker)}
+          onClick={() => {
+            if (status === 'idle') {
+              setShowTagPicker(!showTagPicker);
+              setShowSettings(false);
+            }
+          }}
           className={cn(
             "pl-2 pr-1 flex items-center gap-2 transition-colors", 
             themeColor,
@@ -242,18 +291,25 @@ export default function PomodoroDock() {
         {status === 'idle' ? (
           <div className="flex items-center gap-2">
             <button 
-              onClick={() => handleStart(25)}
-              className="flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm transition-all active:scale-95"
+              onClick={() => handleStart(defaultFocusDuration)}
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm transition-all active:scale-95 shadow-[0_0_15px_rgba(79,70,229,0.3)]"
             >
               <Zap size={16} className="fill-current" />
-              <span>25m</span>
+              <span>{defaultFocusDuration}m</span>
             </button>
-             <button 
-              onClick={() => handleStart(50)}
-              className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-sm transition-all active:scale-95"
+            <button 
+              onClick={() => {
+                setShowSettings(!showSettings);
+                setShowTagPicker(false);
+              }}
+              className={cn(
+                "flex items-center justify-center w-9 h-9 rounded-full transition-all active:scale-95 border",
+                showSettings 
+                  ? "bg-slate-700 text-white border-slate-600" 
+                  : "bg-slate-800 hover:bg-slate-700 text-slate-300 border-transparent"
+              )}
             >
-              <Brain size={16} />
-              <span>50m</span>
+              <Settings size={16} className={showSettings ? "animate-spin-slow" : ""} />
             </button>
           </div>
         ) : (

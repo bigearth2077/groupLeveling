@@ -42,6 +42,7 @@ services:
       - REDIS_PORT=6379
       - JWT_SECRET=${JWT_SECRET:-dev-only-secret-please-change}
       - GIN_MODE=debug
+      - SILICONFLOW_API_KEY=${SILICONFLOW_API_KEY}
     volumes:
       - ./backend:/app
     depends_on:

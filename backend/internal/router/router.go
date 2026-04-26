@@ -17,15 +17,20 @@ func SetupRouter(r *gin.Engine) {
 	rankingHandler := &handler.RankingHandler{}
 	roomHandler := &handler.RoomHandler{}
 	tagHandler := &handler.TagHandler{}
-	
+
 	analyticsService := &service.AnalyticsService{}
 	analyticsHandler := handler.NewAnalyticsHandler(analyticsService)
 
 	matchingService := &service.MatchingService{AnalyticsService: analyticsService}
 	matchingHandler := handler.NewMatchingHandler(matchingService)
 
-	healthService := &service.HealthService{}
+	aiService := &service.AIService{}
+
+	healthService := &service.HealthService{AIService: aiService}
 	healthHandler := handler.NewHealthHandler(healthService)
+
+	blogService := &service.BlogService{AIService: aiService}
+	blogHandler := handler.NewBlogHandler(blogService)
 
 	// --- Socket.IO 路由挂载 ---
 	// 必须在 main 中先 InitSocket()
@@ -61,6 +66,7 @@ func SetupRouter(r *gin.Engine) {
 			userGroup.GET("/search", userHandler.SearchUsers) // 对应 /users/search?query=xxx
 			userGroup.GET("/ambient", matchingHandler.GetAmbientBuddies) // 智能同频学伴推荐
 			userGroup.GET("/:id/public", userHandler.GetPublicProfile)
+			userGroup.GET("/:id/blogs", blogHandler.GetUserBlogs) // 获取某用户的博客列表
 
 			// 用户的标签管理
 			userGroup.GET("/me/tags", tagHandler.GetMyTags)
@@ -119,6 +125,25 @@ func SetupRouter(r *gin.Engine) {
 		healthGroup := protected.Group("/health")
 		{
 			healthGroup.POST("/check-in", healthHandler.CheckIn)
+			healthGroup.GET("/today", healthHandler.GetToday)
+			healthGroup.GET("/history", healthHandler.GetHistory)
+			healthGroup.GET("/ai-report", healthHandler.GetAIReport)
+		}
+
+		// Blog 路由
+		blogGroup := protected.Group("/blogs")
+		{
+			blogGroup.POST("", blogHandler.CreateBlog)
+			blogGroup.GET("", blogHandler.GetBlogs)
+			blogGroup.GET("/my", blogHandler.GetMyBlogs)
+			blogGroup.GET("/:id", blogHandler.GetBlog)
+			blogGroup.PATCH("/:id", blogHandler.UpdateBlog)
+			blogGroup.DELETE("/:id", blogHandler.DeleteBlog)
+
+			blogGroup.POST("/:id/like", blogHandler.LikeBlog)
+			blogGroup.DELETE("/:id/like", blogHandler.UnlikeBlog)
+			blogGroup.POST("/:id/bookmark", blogHandler.BookmarkBlog)
+			blogGroup.DELETE("/:id/bookmark", blogHandler.UnbookmarkBlog)
 		}
 	}
 }

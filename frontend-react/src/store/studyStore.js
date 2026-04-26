@@ -14,11 +14,16 @@ export const useStudyStore = create(
       duration: 25, // minutes
       timeLeft: 25 * 60, // seconds
       
+      defaultFocusDuration: 25, // 用户配置的专注时长
+      defaultBreakDuration: 10, // 用户配置的休息时长
+      
       selectedTag: null, // { id, name } or null
       
       timerInterval: null,
 
       // Actions
+      setDefaultFocusDuration: (val) => set({ defaultFocusDuration: val }),
+      setDefaultBreakDuration: (val) => set({ defaultBreakDuration: val }),
       setSelectedTag: (tag) => set({ selectedTag: tag }),
       
       // Check if there is an active session from backend (e.g. on page reload)
@@ -107,7 +112,7 @@ export const useStudyStore = create(
           status: 'idle',
           sessionId: null,
           timerInterval: null,
-          timeLeft: 25 * 60 // Reset default
+          timeLeft: get().defaultFocusDuration * 60
         });
       },
 
@@ -143,25 +148,22 @@ export const useStudyStore = create(
       },
 
       handleTimerComplete: () => {
-        const { mode, endFocus, startFocus } = get();
+        const { mode, endFocus, startFocus, defaultBreakDuration } = get();
         
         // Stop current
         endFocus(); 
 
-        // Logic: If learning -> Auto start rest? Or prompt?
-        // Prompt Requirement: "自动启动10min的休息计时" (Auto start 10min rest)
+        // Vibration feedback
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+          navigator.vibrate([200, 100, 200]);
+        }
         
         if (mode === 'learning') {
-          // Alert user or Toast?
-          // Since this is in store, we can't easily toast. We'll set a flag or just do it.
-          // Let's Trigger Rest
-          // NOTE: We need to handle the async nature. 
           setTimeout(() => {
              // Create a rest session
-             startFocus(10, 'rest');
-             // Maybe dispatch a browser notification here?
+             startFocus(defaultBreakDuration, 'rest');
              if (Notification.permission === 'granted') {
-               new Notification("Focus Complete!", { body: "Starting 10min Break." });
+               new Notification("Focus Complete!", { body: `Starting ${defaultBreakDuration}min Break.` });
              }
           }, 1000);
         } else {
@@ -180,9 +182,9 @@ export const useStudyStore = create(
         status: state.status, 
         mode: state.mode, 
         startTime: state.startTime,
-        duration: state.duration
-        // Don't persist timeLeft directly if we use startTime to recalc, 
-        // but for simplicity MVP we can persist it.
+        duration: state.duration,
+        defaultFocusDuration: state.defaultFocusDuration,
+        defaultBreakDuration: state.defaultBreakDuration
       }), 
     }
   )

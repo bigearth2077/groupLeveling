@@ -19,12 +19,16 @@ import {
   BarChart3,
   Tag,
   Trash2,
-  Plus
+  Plus,
+  Activity,
+  HeartPulse,
+  AlertTriangle
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { getMe, getUserProfile, updateProfile, changePassword } from '@/feature/user/api';
 import { getSessions, getStatsSummary } from '@/feature/study/api';
 import { getMyTags, deleteMyTag, addMyTag } from '@/feature/tag/api';
+import { getAIHealthReport } from '@/feature/health/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -42,7 +46,7 @@ const PRESET_AVATARS = [
 
 export default function Profile() {
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'history' | 'skills' | 'settings'
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'history' | 'skills' | 'health' | 'settings'
   const [user, setUser] = useState(null);
   const [stats, setStats] = useState(null); // LevelInfo
   
@@ -58,7 +62,6 @@ export default function Profile() {
   // Skills Data
   const [myTags, setMyTags] = useState([]);
   const [newTag, setNewTag] = useState('');
-
   // Edit Form State
   const [formData, setFormData] = useState({
     nickname: '',
@@ -70,6 +73,10 @@ export default function Profile() {
     newPassword: ''
   });
   const [saving, setSaving] = useState(false);
+
+  // Health Report
+  const [healthReport, setHealthReport] = useState(null);
+  const [fetchingReport, setFetchingReport] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -87,6 +94,8 @@ export default function Profile() {
       fetchHistory(sessionPage);
     } else if (activeTab === 'skills') {
       fetchTags();
+    } else if (activeTab === 'health' && !healthReport) {
+      fetchHealthReport();
     }
   }, [activeTab, sessionPage]);
 
@@ -159,6 +168,18 @@ export default function Profile() {
       }
     } catch (err) {
       console.error("Failed to fetch tags", err);
+    }
+  };
+
+  const fetchHealthReport = async () => {
+    setFetchingReport(true);
+    try {
+      const report = await getAIHealthReport();
+      setHealthReport(report);
+    } catch (err) {
+      console.error("Failed to fetch health report", err);
+    } finally {
+      setFetchingReport(false);
     }
   };
 
@@ -321,8 +342,8 @@ export default function Profile() {
           </div>
 
           {/* Actions */}
-          <div className="flex gap-2">
-             {['overview', 'history', 'skills', 'settings'].map(tab => (
+          <div className="flex gap-2 flex-wrap">
+             {['overview', 'history', 'skills', 'health', 'settings'].map(tab => (
                <button 
                  key={tab}
                  onClick={() => setActiveTab(tab)}
@@ -536,6 +557,109 @@ export default function Profile() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'health' && (
+        <div className="space-y-6">
+          <div className="bg-white p-6 md:p-10 rounded-3xl border border-slate-100 shadow-sm min-h-[400px]">
+            <div className="flex justify-between items-center mb-8">
+              <h3 className="font-black text-2xl text-slate-800 flex items-center gap-3">
+                <HeartPulse size={28} className="text-rose-500" />
+                AI Health & Wellness Report
+              </h3>
+              <button 
+                onClick={fetchHealthReport}
+                disabled={fetchingReport}
+                className="px-4 py-2 bg-rose-50 text-rose-600 font-bold text-sm rounded-xl hover:bg-rose-100 transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {fetchingReport ? <Loader2 size={16} className="animate-spin" /> : <Activity size={16} />}
+                {fetchingReport ? 'Analyzing...' : 'Generate New'}
+              </button>
+            </div>
+
+            {fetchingReport && !healthReport ? (
+              <div className="flex flex-col items-center justify-center py-20 text-rose-400">
+                <Loader2 size={40} className="animate-spin mb-4" />
+                <p className="font-medium animate-pulse">DeepSeek AI is analyzing your recent data...</p>
+              </div>
+            ) : healthReport ? (
+              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {/* Score Header */}
+                <div className="flex flex-col md:flex-row gap-8 items-center bg-gradient-to-r from-rose-50 to-orange-50 p-8 rounded-3xl">
+                  <div className="relative w-32 h-32 flex items-center justify-center rounded-full bg-white shadow-lg border-4 border-rose-100">
+                    <span className="text-4xl font-black text-rose-500">{healthReport.overallScore}</span>
+                    <span className="absolute bottom-2 text-[10px] font-bold text-slate-400 uppercase">Score</span>
+                  </div>
+                  <div className="flex-1 space-y-3 text-center md:text-left">
+                    <h4 className="text-xl font-bold text-slate-800">Your Wellness Status</h4>
+                    <p className="text-slate-600 leading-relaxed">
+                      Based on your study duration and daily self-assessment over the past week, here is your personalized evaluation.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Insights */}
+                  <div className="bg-slate-50 p-6 rounded-3xl">
+                    <h5 className="font-bold text-indigo-700 flex items-center gap-2 mb-4">
+                      <Brain size={18} />
+                      Key Insights
+                    </h5>
+                    <ul className="space-y-3">
+                      {healthReport.insights?.map((item, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-slate-600">
+                          <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1.5 shrink-0" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Advice */}
+                  <div className="bg-emerald-50 p-6 rounded-3xl">
+                    <h5 className="font-bold text-emerald-700 flex items-center gap-2 mb-4">
+                      <Coffee size={18} />
+                      Actionable Advice
+                    </h5>
+                    <ul className="space-y-3">
+                      {healthReport.advice?.map((item, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-emerald-700">
+                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Warnings (if any) */}
+                {healthReport.warnings && healthReport.warnings.length > 0 && (
+                  <div className="bg-red-50 border border-red-100 p-6 rounded-3xl">
+                    <h5 className="font-bold text-red-600 flex items-center gap-2 mb-4">
+                      <AlertTriangle size={18} />
+                      Attention Needed
+                    </h5>
+                    <ul className="space-y-3">
+                      {healthReport.warnings.map((item, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-red-600">
+                          <div className="w-1.5 h-1.5 rounded-full bg-red-400 mt-1.5 shrink-0" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20 text-slate-400 border-2 border-dashed border-slate-200 rounded-3xl">
+                <HeartPulse size={48} className="text-slate-300 mb-4" />
+                <p>No health report available yet.</p>
+                <p className="text-sm mt-1">Submit your daily reviews and check back later!</p>
+              </div>
+            )}
           </div>
         </div>
       )}

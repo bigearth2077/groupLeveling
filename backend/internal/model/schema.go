@@ -114,16 +114,67 @@ type StudySession struct {
 	Tag  *Tag `gorm:"foreignKey:TagID"`
 }
 
-type Blog struct {
-	ID        string         `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
-	UserID    string         `gorm:"type:uuid;not null"`
-	Title     string         `gorm:"not null"`
-	Content   string         `gorm:"type:text;not null"`
-	Tags      pq.StringArray `gorm:"type:text[]"` // Postgres 数组
-	CreatedAt time.Time      `gorm:"autoCreateTime"`
-	UpdatedAt time.Time      `gorm:"autoUpdateTime"`
+type BlogStatus string
 
-	User User `gorm:"foreignKey:UserID"`
+const (
+	BlogStatusDraft     BlogStatus = "draft"
+	BlogStatusPublished BlogStatus = "published"
+)
+
+type BlogQuality string
+
+const (
+	BlogQualityBasic     BlogQuality = "basic"
+	BlogQualityGood      BlogQuality = "good"
+	BlogQualityExcellent BlogQuality = "excellent"
+)
+
+type Blog struct {
+	ID      string `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	UserID  string `gorm:"type:uuid;not null;index"`
+	Title   string `gorm:"not null"`
+	Content string `gorm:"type:text;not null"`
+	Format  string `gorm:"type:varchar(20);default:'markdown'"` // "markdown" | "richtext"
+	Summary *string `gorm:"type:text"`                          // AI 生成的摘要
+	Status  BlogStatus `gorm:"type:varchar(20);default:'published'"` // draft | published
+
+	// AI 分析结果
+	AITagIDs   pq.StringArray `gorm:"type:text[]"`              // AI 提取的标签 ID 数组
+	AIQuality  *BlogQuality   `gorm:"type:varchar(20)"`         // AI 质量评级
+	AIXpPerTag *int           `gorm:"default:null"`             // AI 评估的单 Tag XP 值
+
+	// 计数（非规范化，避免频繁 JOIN 聚合）
+	LikeCount     int `gorm:"default:0"`
+	BookmarkCount int `gorm:"default:0"`
+
+	CreatedAt time.Time `gorm:"autoCreateTime"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime"`
+
+	// Relations
+	User      User           `gorm:"foreignKey:UserID"`
+	BlogTags  []Tag          `gorm:"many2many:blog_tags;"`
+	Likes     []BlogLike     `gorm:"foreignKey:BlogID"`
+	Bookmarks []BlogBookmark `gorm:"foreignKey:BlogID"`
+}
+
+type BlogLike struct {
+	ID        string    `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	BlogID    string    `gorm:"type:uuid;not null;uniqueIndex:idx_blog_user_like"`
+	UserID    string    `gorm:"type:uuid;not null;uniqueIndex:idx_blog_user_like"`
+	CreatedAt time.Time `gorm:"autoCreateTime"`
+
+	Blog Blog `gorm:"foreignKey:BlogID;constraint:OnDelete:CASCADE;"`
+	User User `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;"`
+}
+
+type BlogBookmark struct {
+	ID        string    `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	BlogID    string    `gorm:"type:uuid;not null;uniqueIndex:idx_blog_user_bm"`
+	UserID    string    `gorm:"type:uuid;not null;uniqueIndex:idx_blog_user_bm"`
+	CreatedAt time.Time `gorm:"autoCreateTime"`
+
+	Blog Blog `gorm:"foreignKey:BlogID;constraint:OnDelete:CASCADE;"`
+	User User `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;"`
 }
 
 type Room struct {
@@ -165,7 +216,13 @@ type HealthData struct {
 	SleepHours      *float64  `gorm:"default:null"`
 	SleepQuality    *string   `gorm:"type:varchar(20);default:null"` // e.g., 'bad', 'okay', 'great'
 	ExerciseMinutes *int      `gorm:"default:null"`
-	CreatedAt       time.Time `gorm:"autoCreateTime"`
+
+	// 每日自评字段（1-5 离散值）
+	StudyQuality *int `gorm:"default:null"` // 1-5 学习质量自评
+	MoodScore    *int `gorm:"default:null"` // 1-5 心情
+	FatigueLevel *int `gorm:"default:null"` // 1-5 疲劳度
+
+	CreatedAt time.Time `gorm:"autoCreateTime"`
 
 	User User `gorm:"foreignKey:UserID"`
 }

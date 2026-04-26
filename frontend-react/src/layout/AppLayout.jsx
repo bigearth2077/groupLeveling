@@ -3,15 +3,16 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import PomodoroDock from '@/components/PomodoroDock';
 import FriendDrawer from '@/components/friend/FriendDrawer';
 import RoomConnectionManager from '@/components/room/RoomConnectionManager';
-import MorningCheckIn from '@/feature/health/components/MorningCheckIn';
+import DailyReviewPanel from '@/components/DailyReviewPanel';
 import AmbientBuddyRing from '@/feature/matching/components/AmbientBuddyRing';
-import { LayoutDashboard, Users, Trophy, User } from 'lucide-react';
+import { LayoutDashboard, Users, Trophy, User, BookOpen } from 'lucide-react';
 
 const AppLayout = () => {
   const location = useLocation();
 
   const navItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
+    { name: 'Blogs', path: '/blogs', icon: BookOpen },
     { name: 'Rooms', path: '/rooms', icon: Users },
     { name: 'Rankings', path: '/rankings', icon: Trophy },
     { name: 'Profile', path: '/profile', icon: User },
@@ -62,7 +63,7 @@ const AppLayout = () => {
       <PomodoroDock />
 
       {/* Global Modals / Micro-Interactions */}
-      <MorningCheckIn />
+      <DailyReviewPanel />
       <AmbientBuddyRing />
     </div>
   );

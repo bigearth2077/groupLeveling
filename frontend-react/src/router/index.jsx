@@ -8,6 +8,9 @@ import Profile from '../pages/user/Profile';
 import Leaderboard from '../pages/ranking/Leaderboard';
 import RoomLobby from '../pages/room/RoomLobby';
 import RoomDetail from '../pages/room/RoomDetail';
+import BlogFeed from '../pages/blog/BlogFeed';
+import BlogEditor from '../pages/blog/BlogEditor';
+import BlogDetail from '../pages/blog/BlogDetail';
 
 // 路由配置
 const router = createBrowserRouter([
@@ -50,6 +53,22 @@ const router = createBrowserRouter([
           {
             path: 'rankings',
             element: <Leaderboard />,
+          },
+          {
+            path: 'blogs',
+            element: <BlogFeed />,
+          },
+          {
+            path: 'blogs/new',
+            element: <BlogEditor />,
+          },
+          {
+            path: 'blogs/:id/edit',
+            element: <BlogEditor />,
+          },
+          {
+            path: 'blog/:id',
+            element: <BlogDetail />,
           },
           {
             path: 'profile',

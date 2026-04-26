@@ -58,6 +58,8 @@ func InitDB() {
 		&model.Friend{},
 		&model.StudySession{},
 		&model.Blog{},
+		&model.BlogLike{},
+		&model.BlogBookmark{},
 		&model.Room{},
 		&model.RoomMember{},
 		&model.HealthData{},

@@ -9,6 +9,7 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -44,6 +45,11 @@ func main() {
 	database.DB.Where("user_id = ?", targetUser.ID).Delete(&model.DailyStat{})
 	database.DB.Where("user_id = ?", targetUser.ID).Delete(&model.StudySession{})
 	database.DB.Where("user_id = ?", targetUser.ID).Delete(&model.UserTagStat{})
+	database.DB.Where("user_id = ?", targetUser.ID).Delete(&model.HealthData{})
+	database.DB.Where("user_id = ?", targetUser.ID).Delete(&model.Blog{})
+	database.DB.Where("user_id = ?", targetUser.ID).Delete(&model.BlogLike{})
+	database.DB.Where("user_id = ?", targetUser.ID).Delete(&model.BlogBookmark{})
+	database.DB.Where("user_id = ?", targetUser.ID).Delete(&model.AIReport{})
 
 	// 3. Create Basic Tags
 	tagNames := []string{"Go", "React", "Docker", "Machine Learning", "Math"}
@@ -146,6 +152,7 @@ func main() {
 		
 		// clear old stats for this buddy to prevent duplicate keys
 		database.DB.Where("user_id = ?", buddy.ID).Delete(&model.UserTagStat{})
+		database.DB.Where("user_id = ?", buddy.ID).Delete(&model.Blog{})
 		buddies = append(buddies, buddy)
 
 		// Give them EXACT SAME TAGS as user to guarantee high Match Score
@@ -160,7 +167,7 @@ func main() {
 
 	// 8. Create Active Rooms populated with buddies
 	fmt.Println("Populating active recommended rooms...")
-	database.DB.Update("is_private", true) // make old rooms private to clean view
+	database.DB.Model(&model.Room{}).Where("1=1").Update("is_private", true) // make old rooms private to clean view
 	for i, b := range buddies {
 		roomDesc := "Hardcore coding session"
 		room := model.Room{
@@ -181,7 +188,108 @@ func main() {
 		})
 	}
 
-	// 9. Sync Data to Redis for Rankings
+	// 9. Generate HealthData for last 7 days
+	fmt.Println("Generating HealthData mock data (last 7 days)...")
+	var healthData []model.HealthData
+	for i := 0; i < 7; i++ {
+		date := time.Date(now.Year(), now.Month(), now.Day()-i, 0, 0, 0, 0, time.UTC)
+		
+		sleep := float64(rand.Intn(4)) + 5.5 // 5.5 to 8.5
+		studyQuality := rand.Intn(3) + 3 // 3 to 5
+		mood := rand.Intn(3) + 3 // 3 to 5
+		fatigue := rand.Intn(3) + 1 // 1 to 3
+		exercise := rand.Intn(60)
+
+		healthData = append(healthData, model.HealthData{
+			UserID: targetUser.ID,
+			Date: date,
+			SleepHours: &sleep,
+			StudyQuality: &studyQuality,
+			MoodScore: &mood,
+			FatigueLevel: &fatigue,
+			ExerciseMinutes: &exercise,
+		})
+	}
+	database.DB.Create(&healthData)
+
+	// 10. Generate Blogs & Social interactions
+	fmt.Println("Generating Blogs mock data...")
+	var blogs []model.Blog
+	
+	qualityGood := model.BlogQualityGood
+	qualityExcellent := model.BlogQualityExcellent
+	
+	summary1 := "这是一篇关于Go并发编程的深入剖析，探讨了Goroutine的底层原理。强烈推荐给有一定基础的开发者。"
+	summary2 := "React 19 的新特性让状态管理变得更简单了。分享一下我在项目中应用 use() 钩子的体验。"
+	xp1 := 25
+	xp2 := 15
+
+	blogs = append(blogs, model.Blog{
+		UserID: targetUser.ID,
+		Title: "深入理解 Go 并发模型与协程调度",
+		Content: "在这篇文章中，我们将深入探讨 Go 语言的并发模型，包括 Goroutine 和 Channel 的内部实现原理。Go 的 GMP 调度器是其高并发性能的核心...\n\n```go\nfunc main() {\n  go doWork()\n}\n```\n非常硬核的一篇文章。",
+		Format: "markdown",
+		Status: model.BlogStatusPublished,
+		AIQuality: &qualityExcellent,
+		Summary: &summary1,
+		AIXpPerTag: &xp1,
+		LikeCount: 12,
+		BookmarkCount: 5,
+	})
+
+	blogs = append(blogs, model.Blog{
+		UserID: targetUser.ID,
+		Title: "React 19 新特性尝鲜记录与避坑指南",
+		Content: "今天试用了一下 React 最新的实验性功能，感觉在状态管理方面有了一些新的思路。特别是 use() 这个 hook，它能完美地处理 Promise 并且让代码结构更扁平。但是也有一些陷阱需要注意...",
+		Format: "richtext",
+		Status: model.BlogStatusPublished,
+		AIQuality: &qualityGood,
+		Summary: &summary2,
+		AIXpPerTag: &xp2,
+		LikeCount: 3,
+		BookmarkCount: 1,
+	})
+
+	for _, b := range buddies {
+		blogs = append(blogs, model.Blog{
+			UserID: b.ID,
+			Title: fmt.Sprintf("%s 的全栈学习周报", b.Nickname),
+			Content: "这周主要学习了 Docker 和 K8s，遇到了一些网络配置的坑，也算是顺利解决了。感觉自己在 DevOps 的路上越走越远了...",
+			Format: "markdown",
+			Status: model.BlogStatusPublished,
+			LikeCount: rand.Intn(20),
+			BookmarkCount: rand.Intn(5),
+		})
+	}
+
+	if err := database.DB.Create(&blogs).Error; err != nil {
+		fmt.Printf("Failed to create blogs: %v\n", err)
+	} else {
+		// Assign tags using IDs
+		for _, blog := range blogs {
+			var bTags []model.Tag
+			bTags = append(bTags, tags[rand.Intn(len(tags))])
+			bTags = append(bTags, tags[rand.Intn(len(tags))])
+			
+			// We manually build pq.StringArray
+			var tIDs pq.StringArray
+			for _, t := range bTags {
+				tIDs = append(tIDs, t.ID)
+			}
+			database.DB.Model(&blog).Update("ai_tag_ids", tIDs)
+			database.DB.Model(&blog).Association("BlogTags").Replace(bTags)
+
+			// Randomly let target user like some buddy blogs
+			if blog.UserID != targetUser.ID && rand.Float32() > 0.5 {
+				database.DB.Create(&model.BlogLike{
+					UserID: targetUser.ID,
+					BlogID: blog.ID,
+				})
+			}
+		}
+	}
+
+	// 11. Sync Data to Redis for Rankings
 	fmt.Println("Syncing scores to Redis rankings...")
 	ctx := context.Background()
 	// CLEAR OLD GARBAGE REDIS DATA caused by failed runs
@@ -196,14 +304,13 @@ func main() {
 	database.RDB.ZAdd(ctx, keyTotal, redis.Z{Score: 8400, Member: targetUser.ID})
 
 	for i, b := range buddies {
-		// Mock buddy points (slightly higher or lower for good leaderboard spread)
 		weekScore := float64(700 + i*100)
 		totalScore := weekScore * 10 
 		database.RDB.ZAdd(ctx, keyWeek, redis.Z{Score: weekScore, Member: b.ID})
 		database.RDB.ZAdd(ctx, keyTotal, redis.Z{Score: totalScore, Member: b.ID})
 
 		// Make them friends with target user so they appear in Friend Rankings
-		database.DB.Create(&model.Friend{
+		database.DB.Where("user_id = ? AND friend_id = ?", targetUser.ID, b.ID).FirstOrCreate(&model.Friend{
 			UserID:   targetUser.ID,
 			FriendID: b.ID,
 			Status:   model.FriendStatusAccepted,
@@ -211,5 +318,5 @@ func main() {
 	}
 
 	fmt.Println("\n✅ SEEDING COMPLETE!")
-	fmt.Println("Check the browser! Your UI should now explode with beautiful data visuals.")
+	fmt.Println("Check the browser! You should now see Mock Blogs, Health Data, and AI Stats ready for testing.")
 }
