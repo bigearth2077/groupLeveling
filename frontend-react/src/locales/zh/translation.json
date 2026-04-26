@@ -1,0 +1,16 @@
+{
+  "nav": {
+    "dashboard": "仪表盘",
+    "blogs": "博客广场",
+    "rooms": "自习室",
+    "rankings": "排行榜",
+    "profile": "个人中心"
+  },
+  "pomodoro": {
+    "focusTime": "专注时长",
+    "breakTime": "休息时长",
+    "roomLive": "房间进行中",
+    "backToRoom": "返回房间",
+    "customTag": "自定义标签..."
+  }
+}

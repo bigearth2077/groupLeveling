@@ -1,0 +1,16 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "blogs": "Blogs",
+    "rooms": "Rooms",
+    "rankings": "Rankings",
+    "profile": "Profile"
+  },
+  "pomodoro": {
+    "focusTime": "Focus Time",
+    "breakTime": "Break Time",
+    "roomLive": "Room Live",
+    "backToRoom": "Back to Room",
+    "customTag": "Custom tag..."
+  }
+}

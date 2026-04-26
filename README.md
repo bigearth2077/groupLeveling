@@ -55,3 +55,17 @@ GroupLeveling 是一个专为学生与职场人士打造的多人在线自习室
 - PostgreSQL
 - Redis
 - Docker & Docker Compose
+
+---
+
+## 💡 Development Tips / 开发小技巧
+
+### Dependency Auto-Sync / 依赖自动同步
+We have optimized the `docker-compose.yml` to automatically run `npm install` (frontend) and `go mod tidy` (backend) when the containers start. 
+You **no longer** need to run `docker compose build --no-cache` when a new package is added.
+
+- If you see a missing dependency error:
+  ```bash
+  sudo docker compose restart frontend  # or backend
+  ```
+- This is much faster than a full rebuild.

@@ -18,6 +18,7 @@ services:
     volumes:
       - ./frontend-react:/app
       - /app/node_modules
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
     depends_on:
       - app
     networks:
@@ -45,6 +46,7 @@ services:
       - SILICONFLOW_API_KEY=${SILICONFLOW_API_KEY}
     volumes:
       - ./backend:/app
+    command: sh -c "go mod tidy && air -c .air.toml"
     depends_on:
       db:
         condition: service_healthy

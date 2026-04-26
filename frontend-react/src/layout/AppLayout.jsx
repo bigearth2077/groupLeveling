@@ -5,17 +5,24 @@ import FriendDrawer from '@/components/friend/FriendDrawer';
 import RoomConnectionManager from '@/components/room/RoomConnectionManager';
 import DailyReviewPanel from '@/components/DailyReviewPanel';
 import AmbientBuddyRing from '@/feature/matching/components/AmbientBuddyRing';
-import { LayoutDashboard, Users, Trophy, User, BookOpen } from 'lucide-react';
+import { LayoutDashboard, Users, Trophy, User, BookOpen, Globe } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const AppLayout = () => {
   const location = useLocation();
+  const { t, i18n } = useTranslation();
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language.startsWith('zh') ? 'en' : 'zh';
+    i18n.changeLanguage(newLang);
+  };
 
   const navItems = [
-    { name: 'Dashboard', path: '/', icon: LayoutDashboard },
-    { name: 'Blogs', path: '/blogs', icon: BookOpen },
-    { name: 'Rooms', path: '/rooms', icon: Users },
-    { name: 'Rankings', path: '/rankings', icon: Trophy },
-    { name: 'Profile', path: '/profile', icon: User },
+    { name: t('nav.dashboard'), path: '/', icon: LayoutDashboard },
+    { name: t('nav.blogs'), path: '/blogs', icon: BookOpen },
+    { name: t('nav.rooms'), path: '/rooms', icon: Users },
+    { name: t('nav.rankings'), path: '/rankings', icon: Trophy },
+    { name: t('nav.profile'), path: '/profile', icon: User },
   ];
 
   return (
@@ -48,6 +55,16 @@ const AppLayout = () => {
           </nav>
 
           <div className="flex items-center gap-4">
+            {/* Language Switcher */}
+            <button 
+              onClick={toggleLanguage}
+              className="px-2 py-1.5 text-slate-500 hover:text-indigo-600 transition-colors flex items-center gap-1 bg-slate-50 hover:bg-slate-100 rounded-full border border-slate-200"
+              title="Switch Language"
+            >
+              <Globe size={16} />
+              <span className="text-xs font-bold uppercase">{i18n.language?.substring(0, 2) || 'ZH'}</span>
+            </button>
+
             {/* Friend Drawer & Avatar */}
             <FriendDrawer />
           </div>

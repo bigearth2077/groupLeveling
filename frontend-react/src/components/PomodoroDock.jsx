@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Play, Square, Coffee, Brain, Timer, Zap, Tag as TagIcon, ChevronUp, ChevronDown, Plus, Search, Users, X, Settings } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { useStudyStore } from '@/store/studyStore';
 import { useRoomStore } from '@/store/roomStore';
@@ -25,6 +26,7 @@ export default function PomodoroDock() {
   const { activeRoomId, unreadCount, resetUnread, leaveRoom } = useRoomStore();
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [showTagPicker, setShowTagPicker] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -93,7 +95,7 @@ export default function PomodoroDock() {
           >
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/80 backdrop-blur-md border border-white/10 text-white text-xs font-bold shadow-lg hover:bg-black/90 transition-all group">
               <Users size={12} className={unreadCount > 0 ? "text-red-400 animate-pulse" : "text-emerald-400"} />
-              <span>Room Live</span>
+              <span>{t('pomodoro.roomLive')}</span>
               {unreadCount > 0 && (
                 <span className="bg-red-500 text-white text-[10px] px-1.5 rounded-full h-4 flex items-center justify-center">
                   {unreadCount}
@@ -149,7 +151,7 @@ export default function PomodoroDock() {
         >
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/80 backdrop-blur-md border border-white/10 text-white text-xs font-bold shadow-lg hover:bg-black/90 transition-all">
             <Users size={12} className={unreadCount > 0 ? "text-red-400 animate-pulse" : "text-emerald-400"} />
-            <span>Back to Room</span>
+            <span>{t('pomodoro.backToRoom')}</span>
             {unreadCount > 0 && (
               <span className="bg-red-500 text-white text-[10px] px-1.5 rounded-full h-4 flex items-center justify-center">
                 {unreadCount}
@@ -188,7 +190,7 @@ export default function PomodoroDock() {
           <div className="relative">
             <input 
               type="text"
-              placeholder="Custom tag..."
+              placeholder={t('pomodoro.customTag')}
               className="w-full bg-slate-800 border-none rounded-lg py-1.5 pl-8 pr-3 text-xs text-white focus:ring-1 focus:ring-indigo-500"
               value={newTagName}
               onChange={e => setNewTagName(e.target.value)}
@@ -210,7 +212,7 @@ export default function PomodoroDock() {
         <div className="bg-slate-900/95 backdrop-blur-xl border border-slate-700 rounded-2xl p-4 shadow-2xl w-64 animate-in fade-in slide-in-from-bottom-4 duration-200 mb-2">
           <div className="mb-4">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-xs font-bold text-slate-300 flex items-center gap-1"><Brain size={12}/>专注时长</span>
+              <span className="text-xs font-bold text-slate-300 flex items-center gap-1"><Brain size={12}/>{t('pomodoro.focusTime')}</span>
               <span className="text-xs text-indigo-400 font-mono font-bold bg-indigo-500/10 px-2 py-0.5 rounded">{defaultFocusDuration}m</span>
             </div>
             <input 
@@ -226,7 +228,7 @@ export default function PomodoroDock() {
           </div>
           <div>
             <div className="flex justify-between items-center mb-2">
-              <span className="text-xs font-bold text-slate-300 flex items-center gap-1"><Coffee size={12}/>休息时长</span>
+              <span className="text-xs font-bold text-slate-300 flex items-center gap-1"><Coffee size={12}/>{t('pomodoro.breakTime')}</span>
               <span className="text-xs text-emerald-400 font-mono font-bold bg-emerald-500/10 px-2 py-0.5 rounded">{defaultBreakDuration}m</span>
             </div>
             <input 
