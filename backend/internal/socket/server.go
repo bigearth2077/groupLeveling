@@ -21,6 +21,7 @@ import (
 var Server *socketio.Server
 var roomService service.RoomService
 var userService service.UserService // 需要获取用户信息
+var messageService service.MessageService
 
 // 辅助结构体，存入 Context
 type SocketContext struct {
@@ -181,6 +182,71 @@ func InitSocket() {
 		broadcastEvent(payload.RoomID, "status_updated", dto.StatusUpdatedEvent{
 			UserID: userID,
 			Status: payload.Status,
+		})
+
+		return successResponse(gin.H{"ok": true})
+	})
+
+	// --- 5.1 事件: invite_to_room ---
+	Server.OnEvent("/", "invite_to_room", func(s socketio.Conn, msg string) string {
+		var payload dto.InviteRoomPayload
+		if err := json.Unmarshal([]byte(msg), &payload); err != nil {
+			return errorResponse("invalid payload")
+		}
+
+		ctx := s.Context().(*SocketContext)
+		userID := ctx.UserID
+
+		// 获取发送者信息
+		sender, err := userService.GetProfile(userID)
+		if err != nil {
+			return errorResponse("user not found")
+		}
+
+		// 获取房间信息
+		roomResp, err := roomService.GetRoom(payload.RoomID)
+		if err != nil {
+			return errorResponse("room not found")
+		}
+
+		// 发送给目标用户的私有房间 (前面我们用 user.ID 作为 private room)
+		broadcastEvent(payload.TargetUserID, "room_invite", dto.RoomInviteEvent{
+			RoomID:   roomResp.ID,
+			RoomName: roomResp.Name,
+			Sender: dto.UserSimple{
+				ID:        sender.ID,
+				Nickname:  sender.Nickname,
+				AvatarURL: sender.AvatarUrl,
+			},
+		})
+
+		return successResponse(gin.H{"ok": true})
+	})
+
+	// --- 5.2 事件: send_private_message ---
+	Server.OnEvent("/", "send_private_message", func(s socketio.Conn, msg string) string {
+		var payload dto.SendPrivateMessagePayload
+		if err := json.Unmarshal([]byte(msg), &payload); err != nil {
+			return errorResponse("invalid payload")
+		}
+
+		ctx := s.Context().(*SocketContext)
+		userID := ctx.UserID
+
+		// 保存消息到数据库
+		savedMsg, err := messageService.SaveMessage(userID, payload.ReceiverID, payload.Content)
+		if err != nil {
+			return errorResponse("failed to save message")
+		}
+
+		// 发送给接收者 (private room is their UserID)
+		broadcastEvent(payload.ReceiverID, "receive_private_message", dto.PrivateMessageEvent{
+			Message: *savedMsg,
+		})
+
+		// 同时也发回给发送者，确保多端同步，如果发送者在其他设备登录的话
+		broadcastEvent(userID, "receive_private_message", dto.PrivateMessageEvent{
+			Message: *savedMsg,
 		})
 
 		return successResponse(gin.H{"ok": true})

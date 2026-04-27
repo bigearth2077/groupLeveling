@@ -67,6 +67,12 @@ type UpdateStatusPayload struct {
 	Status model.RoomStatus `json:"status"`
 }
 
+// Client -> Server: invite_to_room
+type InviteRoomPayload struct {
+	TargetUserID string `json:"targetUserId"`
+	RoomID       string `json:"roomId"`
+}
+
 type ValidateRoomPasswordRequest struct {
 	RoomID   string `json:"roomId" binding:"required"`
 	Password string `json:"password" binding:"required"`
@@ -96,6 +102,13 @@ type NewMessageEvent struct {
 type StatusUpdatedEvent struct {
 	UserID string           `json:"userId"`
 	Status model.RoomStatus `json:"status"`
+}
+
+// event: room_invite (Server -> Target Client)
+type RoomInviteEvent struct {
+	RoomID     string     `json:"roomId"`
+	RoomName   string     `json:"roomName"`
+	Sender     UserSimple `json:"sender"`
 }
 
 type RoomMemberResponse struct {

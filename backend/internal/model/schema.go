@@ -246,3 +246,15 @@ type RefreshToken struct {
 
 	User User `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"` // 对应 onDelete: Cascade
 }
+
+type Message struct {
+	ID         string    `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	SenderID   string    `gorm:"type:uuid;not null;index"`
+	ReceiverID string    `gorm:"type:uuid;not null;index"`
+	Content    string    `gorm:"type:text;not null"`
+	IsRead     bool      `gorm:"default:false"`
+	CreatedAt  time.Time `gorm:"autoCreateTime"`
+
+	Sender   User `gorm:"foreignKey:SenderID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Receiver User `gorm:"foreignKey:ReceiverID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+}

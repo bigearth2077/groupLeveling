@@ -24,6 +24,12 @@ export default function UserProfileModal({ userId, isOpen, onClose, isFriend: in
     try {
       const res = await getUserProfile(userId);
       setUser(res);
+      if (res.isFriend !== undefined) {
+        setIsFriend(res.isFriend);
+      }
+      if (res.friendStatus === 'pending') {
+        setRequestSent(true);
+      }
     } catch (err) {
       console.error(err);
     } finally {

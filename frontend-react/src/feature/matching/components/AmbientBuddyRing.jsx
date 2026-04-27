@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getAmbientBuddies } from '../api';
-import { Users, PartyPopper } from 'lucide-react';
+import { sendFriendRequest } from '@/feature/friend/api';
+import { Users, PartyPopper, UserPlus } from 'lucide-react';
 
 const AmbientBuddyRing = () => {
   const [buddies, setBuddies] = useState([]);
@@ -37,6 +38,16 @@ const AmbientBuddyRing = () => {
     setTimeout(() => {
       setHighFived(prev => ({ ...prev, [userId]: false }));
     }, 2000);
+  };
+
+  const handleAddFriend = async (e, userId) => {
+    e.stopPropagation(); // prevent high-five
+    try {
+      await sendFriendRequest(userId);
+      alert('Friend request sent!');
+    } catch (err) {
+      alert('Could not send request: ' + (err.message || 'Unknown error'));
+    }
   };
 
   return (
@@ -95,6 +106,12 @@ const AmbientBuddyRing = () => {
                   <div className="text-[10px] text-indigo-300 mt-1 font-medium bg-white/10 px-2 py-0.5 rounded-full w-full text-center">
                     Click to High Five 👏
                   </div>
+                  <button 
+                    onClick={(e) => handleAddFriend(e, buddy.id)}
+                    className="mt-1 w-full flex items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs py-1 rounded-md transition-colors"
+                  >
+                    <UserPlus size={12} /> Add Friend
+                  </button>
                 </div>
               </div>
 

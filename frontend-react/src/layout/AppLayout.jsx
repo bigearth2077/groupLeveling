@@ -1,5 +1,5 @@
 import React from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import PomodoroDock from '@/components/PomodoroDock';
 import FriendDrawer from '@/components/friend/FriendDrawer';
 import RoomConnectionManager from '@/components/room/RoomConnectionManager';
@@ -7,10 +7,34 @@ import DailyReviewPanel from '@/components/DailyReviewPanel';
 import AmbientBuddyRing from '@/feature/matching/components/AmbientBuddyRing';
 import { LayoutDashboard, Users, Trophy, User, BookOpen, Globe } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { connectSocket, disconnectSocket } from '@/lib/socket';
 
 const AppLayout = () => {
   const location = useLocation();
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
+
+  // Global Socket Connection
+  React.useEffect(() => {
+    const socket = connectSocket();
+    if (!socket) return;
+
+    const handleRoomInvite = (data) => {
+      // Toast notification for invite
+      // For simplicity using a confirm dialog, ideally use a Toast component
+      if (window.confirm(`${data.sender.nickname} invited you to join: ${data.roomName}\n\nDo you want to join?`)) {
+        navigate(`/room/${data.roomId}`);
+      }
+    };
+
+    socket.on('room_invite', handleRoomInvite);
+
+    return () => {
+      if (socket) {
+        socket.off('room_invite', handleRoomInvite);
+      }
+    };
+  }, [navigate]);
 
   const toggleLanguage = () => {
     const newLang = i18n.language.startsWith('zh') ? 'en' : 'zh';

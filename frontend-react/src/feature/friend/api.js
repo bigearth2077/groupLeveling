@@ -29,3 +29,13 @@ export const getFriendList = (params) => {
 export const deleteFriend = (friendId) => {
   return request.delete(`/friends/${friendId}`);
 };
+
+// 获取聊天历史
+export const getMessageHistory = (friendId, page = 1, pageSize = 50) => {
+  return request.get('/messages/history', { params: { friendId, page, pageSize } });
+};
+
+// 获取未读总数
+export const getUnreadCount = () => {
+  return request.get('/messages/unread');
+};

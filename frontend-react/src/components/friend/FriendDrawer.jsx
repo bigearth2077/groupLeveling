@@ -4,12 +4,14 @@ import { cn } from '@/lib/utils';
 import FriendList from './FriendList';
 import UserSearch from './UserSearch';
 import RequestList from './RequestList';
+import ChatPanel from './ChatPanel';
 import { getMe } from '@/feature/user/api';
 
 export default function FriendDrawer({ children }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('friends'); // 'friends' | 'add' | 'requests'
+  const [activeTab, setActiveTab] = useState('friends'); // 'friends' | 'add' | 'requests' | 'chat'
   const [myAvatar, setMyAvatar] = useState(null);
+  const [chatFriend, setChatFriend] = useState(null);
 
   useEffect(() => {
     // Only fetch if we need to display it inside
@@ -38,44 +40,49 @@ export default function FriendDrawer({ children }) {
       )}>
         
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50/50">
-           <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-             <Users size={18} className="text-indigo-600" />
-             Social Hub
-           </h2>
-           <button onClick={() => setIsOpen(false)} className="p-1.5 rounded-full hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition-colors">
-             <X size={16} />
-           </button>
-        </div>
+        {activeTab !== 'chat' && (
+          <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50/50">
+             <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+               <Users size={18} className="text-indigo-600" />
+               Social Hub
+             </h2>
+             <button onClick={() => setIsOpen(false)} className="p-1.5 rounded-full hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition-colors">
+               <X size={16} />
+             </button>
+          </div>
+        )}
 
         {/* Tabs */}
-        <div className="flex p-2 gap-2 border-b border-slate-100 bg-white">
-           {[
-             { id: 'friends', icon: Users, label: 'Friends' },
-             { id: 'add', icon: UserPlus, label: 'Add' },
-             { id: 'requests', icon: Inbox, label: 'Requests' }
-           ].map(tab => (
-             <button
-               key={tab.id}
-               onClick={() => setActiveTab(tab.id)}
-               className={cn(
-                 "flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-all",
-                 activeTab === tab.id 
-                   ? "bg-slate-800 text-white shadow-md" 
-                   : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
-               )}
-             >
-               <tab.icon size={14} />
-               {tab.label}
-             </button>
-           ))}
-        </div>
+        {activeTab !== 'chat' && (
+          <div className="flex p-2 gap-2 border-b border-slate-100 bg-white">
+             {[
+               { id: 'friends', icon: Users, label: 'Friends' },
+               { id: 'add', icon: UserPlus, label: 'Add' },
+               { id: 'requests', icon: Inbox, label: 'Requests' }
+             ].map(tab => (
+               <button
+                 key={tab.id}
+                 onClick={() => setActiveTab(tab.id)}
+                 className={cn(
+                   "flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-all",
+                   activeTab === tab.id 
+                     ? "bg-slate-800 text-white shadow-md" 
+                     : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+                 )}
+               >
+                 <tab.icon size={14} />
+                 {tab.label}
+               </button>
+             ))}
+          </div>
+        )}
 
         {/* Content */}
         <div className="flex-1 overflow-hidden p-4 bg-white">
-           {activeTab === 'friends' && <FriendList />}
+           {activeTab === 'friends' && <FriendList onChat={(user) => { setChatFriend(user); setActiveTab('chat'); }} />}
            {activeTab === 'add' && <UserSearch />}
            {activeTab === 'requests' && <RequestList />}
+           {activeTab === 'chat' && <ChatPanel friend={chatFriend} onBack={() => { setActiveTab('friends'); setChatFriend(null); }} />}
         </div>
 
       </div>

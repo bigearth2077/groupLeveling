@@ -18,6 +18,9 @@ func SetupRouter(r *gin.Engine) {
 	roomHandler := &handler.RoomHandler{}
 	tagHandler := &handler.TagHandler{}
 
+	messageService := &service.MessageService{}
+	messageHandler := &handler.MessageHandler{Service: *messageService}
+
 	analyticsService := &service.AnalyticsService{}
 	analyticsHandler := handler.NewAnalyticsHandler(analyticsService)
 
@@ -144,6 +147,13 @@ func SetupRouter(r *gin.Engine) {
 			blogGroup.DELETE("/:id/like", blogHandler.UnlikeBlog)
 			blogGroup.POST("/:id/bookmark", blogHandler.BookmarkBlog)
 			blogGroup.DELETE("/:id/bookmark", blogHandler.UnbookmarkBlog)
+		}
+
+		// Message 路由
+		messageGroup := protected.Group("/messages")
+		{
+			messageGroup.GET("/history", messageHandler.GetHistory)
+			messageGroup.GET("/unread", messageHandler.GetUnread)
 		}
 	}
 }

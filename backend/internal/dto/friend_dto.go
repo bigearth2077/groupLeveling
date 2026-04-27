@@ -52,6 +52,10 @@ type FriendItem struct {
 	Nickname  string  `json:"nickname"`
 	AvatarURL *string `json:"avatarUrl"`
 	Bio       *string `json:"bio"`
+	IsOnline  bool    `json:"isOnline"`
+	Status    string  `json:"status"` // 'idle', 'learning', 'rest'
+	RoomID    *string `json:"roomId"`
+	RoomName  *string `json:"roomName"`
 }
 
 type FriendListResponse struct {

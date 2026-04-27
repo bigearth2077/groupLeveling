@@ -61,7 +61,7 @@ func (s *UserService) ChangePassword(userID string, req dto.ChangePasswordReques
 }
 
 // GetPublicProfile 获取他人公开资料 (包含等级和擅长标签)
-func (s *UserService) GetPublicProfile(targetID string) (*dto.PublicProfileResponse, error) {
+func (s *UserService) GetPublicProfile(callerID, targetID string) (*dto.PublicProfileResponse, error) {
 	var user model.User
 	// 1. 获取基本信息
 	if err := database.DB.Select("id", "nickname", "avatar_url", "bio").First(&user, "id = ?", targetID).Error; err != nil {
@@ -94,13 +94,34 @@ func (s *UserService) GetPublicProfile(targetID string) (*dto.PublicProfileRespo
 		topTags = allTags[:count]
 	}
 
+	// 4. 获取好友状态
+	isFriend := false
+	friendStatus := ""
+	if callerID != "" && callerID != targetID {
+		var friend model.Friend
+		// 查找他们之间的关系
+		err := database.DB.Where(
+			"(user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)",
+			callerID, targetID, targetID, callerID,
+		).First(&friend).Error
+
+		if err == nil {
+			friendStatus = string(friend.Status)
+			if friend.Status == model.FriendStatusAccepted {
+				isFriend = true
+			}
+		}
+	}
+
 	return &dto.PublicProfileResponse{
-		ID:        user.ID,
-		Nickname:  user.Nickname,
-		AvatarURL: user.AvatarUrl,
-		Bio:       user.Bio,
-		LevelInfo: levelInfo,
-		TopTags:   topTags,
+		ID:           user.ID,
+		Nickname:     user.Nickname,
+		AvatarURL:    user.AvatarUrl,
+		Bio:          user.Bio,
+		LevelInfo:    levelInfo,
+		TopTags:      topTags,
+		IsFriend:     isFriend,
+		FriendStatus: friendStatus,
 	}, nil
 }
 
