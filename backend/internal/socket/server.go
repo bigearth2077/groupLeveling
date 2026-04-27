@@ -2,6 +2,7 @@ package socket
 
 import (
 	"backend/internal/dto"
+	"backend/internal/model"
 	"backend/internal/service"
 	"backend/pkg/utils"
 	"encoding/json"
@@ -22,6 +23,7 @@ var Server *socketio.Server
 var roomService service.RoomService
 var userService service.UserService // 需要获取用户信息
 var messageService service.MessageService
+var notificationService service.NotificationService
 
 // 辅助结构体，存入 Context
 type SocketContext struct {
@@ -209,7 +211,24 @@ func InitSocket() {
 			return errorResponse("room not found")
 		}
 
-		// 发送给目标用户的私有房间 (前面我们用 user.ID 作为 private room)
+		// 创建数据库通知
+		content := sender.Nickname + " invited you to join room: " + roomResp.Name
+		notif, err := notificationService.CreateNotification(
+			payload.TargetUserID,
+			model.NotificationTypeInvite,
+			"Room Invitation",
+			content,
+			&roomResp.ID,
+		)
+
+		if err == nil {
+			// 发送新通知事件给目标用户
+			broadcastEvent(payload.TargetUserID, "new_notification", dto.NewNotificationEvent{
+				Notification: *notif,
+			})
+		}
+
+		// (可选) 兼容旧版前端事件
 		broadcastEvent(payload.TargetUserID, "room_invite", dto.RoomInviteEvent{
 			RoomID:   roomResp.ID,
 			RoomName: roomResp.Name,

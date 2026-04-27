@@ -6,6 +6,8 @@ import UserSearch from './UserSearch';
 import RequestList from './RequestList';
 import ChatPanel from './ChatPanel';
 import { getMe } from '@/feature/user/api';
+import { getSocket } from '@/lib/socket';
+import request from '@/lib/request';
 
 export default function FriendDrawer({ children }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -18,18 +20,61 @@ export default function FriendDrawer({ children }) {
     getMe().then(u => {
         if (u) setMyAvatar(u.avatarUrl);
     }).catch(() => {});
+    
+    // Fetch initial global unread counts (messages + requests)
+    fetchBadges();
   }, []);
+
+  const [hasUnread, setHasUnread] = useState(false);
+
+  const fetchBadges = async () => {
+    try {
+      // 1. messages
+      const msgRes = await request.get('/messages/unread/per-friend');
+      const totalMsg = Object.values(msgRes).reduce((a, b) => a + b, 0);
+      
+      // 2. pending requests (we could make an api for count, or just fetch requests)
+      const reqRes = await request.get('/friends/requests/incoming', { params: { page: 1, pageSize: 1 } });
+      const totalReq = reqRes.total || 0;
+      
+      setHasUnread(totalMsg > 0 || totalReq > 0);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+    
+    const handleNewMessage = () => {
+      setHasUnread(true);
+    };
+    
+    socket.on('receive_private_message', handleNewMessage);
+    return () => socket.off('receive_private_message', handleNewMessage);
+  }, []);
+
+  // When drawer opens, maybe refresh badges
+  useEffect(() => {
+    if (isOpen) {
+      fetchBadges();
+    }
+  }, [isOpen]);
 
   const toggle = () => setIsOpen(!isOpen);
 
   return (
     <div className="relative z-50">
       {/* Trigger */}
-      <div onClick={toggle} className="cursor-pointer">
+      <div onClick={toggle} className="cursor-pointer relative">
         {children ? children : (
             <div className={`h-8 w-8 rounded-full bg-slate-200 ring-2 ring-white hover:ring-indigo-100 transition-all overflow-hidden ${isOpen ? 'ring-indigo-200 ring-offset-2' : ''}`}>
                 {myAvatar ? <img src={myAvatar} className="w-full h-full object-cover" /> : <User size={20} className="m-1.5 text-slate-500" />}
             </div>
+        )}
+        {hasUnread && (
+          <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
         )}
       </div>
 

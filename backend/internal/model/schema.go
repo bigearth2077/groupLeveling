@@ -15,6 +15,14 @@ const (
 	FriendStatusAccepted FriendStatus = "accepted"
 )
 
+type NotificationType string
+
+const (
+	NotificationTypeSystem NotificationType = "system"
+	NotificationTypeInvite NotificationType = "invite"
+	NotificationTypeFriend NotificationType = "friend"
+)
+
 type SessionType string
 
 const (
@@ -257,4 +265,17 @@ type Message struct {
 
 	Sender   User `gorm:"foreignKey:SenderID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Receiver User `gorm:"foreignKey:ReceiverID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+}
+
+type Notification struct {
+	ID        string           `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	UserID    string           `gorm:"type:uuid;not null;index"`
+	Type      NotificationType `gorm:"type:varchar(20);not null"`
+	Title     string           `gorm:"not null"`
+	Content   string           `gorm:"type:text;not null"`
+	RelatedID *string          `gorm:"type:uuid;default:null"` // e.g. RoomID
+	IsRead    bool             `gorm:"default:false"`
+	CreatedAt time.Time        `gorm:"autoCreateTime"`
+
+	User User `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }

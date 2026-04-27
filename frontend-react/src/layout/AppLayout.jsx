@@ -4,6 +4,7 @@ import PomodoroDock from '@/components/PomodoroDock';
 import FriendDrawer from '@/components/friend/FriendDrawer';
 import RoomConnectionManager from '@/components/room/RoomConnectionManager';
 import DailyReviewPanel from '@/components/DailyReviewPanel';
+import NotificationBell from '@/components/notification/NotificationBell';
 import AmbientBuddyRing from '@/feature/matching/components/AmbientBuddyRing';
 import { LayoutDashboard, Users, Trophy, User, BookOpen, Globe } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -13,29 +14,11 @@ const AppLayout = () => {
   const location = useLocation();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-
-  // Global Socket Connection
+  // AppLayout now just connects socket globally, NotificationBell handles its own notifications
   React.useEffect(() => {
     const socket = connectSocket();
-    if (!socket) return;
-
-    const handleRoomInvite = (data) => {
-      // Toast notification for invite
-      // For simplicity using a confirm dialog, ideally use a Toast component
-      if (window.confirm(`${data.sender.nickname} invited you to join: ${data.roomName}\n\nDo you want to join?`)) {
-        navigate(`/room/${data.roomId}`);
-      }
-    };
-
-    socket.on('room_invite', handleRoomInvite);
-
-    return () => {
-      if (socket) {
-        socket.off('room_invite', handleRoomInvite);
-      }
-    };
-  }, [navigate]);
-
+    return () => {};
+  }, []);
   const toggleLanguage = () => {
     const newLang = i18n.language.startsWith('zh') ? 'en' : 'zh';
     i18n.changeLanguage(newLang);
@@ -88,6 +71,9 @@ const AppLayout = () => {
               <Globe size={16} />
               <span className="text-xs font-bold uppercase">{i18n.language?.substring(0, 2) || 'ZH'}</span>
             </button>
+
+            {/* Notification Bell */}
+            <NotificationBell />
 
             {/* Friend Drawer & Avatar */}
             <FriendDrawer />

@@ -21,6 +21,9 @@ func SetupRouter(r *gin.Engine) {
 	messageService := &service.MessageService{}
 	messageHandler := &handler.MessageHandler{Service: *messageService}
 
+	notificationService := &service.NotificationService{}
+	notificationHandler := &handler.NotificationHandler{Service: *notificationService}
+
 	analyticsService := &service.AnalyticsService{}
 	analyticsHandler := handler.NewAnalyticsHandler(analyticsService)
 
@@ -154,6 +157,16 @@ func SetupRouter(r *gin.Engine) {
 		{
 			messageGroup.GET("/history", messageHandler.GetHistory)
 			messageGroup.GET("/unread", messageHandler.GetUnread)
+			messageGroup.GET("/unread/per-friend", messageHandler.GetUnreadPerFriend)
+		}
+
+		// Notification 路由
+		notificationGroup := protected.Group("/notifications")
+		{
+			notificationGroup.GET("", notificationHandler.GetNotifications)
+			notificationGroup.GET("/unread", notificationHandler.GetUnreadCount)
+			notificationGroup.PATCH("/:id/read", notificationHandler.MarkAsRead)
+			notificationGroup.PATCH("/read-all", notificationHandler.MarkAllAsRead)
 		}
 	}
 }

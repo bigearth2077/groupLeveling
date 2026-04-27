@@ -35,7 +35,12 @@ export const getMessageHistory = (friendId, page = 1, pageSize = 50) => {
   return request.get('/messages/history', { params: { friendId, page, pageSize } });
 };
 
-// 获取未读总数
+// 获取未读总数 (通知)
 export const getUnreadCount = () => {
-  return request.get('/messages/unread');
+  return request.get('/notifications/unread');
+};
+
+// 获取每个好友的未读消息数
+export const getUnreadPerFriend = () => {
+  return request.get('/messages/unread/per-friend');
 };

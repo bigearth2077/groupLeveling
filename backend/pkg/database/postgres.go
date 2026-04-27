@@ -69,6 +69,7 @@ func InitDB() {
 		&model.Tag{},
 		&model.UserTagStat{},
 		&model.Message{},
+		&model.Notification{},
 	)
 
 	if err != nil {

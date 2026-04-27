@@ -85,3 +85,28 @@ func (s *MessageService) GetUnreadCount(userID string) (int64, error) {
 		Count(&count).Error
 	return count, err
 }
+
+// GetUnreadCountsPerFriend 获取每个好友发来的未读消息数
+func (s *MessageService) GetUnreadCountsPerFriend(userID string) (map[string]int64, error) {
+	type Result struct {
+		SenderID string
+		Count    int64
+	}
+	var results []Result
+
+	err := database.DB.Model(&model.Message{}).
+		Select("sender_id, count(*) as count").
+		Where("receiver_id = ? AND is_read = false", userID).
+		Group("sender_id").
+		Scan(&results).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	counts := make(map[string]int64)
+	for _, r := range results {
+		counts[r.SenderID] = r.Count
+	}
+	return counts, nil
+}

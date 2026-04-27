@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 
 export default function FriendList({ onChat }) {
   const [friends, setFriends] = useState([]);
+  const [unreadCounts, setUnreadCounts] = useState({});
   const [loading, setLoading] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const { activeRoomId } = useRoomStore();
@@ -17,7 +18,37 @@ export default function FriendList({ onChat }) {
 
   useEffect(() => {
     loadFriends();
+    loadUnreadCounts();
   }, []);
+
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    const handleNewMessage = (data) => {
+      // If we receive a message from someone, increment their unread count
+      // only if the chat isn't currently open (this might need global state, but for now just increment)
+      const senderId = data.message.senderId;
+      setUnreadCounts(prev => ({
+        ...prev,
+        [senderId]: (prev[senderId] || 0) + 1
+      }));
+    };
+
+    socket.on('receive_private_message', handleNewMessage);
+    return () => socket.off('receive_private_message', handleNewMessage);
+  }, []);
+
+  const loadUnreadCounts = async () => {
+    try {
+      // Need to import getUnreadPerFriend
+      const { getUnreadPerFriend } = await import('@/feature/friend/api');
+      const counts = await getUnreadPerFriend();
+      setUnreadCounts(counts || {});
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const loadFriends = async () => {
     setLoading(true);
@@ -77,7 +108,13 @@ export default function FriendList({ onChat }) {
                      </div>
                      {/* Online Indicator */}
                      {user.isOnline && (
-                       <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></div>
+                       <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full z-10"></div>
+                     )}
+                     {/* Unread Badge */}
+                     {(unreadCounts[user.id] > 0) && (
+                       <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border border-white z-10">
+                         {unreadCounts[user.id] > 99 ? '99+' : unreadCounts[user.id]}
+                       </div>
                      )}
                   </div>
                   <div className="overflow-hidden">
@@ -128,7 +165,12 @@ export default function FriendList({ onChat }) {
                     variant="ghost" 
                     className="h-8 w-8 text-blue-500 hover:bg-blue-50 hover:text-blue-600" 
                     title="Chat"
-                    onClick={(e) => { e.stopPropagation(); onChat && onChat(user); }}
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      // Clear local unread count
+                      setUnreadCounts(prev => ({...prev, [user.id]: 0}));
+                      onChat && onChat(user); 
+                    }}
                   >
                     <MessageCircle size={14} />
                   </Button>

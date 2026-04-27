@@ -43,3 +43,16 @@ func (h *MessageHandler) GetUnread(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"unread": count})
 }
+
+// GetUnreadPerFriend 获取每个好友分别的未读消息数
+func (h *MessageHandler) GetUnreadPerFriend(c *gin.Context) {
+	userID := c.GetString("userId")
+	
+	counts, err := h.Service.GetUnreadCountsPerFriend(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, counts)
+}
