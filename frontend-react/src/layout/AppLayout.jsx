@@ -34,107 +34,84 @@ const AppLayout = () => {
   ];
 
   return (
-    <div className="flex h-screen bg-slate-50 text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-700 overflow-hidden">
-      {/* Global Room Manager */}
-      <RoomConnectionManager />
-
-      {/* Left Navigation Rail */}
-      <aside className="w-20 lg:w-64 flex-shrink-0 bg-white border-r border-slate-100 flex flex-col items-center lg:items-start py-6 z-40 transition-all">
-        {/* Logo */}
-        <div className="flex items-center gap-3 px-0 lg:px-6 mb-10 w-full justify-center lg:justify-start">
-          <div className="h-10 w-10 shrink-0 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-bold shadow-blue-200 shadow-lg">
-            GL
-          </div>
-          <span className="text-xl font-bold tracking-tight text-slate-800 hidden lg:block">
-            GroupLeveling
-          </span>
+    <div className="h-screen w-full bg-[#f0f4f9] text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-700 overflow-hidden relative flex flex-col">
+      {/* Top Bar (Integrated into NotebookLM style) */}
+      <header className="h-16 flex-shrink-0 flex items-center justify-between px-6 z-30">
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold shadow-sm">GL</div>
+          <span className="text-lg font-bold tracking-tight text-slate-800 hidden sm:block">GroupLeveling</span>
         </div>
 
-        {/* Nav Links */}
-        <nav className="flex-1 w-full px-3 flex flex-col gap-2">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
-            return (
-              <Link 
-                key={item.path} 
-                to={item.path}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-3 rounded-2xl transition-all duration-200 group w-full justify-center lg:justify-start",
-                  isActive 
-                    ? "bg-blue-50 text-blue-700 font-bold" 
-                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                )}
-                title={item.name}
-              >
-                <item.icon size={20} className={cn("shrink-0", isActive ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600")} />
-                <span className="hidden lg:block whitespace-nowrap text-sm">
-                  {item.name}
-                </span>
-              </Link>
-            )
-          })}
-        </nav>
-      </aside>
-
-      {/* Main Content Wrapper */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-        {/* Minimal Header */}
-        <header className="h-16 flex-shrink-0 bg-transparent flex items-center justify-between px-6 lg:px-10 z-30 pt-4">
-          
-          {/* Search Bar (Placeholder) */}
-          <div className="max-w-md w-full relative hidden sm:block">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+        <div className="flex items-center gap-4">
+           {/* Search Bar */}
+           <div className="max-w-md w-64 lg:w-96 relative hidden md:block">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <input 
               type="text" 
-              placeholder="Search rooms, friends, or blogs..." 
-              className="w-full bg-white border-0 shadow-sm pl-10 pr-4 py-2.5 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 transition-shadow"
+              placeholder="Search..." 
+              className="w-full bg-white/50 border border-slate-200/50 pl-10 pr-4 py-1.5 rounded-full text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all"
             />
           </div>
 
-          <div className="flex-1 sm:hidden"></div> {/* Spacer for mobile */}
-
-          <div className="flex items-center gap-3">
-            {/* Language Switcher */}
-            <button 
-              onClick={toggleLanguage}
-              className="p-2.5 text-slate-500 hover:text-blue-600 transition-colors flex items-center justify-center bg-white shadow-sm hover:shadow rounded-full"
-              title="Switch Language"
-            >
-              <Globe size={18} />
-              <span className="sr-only">{i18n.language?.substring(0, 2) || 'ZH'}</span>
+          <div className="flex items-center gap-2">
+            <button onClick={toggleLanguage} className="p-2 text-slate-500 hover:text-blue-600 transition-colors bg-white/50 rounded-full border border-slate-200/50">
+              <Globe size={16} />
             </button>
-
-            {/* Notification Bell */}
-            <div className="bg-white shadow-sm rounded-full flex items-center justify-center hover:shadow transition-shadow">
-               <NotificationBell />
-            </div>
-
-            {/* Friend Drawer & Avatar */}
-            <div className="bg-white p-1 shadow-sm rounded-full hover:shadow transition-shadow ml-1">
-               <FriendDrawer />
-            </div>
+            <div className="bg-white/50 rounded-full border border-slate-200/50 p-0.5"><NotificationBell /></div>
+            <div className="bg-white/50 rounded-full border border-slate-200/50 p-1"><FriendDrawer /></div>
           </div>
-        </header>
+        </div>
+      </header>
 
-        {/* Main Scrollable Content */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-6 lg:p-10 pb-32">
-          <div className="max-w-6xl mx-auto h-full">
+      {/* Panels Area */}
+      <div className="flex-1 flex gap-4 p-4 pt-0 overflow-hidden">
+        {/* Global Room Manager */}
+        <RoomConnectionManager />
+
+        {/* Left Nav Card */}
+        <aside className="w-20 lg:w-64 flex-shrink-0 bg-white rounded-[2rem] shadow-sm border border-slate-200/30 flex flex-col py-6 transition-all">
+          <nav className="flex-1 w-full px-4 flex flex-col gap-2">
+            {navItems.map((item) => {
+              const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
+              return (
+                <Link 
+                  key={item.path} 
+                  to={item.path}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 group w-full justify-center lg:justify-start",
+                    isActive 
+                      ? "bg-blue-50 text-blue-700 font-bold" 
+                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                  )}
+                >
+                  <item.icon size={18} className={cn("shrink-0", isActive ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600")} />
+                  <span className="hidden lg:block whitespace-nowrap text-sm">{item.name}</span>
+                </Link>
+              )
+            })}
+          </nav>
+
+          {/* Sidebar Bottom: Pomodoro */}
+          <div className="mt-auto border-t border-slate-100 px-4 py-4">
+            <PomodoroDock isEmbedded={true} />
+          </div>
+        </aside>
+
+        {/* Main Content Card */}
+        <main className="flex-1 bg-white rounded-[2rem] shadow-sm border border-slate-200/30 overflow-hidden flex flex-col">
+          <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
             <Outlet />
           </div>
         </main>
       </div>
-
       {/* Unified Right-Bottom Floating Tools */}
-      <div className="fixed bottom-6 right-6 flex flex-col gap-4 items-end z-50 pointer-events-none">
-        {/* Pointer events auto for children so they can be clicked, but the container itself won't block clicks */}
-        <div className="pointer-events-auto flex flex-col gap-4">
-          <AmbientBuddyRing />
-          <PomodoroDock />
+      <div className="fixed bottom-8 right-8 z-50 pointer-events-none">
+        <div className="pointer-events-auto">
+          <DailyReviewPanel />
         </div>
       </div>
 
-      {/* Global Modals / Micro-Interactions */}
-      <DailyReviewPanel />
+      <AmbientBuddyRing />
     </div>
   );
 };

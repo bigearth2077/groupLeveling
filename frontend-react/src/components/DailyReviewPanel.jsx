@@ -76,7 +76,7 @@ const DailyReviewPanel = () => {
   );
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex items-end justify-end">
+    <div className="fixed bottom-8 right-8 z-50 flex items-end justify-end transition-all">
       {/* 展开面板 */}
       <div 
         className={`absolute bottom-0 right-0 w-80 bg-white/95 backdrop-blur-xl border border-slate-200/60 rounded-3xl shadow-2xl transition-all duration-500 origin-bottom-right overflow-hidden ${

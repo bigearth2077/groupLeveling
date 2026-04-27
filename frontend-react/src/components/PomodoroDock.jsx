@@ -7,7 +7,7 @@ import { useRoomStore } from '@/store/roomStore';
 import { getMyTags } from '@/feature/tag/api';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-export default function PomodoroDock() {
+export default function PomodoroDock({ isEmbedded = false }) {
   const { 
     status, 
     mode, 
@@ -79,12 +79,14 @@ export default function PomodoroDock() {
   };
 
   const isResting = mode === 'rest';
-  const themeColor = isResting ? 'text-emerald-400' : 'text-indigo-400';
+  const themeColor = isEmbedded 
+    ? 'text-blue-600' 
+    : (isResting ? 'text-emerald-400' : 'text-indigo-400');
   const glowColor = isResting ? 'shadow-emerald-500/20' : 'shadow-indigo-500/20';
   const borderColor = isResting ? 'border-emerald-500/30' : 'border-indigo-500/30';
 
   // --- Collapsed View ---
-  if (status !== 'idle' && isCollapsed) {
+  if (status !== 'idle' && isCollapsed && !isEmbedded) {
     return (
       <div className="flex flex-col items-end gap-2">
         {/* Room Pill (Background Mode) */}
@@ -121,16 +123,16 @@ export default function PomodoroDock() {
           )}
         >
           <div className={cn("flex items-center justify-center transition-colors", themeColor)}>
-             {isResting ? <Coffee size={16} /> : <Brain size={16} className="animate-pulse" />}
+             {isResting ? <Coffee size={14} /> : <Brain size={14} className="animate-pulse" />}
           </div>
-          <span className="font-mono text-sm font-bold tracking-widest tabular-nums">
+          <span className="font-mono text-xs font-bold tracking-widest tabular-nums">
             {formatTime(timeLeft)}
           </span>
           
           {/* Progress Bar Background */}
-          <div className="absolute bottom-0 left-4 right-4 h-[2px] bg-slate-100 rounded-full overflow-hidden">
+          <div className="absolute bottom-0 left-2 right-2 h-[2px] bg-blue-100 rounded-full overflow-hidden">
              <div 
-               className={cn("h-full transition-all duration-1000", isResting ? "bg-emerald-500" : "bg-indigo-500")}
+               className={cn("h-full transition-all duration-1000", isResting ? "bg-emerald-500" : "bg-blue-600")}
                style={{ width: `${(timeLeft / (useStudyStore.getState().duration * 60)) * 100}%` }} 
              />
           </div>
@@ -141,7 +143,10 @@ export default function PomodoroDock() {
 
   // --- Expanded View ---
   return (
-    <div className="relative flex flex-col items-end gap-3">
+    <div className={cn(
+      "relative flex flex-col items-center gap-3",
+      !isEmbedded && "items-end"
+    )}>
       
       {/* Room Pill (Background Mode) */}
       {isRoomBackground && (
@@ -247,13 +252,14 @@ export default function PomodoroDock() {
 
       {/* Main Dock */}
       <div className={cn(
-        "relative flex items-center gap-4 px-3 py-2.5 rounded-full border shadow-lg transition-all duration-300",
-        "bg-white/95 backdrop-blur-xl text-slate-800",
-        status !== 'idle' ? "border-slate-100 shadow-md" : "border-slate-200"
+        "relative flex items-center gap-3 transition-all duration-300",
+        isEmbedded 
+          ? "bg-transparent w-full text-slate-700 justify-between" 
+          : "bg-white/95 backdrop-blur-xl border border-slate-200 shadow-lg text-slate-800 rounded-full px-3 py-2.5"
       )}>
         
-        {/* Toggle Collapse Button (Only when running) */}
-        {status !== 'idle' && (
+        {/* Toggle Collapse Button (Only when running and NOT embedded) */}
+        {status !== 'idle' && !isEmbedded && (
           <button 
             onClick={() => setIsCollapsed(true)}
             className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white text-slate-500 rounded-full p-0.5 border border-slate-200 hover:bg-slate-50 hover:text-slate-800 transition-colors shadow-sm"
@@ -287,16 +293,16 @@ export default function PomodoroDock() {
         </button>
 
         {/* Divider */}
-        <div className="w-px h-6 bg-slate-200"></div>
+        <div className={cn("w-px h-6", isEmbedded ? "bg-slate-200" : "bg-slate-200")}></div>
 
         {/* Middle Section: Controls & Time */}
         {status === 'idle' ? (
           <div className="flex items-center gap-2">
             <button 
               onClick={() => handleStart(defaultFocusDuration)}
-              className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all active:scale-95 shadow-sm"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-all active:scale-95 shadow-sm"
             >
-              <Zap size={16} className="fill-current" />
+              <Play size={14} className="fill-current" />
               <span>{defaultFocusDuration}m</span>
             </button>
             <button 
@@ -305,10 +311,10 @@ export default function PomodoroDock() {
                 setShowTagPicker(false);
               }}
               className={cn(
-                "flex items-center justify-center w-9 h-9 rounded-full transition-all active:scale-95 border",
+                "flex items-center justify-center w-9 h-9 rounded-full transition-all active:scale-95",
                 showSettings 
-                  ? "bg-slate-100 text-slate-800 border-slate-200" 
-                  : "bg-white hover:bg-slate-50 text-slate-500 border-transparent"
+                  ? "bg-slate-100 text-slate-700" 
+                  : "bg-transparent hover:bg-slate-100 text-slate-400 hover:text-slate-600"
               )}
             >
               <Settings size={16} className={showSettings ? "animate-spin-slow" : ""} />
