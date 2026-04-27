@@ -51,10 +51,10 @@ const AmbientBuddyRing = () => {
   };
 
   return (
-    <div className="fixed top-1/3 right-4 z-40 hidden xl:flex flex-col gap-4">
-      <div className="bg-white/80 backdrop-blur-sm border border-slate-200 rounded-full py-3 px-2 flex flex-col items-center gap-3 shadow-lg shadow-indigo-100/50">
+    <div className="hidden xl:flex flex-col gap-4 relative">
+      <div className="bg-white/80 backdrop-blur-md border border-slate-200 rounded-full py-3 px-2 flex flex-col items-center gap-3 shadow-sm hover:shadow transition-shadow">
         
-        <div className="p-1.5 rounded-full bg-indigo-50 text-indigo-500 mb-1" title="Top Algorithm Matches">
+        <div className="p-1.5 rounded-full bg-blue-50 text-blue-500 mb-1" title="Top Algorithm Matches">
           <Users size={16} />
         </div>
 
