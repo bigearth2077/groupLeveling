@@ -129,7 +129,7 @@ const Home = () => {
       
       {/* 1. Hero Section: Level & Status */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-        <div className="col-span-1 md:col-span-12 lg:col-span-8 group relative overflow-hidden rounded-3xl bg-white border border-slate-100 p-8 shadow-xl shadow-slate-200/50 transition-all hover:shadow-2xl hover:shadow-indigo-200/50">
+        <div className="col-span-1 md:col-span-12 lg:col-span-8 group relative overflow-hidden rounded-[2rem] bg-white border border-slate-100/60 p-8 sm:p-10 shadow-sm hover:shadow transition-shadow">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
             <Zap size={120} className="text-indigo-600 rotate-12" />
           </div>
@@ -137,7 +137,7 @@ const Home = () => {
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-4 flex-1">
               <div className="flex items-center gap-3">
-                <span className="px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-bold uppercase tracking-wider">
+                <span className="px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-wider border border-blue-100/50">
                   Level {userStats.level}
                 </span>
                 <div className="flex items-center gap-1 text-orange-500 font-bold text-sm">
@@ -150,8 +150,8 @@ const Home = () => {
                 <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">
                   Welcome back, {userStats.nickname}
                 </h1>
-                <p className="text-slate-500 mt-1">
-                  You are <span className="text-indigo-600 font-bold">{userStats.nextLevelXP - userStats.currentXP} XP</span> away from Level {userStats.level + 1}.
+                <p className="text-slate-500 mt-2 font-medium">
+                  You are <span className="text-blue-600 font-bold">{userStats.nextLevelXP - userStats.currentXP} XP</span> away from Level {userStats.level + 1}.
                 </p>
               </div>
 
@@ -161,9 +161,9 @@ const Home = () => {
                   <span>Current XP</span>
                   <span>Target {userStats.nextLevelXP}</span>
                 </div>
-                <div className="h-4 w-full rounded-full bg-slate-100 overflow-hidden">
+                <div className="h-4 w-full rounded-full bg-slate-50 border border-slate-100 overflow-hidden">
                   <div 
-                    className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 shadow-[0_0_10px_rgba(99,102,241,0.5)] transition-all duration-1000 ease-out"
+                    className="h-full rounded-full bg-blue-500 transition-all duration-1000 ease-out"
                     style={{ width: `${userStats.progress}%` }}
                   />
                 </div>
@@ -173,10 +173,10 @@ const Home = () => {
             {/* CTA Button */}
             <button 
               onClick={() => navigate('/rooms')}
-              className="shrink-0 rounded-2xl bg-slate-900 px-8 py-5 text-white shadow-lg shadow-slate-900/20 transition-all hover:-translate-y-1 hover:shadow-xl active:translate-y-0 active:scale-95 flex items-center gap-3 group/btn"
+              className="shrink-0 rounded-2xl bg-blue-600 px-8 py-4 text-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md hover:bg-blue-500 active:translate-y-0 active:scale-95 flex items-center gap-3 group/btn"
             >
               <span className="font-bold text-lg">Join Squad</span>
-              <div className="rounded-lg bg-white/20 p-1 transition-transform group-hover/btn:translate-x-1">
+              <div className="rounded-full bg-white/20 p-1.5 transition-transform group-hover/btn:translate-x-1">
                 <ArrowRight size={20} />
               </div>
             </button>
@@ -185,7 +185,7 @@ const Home = () => {
 
         {/* Mini Stats (Desktop Sidebar Top) */}
         <div className="col-span-1 md:col-span-6 lg:col-span-4 grid grid-cols-2 gap-4">
-          <div className="rounded-3xl bg-gradient-to-br from-orange-50 to-orange-100 p-6 flex flex-col justify-between border border-orange-200">
+          <div className="rounded-[2rem] bg-orange-50 p-6 flex flex-col justify-between border border-orange-100/50">
             <div className="rounded-full bg-white/60 w-10 h-10 flex items-center justify-center text-orange-600 mb-2">
               <Clock size={20} />
             </div>
@@ -194,8 +194,8 @@ const Home = () => {
               <div className="text-xs font-medium text-orange-700/60 uppercase">Today's Focus</div>
             </div>
           </div>
-           <div className="rounded-3xl bg-white p-6 flex flex-col justify-between border border-slate-100 shadow-sm">
-            <div className="rounded-full bg-slate-50 w-10 h-10 flex items-center justify-center text-slate-600 mb-2">
+           <div className="rounded-[2rem] bg-white p-6 flex flex-col justify-between border border-slate-100/60 shadow-sm">
+            <div className="rounded-full bg-slate-50 w-10 h-10 flex items-center justify-center text-slate-600 mb-2 border border-slate-100">
               <Trophy size={20} />
             </div>
             <div>
@@ -208,7 +208,7 @@ const Home = () => {
 
       {/* Analytics Section (New Heatmaps) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-         <div className="lg:col-span-12 xl:col-span-5 rounded-3xl bg-white border border-slate-100 p-6 shadow-sm">
+         <div className="lg:col-span-12 xl:col-span-5 rounded-[2rem] bg-white border border-slate-100/60 p-8 shadow-sm">
             <h3 className="font-bold text-slate-800 mb-1 text-lg flex items-center gap-2">
               <Zap size={18} className="text-orange-500" />
               Activity Calendar
@@ -216,9 +216,9 @@ const Home = () => {
             <p className="text-xs text-slate-400 mb-4">Your daily study footprint for the year</p>
             <ActivityHeatmap />
          </div>
-         <div className="lg:col-span-12 xl:col-span-7 rounded-3xl bg-white border border-slate-100 p-6 shadow-sm">
+         <div className="lg:col-span-12 xl:col-span-7 rounded-[2rem] bg-white border border-slate-100/60 p-8 shadow-sm">
             <h3 className="font-bold text-slate-800 mb-1 text-lg flex items-center gap-2">
-              <Clock size={18} className="text-indigo-500" />
+              <Clock size={18} className="text-blue-500" />
               Peak Focus Hours
             </h3>
             <p className="text-xs text-slate-400 mb-4">Your 24-hour efficiency matrix over the last 30 days</p>
@@ -250,9 +250,9 @@ const Home = () => {
             {/* Create Room Card */}
             <div 
               onClick={() => navigate('/rooms')}
-              className="group cursor-pointer rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/50 p-6 flex flex-col items-center justify-center text-center gap-3 transition-colors hover:border-indigo-400 hover:bg-indigo-50/10"
+              className="group cursor-pointer rounded-3xl border border-dashed border-slate-300 bg-white p-6 flex flex-col items-center justify-center text-center gap-3 transition-colors hover:border-blue-400 hover:bg-blue-50/30"
             >
-              <div className="rounded-full bg-white p-3 shadow-sm group-hover:scale-110 transition-transform text-indigo-600">
+              <div className="rounded-full bg-blue-50 p-3 group-hover:scale-110 transition-transform text-blue-600">
                 <Plus size={24} />
               </div>
               <div>
@@ -271,11 +271,11 @@ const Home = () => {
                 <div 
                   key={room.id} 
                   onClick={() => handleJoinAttempt(room)}
-                  className="group relative rounded-2xl bg-white p-5 border border-slate-100 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md cursor-pointer"
+                  className="group relative rounded-3xl bg-white p-5 border border-slate-100/60 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md cursor-pointer"
                 >
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex gap-2">
-                      <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600">
+                      <div className="p-2 rounded-2xl bg-blue-50 text-blue-600">
                          {room.isPrivate ? <Lock size={20} /> : <Code2 size={20} />}
                       </div>
                       {room.matchScore > 0 && (
@@ -297,7 +297,7 @@ const Home = () => {
                   </div>
                   
                   <div className="absolute bottom-4 right-4 opacity-0 transform translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all">
-                    <div className="rounded-full bg-slate-900 p-2 text-white">
+                    <div className="rounded-full bg-blue-50 p-2 text-blue-600">
                       <ArrowRight size={16} />
                     </div>
                   </div>
@@ -311,15 +311,15 @@ const Home = () => {
         <div className="lg:col-span-4 space-y-6">
           
           {/* Global Leaderboard Card */}
-          <div className="rounded-3xl bg-white border border-slate-100 shadow-lg shadow-slate-200/50 overflow-hidden">
-            <div className="p-5 border-b border-slate-50 flex justify-between items-center bg-gradient-to-r from-slate-50 to-white">
+          <div className="rounded-[2rem] bg-white border border-slate-100/60 shadow-sm overflow-hidden">
+            <div className="p-5 border-b border-slate-50 flex justify-between items-center">
               <h3 className="font-bold text-slate-700 flex items-center gap-2">
                 <Trophy size={18} className="text-yellow-500" />
                 Global Top
               </h3>
               <button 
                 onClick={() => navigate('/rankings')}
-                className="text-xs font-bold text-indigo-600 hover:text-indigo-700"
+                className="text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 px-2 py-1 rounded-lg"
               >
                 View All
               </button>
@@ -347,7 +347,7 @@ const Home = () => {
           </div>
 
           {/* Friends Leaderboard Card */}
-          <div className="rounded-3xl bg-white border border-slate-100 shadow-sm overflow-hidden">
+          <div className="rounded-[2rem] bg-white border border-slate-100/60 shadow-sm overflow-hidden">
              <div className="p-5 border-b border-slate-50 flex justify-between items-center">
                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
                  <Users size={16} /> Top Friends

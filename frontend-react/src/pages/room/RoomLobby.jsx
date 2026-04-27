@@ -124,9 +124,9 @@ export default function RoomLobby() {
     <div className="max-w-5xl mx-auto space-y-8 pb-20">
       
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-6 rounded-[2rem] border border-slate-100/60 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="p-3 rounded-2xl bg-indigo-50 text-indigo-600">
+          <div className="p-3 rounded-2xl bg-blue-50 text-blue-600">
             <Users size={24} />
           </div>
           <div>
@@ -142,10 +142,10 @@ export default function RoomLobby() {
                value={searchQuery}
                onChange={(e) => setSearchQuery(e.target.value)}
                placeholder="Search rooms..." 
-               className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+               className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 transition-all"
              />
            </div>
-           <Button onClick={() => setShowCreateModal(true)} className="rounded-xl bg-slate-900 shadow-lg hover:bg-slate-800">
+           <Button onClick={() => setShowCreateModal(true)} className="rounded-2xl bg-blue-600 shadow-sm hover:bg-blue-500 hover:shadow-md transition-all py-6 px-6">
              <Plus size={18} className="mr-2" /> Create
            </Button>
         </div>
@@ -162,10 +162,10 @@ export default function RoomLobby() {
             <div 
               key={room.id}
               onClick={() => handleJoinAttempt(room)}
-              className="group relative bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:border-indigo-100 transition-all cursor-pointer overflow-hidden"
+              className="group relative bg-white p-6 rounded-3xl border border-slate-100/60 shadow-sm hover:shadow-md hover:border-blue-100 transition-all cursor-pointer overflow-hidden"
             >
               <div className="flex justify-between items-start mb-4">
-                <div className="p-3 rounded-2xl bg-slate-50 text-slate-600 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
+                <div className="p-3 rounded-2xl bg-slate-50 text-slate-600 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
                   {room.isPrivate ? <Lock size={20} /> : <Unlock size={20} />}
                 </div>
                 <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-50 text-xs font-bold text-slate-600">
@@ -174,14 +174,14 @@ export default function RoomLobby() {
                 </div>
               </div>
 
-              <h3 className="text-lg font-bold text-slate-800 mb-1 group-hover:text-indigo-600 transition-colors">{room.name}</h3>
+              <h3 className="text-lg font-bold text-slate-800 mb-1 group-hover:text-blue-600 transition-colors">{room.name}</h3>
               <p className="text-sm text-slate-500 line-clamp-2 mb-4 h-10">{room.description || "No description provided."}</p>
 
               <div className="flex items-center justify-between mt-auto">
-                 <span className="text-xs font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded-md">
+                 <span className="text-xs font-bold text-slate-500 bg-slate-50 px-2.5 py-1 rounded-lg">
                    #{room.tagName || 'General'}
                  </span>
-                 <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-indigo-600 group-hover:text-white transition-all transform group-hover:translate-x-1">
+                 <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition-all transform group-hover:translate-x-1">
                    <ArrowRight size={16} />
                  </div>
               </div>
@@ -192,11 +192,11 @@ export default function RoomLobby() {
 
       {/* Create Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-[2rem] w-full max-w-md p-8 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-slate-800">Create Squad</h2>
-              <button onClick={() => setShowCreateModal(false)} className="p-2 rounded-full hover:bg-slate-100 text-slate-400">
+              <button onClick={() => setShowCreateModal(false)} className="p-2 rounded-full hover:bg-slate-50 text-slate-400 transition-colors">
                 <X size={20} />
               </button>
             </div>
@@ -276,8 +276,8 @@ export default function RoomLobby() {
               )}
 
               <div className="pt-4 flex gap-3">
-                <Button type="button" variant="outline" onClick={() => setShowCreateModal(false)} className="flex-1 rounded-xl">Cancel</Button>
-                <Button type="submit" className="flex-1 rounded-xl bg-slate-900">Create</Button>
+                <Button type="button" variant="outline" onClick={() => setShowCreateModal(false)} className="flex-1 rounded-xl border-slate-200 hover:bg-slate-50">Cancel</Button>
+                <Button type="submit" className="flex-1 rounded-xl bg-blue-600 hover:bg-blue-500 shadow-sm">Create</Button>
               </div>
             </form>
           </div>

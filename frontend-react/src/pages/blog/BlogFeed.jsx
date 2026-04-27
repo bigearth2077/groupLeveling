@@ -74,7 +74,7 @@ const BlogFeed = () => {
         </div>
         <button
           onClick={() => navigate('/blogs/new')}
-          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 hover:shadow-xl hover:shadow-indigo-300 transition-all active:scale-95"
+          className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-bold rounded-2xl shadow-sm hover:shadow-md hover:bg-blue-500 transition-all active:scale-95"
         >
           <Plus size={18} strokeWidth={3} />
           写博客
@@ -90,42 +90,42 @@ const BlogFeed = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="搜索博客标题或内容..."
-            className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 transition-all"
+            className="w-full pl-9 pr-4 py-3 bg-white border border-slate-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 transition-all shadow-sm"
           />
         </form>
         <div className="flex gap-2">
           <button
             onClick={() => { setSort('latest'); setPage(1); }}
-            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
+            className={`flex items-center gap-1.5 px-5 py-3 rounded-2xl text-sm font-bold transition-all shadow-sm ${
               sort === 'latest'
-                ? 'bg-indigo-50 text-indigo-600 border border-indigo-200'
-                : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
+                ? 'bg-blue-50 text-blue-700 border-transparent'
+                : 'bg-white border border-slate-100 text-slate-500 hover:bg-slate-50'
             }`}
           >
-            <Clock size={14} /> 最新
+            <Clock size={16} /> 最新
           </button>
           <button
             onClick={() => { setSort('popular'); setPage(1); }}
-            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
+            className={`flex items-center gap-1.5 px-5 py-3 rounded-2xl text-sm font-bold transition-all shadow-sm ${
               sort === 'popular'
-                ? 'bg-indigo-50 text-indigo-600 border border-indigo-200'
-                : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
+                ? 'bg-blue-50 text-blue-700 border-transparent'
+                : 'bg-white border border-slate-100 text-slate-500 hover:bg-slate-50'
             }`}
           >
-            <TrendingUp size={14} /> 热门
+            <TrendingUp size={16} /> 热门
           </button>
         </div>
       </div>
 
       {/* Blog Cards Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="bg-white rounded-2xl border border-slate-100 p-5 animate-pulse">
-              <div className="h-4 bg-slate-200 rounded w-3/4 mb-3" />
-              <div className="h-3 bg-slate-100 rounded w-full mb-2" />
-              <div className="h-3 bg-slate-100 rounded w-2/3 mb-4" />
-              <div className="h-3 bg-slate-100 rounded w-1/3" />
+            <div key={i} className="bg-white rounded-[2rem] border border-slate-100/60 p-6 animate-pulse shadow-sm">
+              <div className="h-4 bg-slate-100 rounded-full w-3/4 mb-3" />
+              <div className="h-3 bg-slate-50 rounded-full w-full mb-2" />
+              <div className="h-3 bg-slate-50 rounded-full w-2/3 mb-4" />
+              <div className="h-3 bg-slate-50 rounded-full w-1/3" />
             </div>
           ))}
         </div>
@@ -141,12 +141,12 @@ const BlogFeed = () => {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {blogs.map((blog) => (
             <article
               key={blog.id}
               onClick={() => navigate(`/blog/${blog.id}`)}
-              className="group bg-white rounded-2xl border border-slate-100 p-5 cursor-pointer hover:shadow-lg hover:shadow-slate-100 hover:border-slate-200 transition-all duration-300 hover:-translate-y-0.5"
+              className="group bg-white rounded-[2rem] border border-slate-100/60 p-6 cursor-pointer hover:shadow-md hover:border-blue-100 transition-all duration-300 hover:-translate-y-0.5 shadow-sm"
             >
               {/* Quality Badge + Tags */}
               <div className="flex items-center gap-2 mb-3 flex-wrap">
@@ -160,7 +160,7 @@ const BlogFeed = () => {
               </div>
 
               {/* Title */}
-              <h2 className="text-lg font-bold text-slate-800 group-hover:text-indigo-600 transition-colors line-clamp-2 mb-2">
+              <h2 className="text-lg font-bold text-slate-800 group-hover:text-blue-600 transition-colors line-clamp-2 mb-2">
                 {blog.title}
               </h2>
 
@@ -173,10 +173,10 @@ const BlogFeed = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   {blog.author?.avatarUrl ? (
-                    <img src={blog.author.avatarUrl} className="w-5 h-5 rounded-full object-cover" alt="" />
+                    <img src={blog.author.avatarUrl} className="w-6 h-6 rounded-full object-cover" alt="" />
                   ) : (
-                    <div className="w-5 h-5 rounded-full bg-gradient-to-br from-indigo-400 to-purple-400 flex items-center justify-center">
-                      <User size={10} className="text-white" />
+                    <div className="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center">
+                      <User size={12} className="text-blue-500" />
                     </div>
                   )}
                   <span className="text-xs font-medium text-slate-500">{blog.author?.nickname}</span>
@@ -204,17 +204,17 @@ const BlogFeed = () => {
           <button
             disabled={page <= 1}
             onClick={() => setPage(p => p - 1)}
-            className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="px-5 py-2.5 rounded-2xl bg-white border border-slate-100 text-sm font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
           >
             上一页
           </button>
-          <span className="px-4 py-2 text-sm font-bold text-slate-500">
+          <span className="px-4 py-2.5 text-sm font-bold text-slate-500 flex items-center">
             {page} / {totalPages}
           </span>
           <button
             disabled={page >= totalPages}
             onClick={() => setPage(p => p + 1)}
-            className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="px-5 py-2.5 rounded-2xl bg-white border border-slate-100 text-sm font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
           >
             下一页
           </button>
