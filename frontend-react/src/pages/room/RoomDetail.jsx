@@ -114,7 +114,7 @@ export default function RoomDetail() {
     return (
       <div className="flex justify-center items-center h-[50vh]">
         <Loader2 className="w-10 h-10 animate-spin text-indigo-600" />
-        <span className="ml-3 text-slate-500 font-medium">Connecting to room...</span>
+        <span className="ml-3 text-slate-500 font-medium">正在连接房间...</span>
       </div>
     );
   }
@@ -132,8 +132,8 @@ export default function RoomDetail() {
             </button>
             <div>
               <h1 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                {roomInfo ? roomInfo.name : `Room #${roomId.slice(0, 4)}`}
-                <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs">Live</span>
+                {roomInfo ? roomInfo.name : `房间 #${roomId.slice(0, 4)}`}
+                <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs">进行中</span>
               </h1>
             </div>
           </div>
@@ -141,7 +141,7 @@ export default function RoomDetail() {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 text-slate-500 text-sm font-bold">
               <Users size={18} />
-              {members.length} Online
+              {members.length} 人在线
             </div>
             
             {isHost && (
@@ -151,9 +151,9 @@ export default function RoomDetail() {
                   variant="outline" 
                   className="rounded-xl h-9 border-slate-200 text-slate-600 hover:bg-slate-50"
                   onClick={() => setShowSettings(true)}
-                  title="Room Settings"
+                  title="房间设置"
                 >
-                  <Settings size={16} className="mr-2" /> Settings
+                  <Settings size={16} className="mr-2" /> 设置
                 </Button>
                 <Button 
                   size="sm" 
@@ -173,7 +173,7 @@ export default function RoomDetail() {
               className="rounded-xl h-9"
               onClick={handleLeave}
             >
-              <LogOut size={16} className="mr-2" /> Leave
+              <LogOut size={16} className="mr-2" /> 退出
             </Button>
           </div>
         </div>
@@ -215,7 +215,7 @@ export default function RoomDetail() {
                       "text-[10px] uppercase font-bold tracking-wider mt-0.5",
                       isLearning ? "text-indigo-600" : isResting ? "text-emerald-600" : "text-slate-400"
                     )}>
-                      {isLearning ? 'Focusing' : isResting ? 'Resting' : 'Idle'}
+                      {isLearning ? '专注中' : isResting ? '休息中' : '空闲'}
                     </div>
                   </div>
                 </div>
@@ -228,7 +228,7 @@ export default function RoomDetail() {
       {/* Sidebar: Chat */}
       <div className="w-full md:w-80 flex flex-col bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden h-[400px] md:h-auto">
         <div className="p-4 border-b border-slate-100 font-bold text-slate-700 flex items-center gap-2">
-          <MessageSquare size={18} /> Chat
+          <MessageSquare size={18} /> 聊天室
         </div>
         
         <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/30">
@@ -253,7 +253,7 @@ export default function RoomDetail() {
           <Input 
             value={inputMsg}
             onChange={e => setInputMsg(e.target.value)}
-            placeholder="Say hi..." 
+            placeholder="聊点什么吧..." 
             className="rounded-xl border-slate-200 text-sm"
           />
           <Button type="submit" size="icon" className="rounded-xl bg-slate-900 shrink-0">

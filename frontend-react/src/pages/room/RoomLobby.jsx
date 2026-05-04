@@ -130,8 +130,8 @@ export default function RoomLobby() {
             <Users size={24} />
           </div>
           <div>
-            <h1 className="text-2xl font-black text-slate-800 tracking-tight">Study Squads</h1>
-            <p className="text-sm text-slate-500 font-medium">Join a room and focus together</p>
+            <h1 className="text-2xl font-black text-slate-800 tracking-tight">自习小组</h1>
+            <p className="text-sm text-slate-500 font-medium">加入自习室，开启专注学习之旅</p>
           </div>
         </div>
 
@@ -141,12 +141,12 @@ export default function RoomLobby() {
              <input 
                value={searchQuery}
                onChange={(e) => setSearchQuery(e.target.value)}
-               placeholder="Search rooms..." 
+               placeholder="搜索自习室..." 
                className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 transition-all"
              />
            </div>
            <Button onClick={() => setShowCreateModal(true)} className="rounded-2xl bg-blue-600 shadow-sm hover:bg-blue-500 hover:shadow-md transition-all py-6 px-6">
-             <Plus size={18} className="mr-2" /> Create
+             <Plus size={18} className="mr-2" /> 创建
            </Button>
         </div>
       </div>
@@ -175,11 +175,11 @@ export default function RoomLobby() {
               </div>
 
               <h3 className="text-lg font-bold text-slate-800 mb-1 group-hover:text-blue-600 transition-colors">{room.name}</h3>
-              <p className="text-sm text-slate-500 line-clamp-2 mb-4 h-10">{room.description || "No description provided."}</p>
+              <p className="text-sm text-slate-500 line-clamp-2 mb-4 h-10">{room.description || "暂无简介。"}</p>
 
               <div className="flex items-center justify-between mt-auto">
                  <span className="text-xs font-bold text-slate-500 bg-slate-50 px-2.5 py-1 rounded-lg">
-                   #{room.tagName || 'General'}
+                   #{room.tagName || '通用'}
                  </span>
                  <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition-all transform group-hover:translate-x-1">
                    <ArrowRight size={16} />
@@ -195,7 +195,7 @@ export default function RoomLobby() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-sm p-4">
           <div className="bg-white rounded-[2rem] w-full max-w-md p-8 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-slate-800">Create Squad</h2>
+              <h2 className="text-xl font-bold text-slate-800">创建小组</h2>
               <button onClick={() => setShowCreateModal(false)} className="p-2 rounded-full hover:bg-slate-50 text-slate-400 transition-colors">
                 <X size={20} />
               </button>
@@ -203,27 +203,27 @@ export default function RoomLobby() {
             
             <form onSubmit={handleCreate} className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">Room Name</label>
+                <label className="text-sm font-bold text-slate-700">小组名称</label>
                 <Input 
                   value={newRoom.name} 
                   onChange={e => setNewRoom({...newRoom, name: e.target.value})}
                   className="rounded-xl" 
-                  placeholder="e.g. Late Night Coding"
+                  placeholder="例如：深夜编程"
                   autoFocus
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">Description</label>
+                <label className="text-sm font-bold text-slate-700">小组简介</label>
                 <Input 
                   value={newRoom.description} 
                   onChange={e => setNewRoom({...newRoom, description: e.target.value})}
                   className="rounded-xl" 
-                  placeholder="What's this room for?"
+                  placeholder="介绍一下这个自习室吧"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-700">Max Members</label>
+                    <label className="text-sm font-bold text-slate-700">最大人数</label>
                     <Input 
                       type="number"
                       value={newRoom.maxMembers} 
@@ -232,14 +232,14 @@ export default function RoomLobby() {
                     />
                  </div>
                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-700">Topic Tag</label>
+                    <label className="text-sm font-bold text-slate-700">主题标签</label>
                     <div className="relative">
                       <Hash className="absolute left-3 top-2.5 text-slate-400" size={16} />
                       <Input 
                         list="my-tags-list"
                         value={tagNameInput}
                         onChange={e => setTagNameInput(e.target.value)}
-                        placeholder="Select or type tag..."
+                        placeholder="选择或输入标签..."
                         className="pl-9 rounded-xl"
                       />
                       <datalist id="my-tags-list">
@@ -259,12 +259,12 @@ export default function RoomLobby() {
                       onChange={e => setNewRoom({...newRoom, isPrivate: e.target.checked})}
                       className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                     />
-                    <label htmlFor="isPrivate" className="text-sm font-bold text-slate-700">Private Room</label>
+                    <label htmlFor="isPrivate" className="text-sm font-bold text-slate-700">私密小组</label>
               </div>
 
               {newRoom.isPrivate && (
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">Password</label>
+                  <label className="text-sm font-bold text-slate-700">密码</label>
                   <Input 
                     type="password"
                     value={newRoom.password} 
@@ -276,8 +276,8 @@ export default function RoomLobby() {
               )}
 
               <div className="pt-4 flex gap-3">
-                <Button type="button" variant="outline" onClick={() => setShowCreateModal(false)} className="flex-1 rounded-xl border-slate-200 hover:bg-slate-50">Cancel</Button>
-                <Button type="submit" className="flex-1 rounded-xl bg-blue-600 hover:bg-blue-500 shadow-sm">Create</Button>
+                <Button type="button" variant="outline" onClick={() => setShowCreateModal(false)} className="flex-1 rounded-xl border-slate-200 hover:bg-slate-50">取消</Button>
+                <Button type="submit" className="flex-1 rounded-xl bg-blue-600 hover:bg-blue-500 shadow-sm">创建</Button>
               </div>
             </form>
           </div>

@@ -137,7 +137,7 @@ export default function ChatPanel({ friend, onBack }) {
         <Input 
           value={inputMsg}
           onChange={e => setInputMsg(e.target.value)}
-          placeholder="Type a message..." 
+          placeholder="在此输入消息..." 
           className="rounded-xl border-slate-200 text-sm flex-1 h-9"
         />
         <Button type="submit" size="icon" className="h-9 w-9 rounded-xl bg-indigo-600 hover:bg-indigo-700 shrink-0">

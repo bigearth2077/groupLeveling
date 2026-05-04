@@ -6,7 +6,7 @@ import RoomConnectionManager from '@/components/room/RoomConnectionManager';
 import DailyReviewPanel from '@/components/DailyReviewPanel';
 import NotificationBell from '@/components/notification/NotificationBell';
 import AmbientBuddyRing from '@/feature/matching/components/AmbientBuddyRing';
-import { LayoutDashboard, Users, Trophy, User, BookOpen, Globe, Search } from 'lucide-react';
+import { LayoutDashboard, Users, User } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { connectSocket } from '@/lib/socket';
 import { cn } from '@/lib/utils';
@@ -20,16 +20,14 @@ const AppLayout = () => {
     return () => {};
   }, []);
 
-  const toggleLanguage = () => {
-    const newLang = i18n.language.startsWith('zh') ? 'en' : 'zh';
-    i18n.changeLanguage(newLang);
-  };
+  // Global Chinese forced
+  React.useEffect(() => {
+    i18n.changeLanguage('zh');
+  }, [i18n]);
 
   const navItems = [
     { name: t('nav.dashboard'), path: '/', icon: LayoutDashboard },
     { name: t('nav.rooms'), path: '/rooms', icon: Users },
-    { name: t('nav.blogs'), path: '/blogs', icon: BookOpen },
-    { name: t('nav.rankings'), path: '/rankings', icon: Trophy },
     { name: t('nav.profile'), path: '/profile', icon: User },
   ];
 
@@ -43,21 +41,7 @@ const AppLayout = () => {
         </div>
 
         <div className="flex items-center gap-4">
-           {/* Search Bar */}
-           <div className="max-w-md w-64 lg:w-96 relative hidden md:block">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            <input 
-              type="text" 
-              placeholder="Search..." 
-              className="w-full bg-white/50 border border-slate-200/50 pl-10 pr-4 py-1.5 rounded-full text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all"
-            />
-          </div>
-
           <div className="flex items-center gap-2">
-            <button onClick={toggleLanguage} className="p-2 text-slate-500 hover:text-blue-600 transition-colors bg-white/50 rounded-full border border-slate-200/50">
-              <Globe size={16} />
-            </button>
-            <div className="bg-white/50 rounded-full border border-slate-200/50 p-0.5"><NotificationBell /></div>
             <div className="bg-white/50 rounded-full border border-slate-200/50 p-1"><FriendDrawer /></div>
           </div>
         </div>

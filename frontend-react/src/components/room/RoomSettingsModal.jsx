@@ -69,7 +69,7 @@ export default function RoomSettingsModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
       <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl animate-in zoom-in-95 duration-200">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-slate-800">Room Settings</h2>
+          <h2 className="text-xl font-bold text-slate-800">房间设置</h2>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 text-slate-400">
             <X size={20} />
           </button>
@@ -77,7 +77,7 @@ export default function RoomSettingsModal({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-700">Room Name</label>
+            <label className="text-sm font-bold text-slate-700">房间名称</label>
             <Input 
               value={formData.name} 
               onChange={e => setFormData({...formData, name: e.target.value})}
@@ -86,7 +86,7 @@ export default function RoomSettingsModal({
           </div>
           
           <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-700">Description</label>
+            <label className="text-sm font-bold text-slate-700">简介</label>
             <Input 
               value={formData.description} 
               onChange={e => setFormData({...formData, description: e.target.value})}
@@ -96,7 +96,7 @@ export default function RoomSettingsModal({
 
           <div className="grid grid-cols-2 gap-4">
              <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">Max Members</label>
+                <label className="text-sm font-bold text-slate-700">最大人数</label>
                 <Input 
                   type="number"
                   value={formData.maxMembers} 
@@ -112,19 +112,19 @@ export default function RoomSettingsModal({
                   onChange={e => setFormData({...formData, isPrivate: e.target.checked})}
                   className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                 />
-                <label htmlFor="isPrivateEdit" className="text-sm font-bold text-slate-700">Private Room</label>
+                <label htmlFor="isPrivateEdit" className="text-sm font-bold text-slate-700">私密小组</label>
              </div>
           </div>
 
           {formData.isPrivate && (
             <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">New Password (Optional)</label>
+              <label className="text-sm font-bold text-slate-700">新密码 (可选)</label>
               <Input 
                 type="password"
                 value={formData.password} 
                 onChange={e => setFormData({...formData, password: e.target.value})}
                 className="rounded-xl" 
-                placeholder="Leave empty to keep current"
+                placeholder="留空则保持当前密码"
               />
             </div>
           )}
@@ -137,14 +137,14 @@ export default function RoomSettingsModal({
                className="flex-1 rounded-xl"
                disabled={loading}
              >
-               Cancel
+               取消
              </Button>
              <Button 
                type="submit" 
                className="flex-1 rounded-xl bg-slate-900"
                disabled={loading}
              >
-               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Changes'}
+               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : '保存更改'}
              </Button>
           </div>
         </form>

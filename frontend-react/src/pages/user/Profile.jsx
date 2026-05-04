@@ -256,7 +256,7 @@ export default function Profile() {
 
     return {
       title: { 
-        text: statsRange === '7' ? 'Weekly Focus (Minutes)' : 'Monthly Focus (Minutes)', 
+        text: statsRange === '7' ? '周专注时长 (分钟)' : '月专注时长 (分钟)', 
         textStyle: { fontSize: 14, fontWeight: 'bold', color: '#334155' } 
       },
       tooltip: { trigger: 'axis' },
@@ -321,7 +321,7 @@ export default function Profile() {
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-3xl font-extrabold text-slate-800">{user?.nickname}</h1>
               <span className="px-3 py-1 rounded-full bg-slate-900 text-white text-xs font-bold uppercase tracking-wider">
-                Lvl {stats?.level || 0}
+                等级 {stats?.level || 0}
               </span>
               
               {/* Top Tags Badges */}
@@ -332,16 +332,16 @@ export default function Profile() {
               ))}
             </div>
             <p className="text-slate-500 max-w-lg">
-              {user?.bio || "This user prefers to keep an air of mystery about them."}
+              {user?.bio || "这个人很懒，什么都没有写。"}
             </p>
             <div className="flex items-center gap-4 text-sm text-slate-400 pt-2">
               <div className="flex items-center gap-1">
                 <MapPin size={14} />
-                <span>Earth</span>
+                <span>地球</span>
               </div>
               <div className="flex items-center gap-1">
                 <Calendar size={14} />
-                <span>Joined Jan 2026</span>
+                <span>2026年1月加入</span>
               </div>
             </div>
           </div>
@@ -358,7 +358,10 @@ export default function Profile() {
                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                  }`}
                >
-                 {tab === 'settings' ? <Settings size={18} /> : tab}
+                 {tab === 'overview' ? '总览' : 
+                  tab === 'history' ? '历史' : 
+                  tab === 'skills' ? '技能' : 
+                  tab === 'health' ? '健康' : <Settings size={18} />}
                </button>
              ))}
           </div>
@@ -373,25 +376,25 @@ export default function Profile() {
             <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">
               <h3 className="font-bold text-slate-800 flex items-center gap-2">
                 <Trophy size={18} className="text-yellow-500" />
-                Current Stats
+                当前数据
               </h3>
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 rounded-2xl bg-slate-50">
-                  <div className="text-xs text-slate-400 uppercase font-bold">Total XP</div>
+                  <div className="text-xs text-slate-400 uppercase font-bold">总经验值</div>
                   <div className="text-2xl font-black text-slate-800">{stats?.currentXP || 0}</div>
                 </div>
                 <div className="p-4 rounded-2xl bg-orange-50">
-                  <div className="text-xs text-orange-400 uppercase font-bold">Streak</div>
+                  <div className="text-xs text-orange-400 uppercase font-bold">连续学习</div>
                   <div className="text-2xl font-black text-orange-600 flex items-center gap-1">
                     <Zap size={20} className="fill-current" />
-                    {summary?.currentStreak || 0}
+                    {summary?.currentStreak || 0} 天
                   </div>
                 </div>
                 <div className="p-4 rounded-2xl bg-blue-50 col-span-2">
-                  <div className="text-xs text-blue-400 uppercase font-bold">Next Level</div>
+                  <div className="text-xs text-blue-400 uppercase font-bold">下一等级</div>
                   <div className="flex items-end justify-between">
-                     <div className="text-xl font-black text-blue-700">{stats?.nextLevelXP - stats?.currentXP} XP left</div>
+                     <div className="text-xl font-black text-blue-700">还差 {stats?.nextLevelXP - stats?.currentXP} 经验</div>
                      <div className="text-xs text-blue-500 font-bold">{stats?.progress?.toFixed(1)}%</div>
                   </div>
                   <div className="mt-2 h-2 w-full bg-blue-100 rounded-full overflow-hidden">
@@ -408,20 +411,20 @@ export default function Profile() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <BarChart3 size={20} className="text-indigo-600" />
-                    <h3 className="font-bold text-slate-800">Focus Trends</h3>
+                    <h3 className="font-bold text-slate-800">专注趋势</h3>
                   </div>
                   <div className="flex bg-slate-100 p-1 rounded-lg">
                     <button 
                       onClick={() => setStatsRange('7')} 
                       className={cn("px-3 py-1 text-xs font-bold rounded-md transition-all", statsRange === '7' ? "bg-white shadow-sm text-indigo-600" : "text-slate-500")}
                     >
-                      Week
+                      周
                     </button>
                     <button 
                       onClick={() => setStatsRange('30')} 
                       className={cn("px-3 py-1 text-xs font-bold rounded-md transition-all", statsRange === '30' ? "bg-white shadow-sm text-indigo-600" : "text-slate-500")}
                     >
-                      Month
+                      月
                     </button>
                   </div>
                 </div>
@@ -430,7 +433,7 @@ export default function Profile() {
                   <ReactECharts option={getChartOption()} style={{ height: '320px' }} />
                 ) : (
                   <div className="flex h-full items-center justify-center text-slate-400">
-                    No activity data available yet.
+                    暂无活动数据。
                   </div>
                 )}
              </div>
@@ -444,14 +447,14 @@ export default function Profile() {
             <div className="p-6 border-b border-slate-50 flex justify-between items-center">
                <h3 className="font-bold text-slate-800 flex items-center gap-2">
                  <History size={20} className="text-indigo-600" />
-                 Session History
+                 学习记录
                </h3>
-               <div className="text-xs text-slate-400">Page {sessionPage}</div>
+               <div className="text-xs text-slate-400">第 {sessionPage} 页</div>
             </div>
             
             <div className="divide-y divide-slate-50">
                {sessions.length === 0 ? (
-                 <div className="p-12 text-center text-slate-400">No sessions found. Start focusing!</div>
+                 <div className="p-12 text-center text-slate-400">暂无记录。开始专注学习吧！</div>
                ) : (
                  sessions.map((sess) => (
                    <div key={sess.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
@@ -460,7 +463,7 @@ export default function Profile() {
                            {sess.type === 'learning' ? <Brain size={20} /> : <Coffee size={20} />}
                         </div>
                         <div>
-                          <div className="font-bold text-slate-700 capitalize">{sess.type === 'learning' ? 'Focus Session' : 'Break'}</div>
+                          <div className="font-bold text-slate-700 capitalize">{sess.type === 'learning' ? '专注时间' : '休息时间'}</div>
                           <div className="text-xs text-slate-400 flex items-center gap-1">
                              <Calendar size={12} />
                              {formatDate(sess.startTime)}
@@ -470,10 +473,9 @@ export default function Profile() {
                       
                       <div className="flex items-center gap-8">
                          <div className="text-right">
-                           <div className="text-sm font-bold text-slate-800">{sess.durationMinutes || 0} min</div>
-                           <div className="text-xs text-slate-400">Duration</div>
+                           <div className="text-sm font-bold text-slate-800">{sess.durationMinutes || 0} 分钟</div>
+                           <div className="text-xs text-slate-400">时长</div>
                          </div>
-                         {/* Optional: Add tag here if available */}
                       </div>
                    </div>
                  ))
@@ -487,7 +489,7 @@ export default function Profile() {
                 onClick={() => setSessionPage(p => p - 1)}
                 className="rounded-xl border-slate-200"
               >
-                <ArrowLeft size={16} className="mr-2" /> Previous
+                <ArrowLeft size={16} className="mr-2" /> 上一页
               </Button>
               <Button 
                 variant="outline" 
@@ -495,7 +497,7 @@ export default function Profile() {
                 onClick={() => setSessionPage(p => p + 1)}
                 className="rounded-xl border-slate-200"
               >
-                Next <ArrowRight size={16} className="ml-2" />
+                下一页 <ArrowRight size={16} className="ml-2" />
               </Button>
             </div>
           </div>
@@ -508,17 +510,17 @@ export default function Profile() {
             <div className="flex justify-between items-center mb-6">
               <h3 className="font-bold text-slate-800 flex items-center gap-2">
                 <Tag size={20} className="text-indigo-600" />
-                My Skills & Tags
+                我的技能与标签
               </h3>
               <form onSubmit={handleAddTag} className="flex gap-2">
                 <Input 
-                  placeholder="New skill..." 
+                  placeholder="新技能..." 
                   value={newTag}
                   onChange={e => setNewTag(e.target.value)}
                   className="h-9 w-40 text-sm rounded-xl"
                 />
                 <Button type="submit" size="sm" className="rounded-xl bg-slate-900 h-9">
-                  <Plus size={16} className="mr-1" /> Add
+                  <Plus size={16} className="mr-1" /> 添加
                 </Button>
               </form>
             </div>
@@ -535,19 +537,18 @@ export default function Profile() {
                    
                    <div className="space-y-2">
                       <div className="flex justify-between text-xs text-slate-400 font-medium">
-                        <span>Progress</span>
-                        <span>{tag.levelInfo?.currentXP || 0} min</span>
+                        <span>进度</span>
+                        <span>{tag.levelInfo?.currentXP || 0} 分钟</span>
                       </div>
                       <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
                         <div className="h-full bg-indigo-500 transition-all duration-500" style={{ width: `${tag.levelInfo?.progress || 0}%` }}></div>
                       </div>
                    </div>
 
-                   {/* Delete Button moved to Top-Left */}
                    <button 
                      onClick={() => handleDeleteTag(tag.tagId)}
                      className="absolute top-2 left-2 p-1.5 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity bg-white/50 rounded-full hover:bg-white"
-                     title="Remove Skill"
+                     title="移除技能"
                    >
                      <Trash2 size={14} />
                    </button>
@@ -557,8 +558,8 @@ export default function Profile() {
               {/* Empty State */}
               {myTags.length === 0 && (
                 <div className="col-span-full py-12 text-center text-slate-400 bg-slate-50/50 rounded-2xl border-dashed border-2 border-slate-200">
-                  <p>No skills tracked yet.</p>
-                  <p className="text-xs mt-1">Add a skill above or start a focus session with a tag.</p>
+                  <p>暂无技能追踪。</p>
+                  <p className="text-xs mt-1">在上方添加一个技能，或带上标签开始专注会话。</p>
                 </div>
               )}
             </div>
@@ -572,7 +573,7 @@ export default function Profile() {
             <div className="flex justify-between items-center mb-8">
               <h3 className="font-black text-2xl text-slate-800 flex items-center gap-3">
                 <HeartPulse size={28} className="text-rose-500" />
-                AI Health & Wellness Report
+                AI 健康与评估报告
               </h3>
               <button 
                 onClick={fetchHealthReport}
@@ -580,14 +581,14 @@ export default function Profile() {
                 className="px-4 py-2 bg-rose-50 text-rose-600 font-bold text-sm rounded-xl hover:bg-rose-100 transition-colors disabled:opacity-50 flex items-center gap-2"
               >
                 {fetchingReport ? <Loader2 size={16} className="animate-spin" /> : <Activity size={16} />}
-                {fetchingReport ? 'Analyzing...' : 'Generate New'}
+                {fetchingReport ? '分析中...' : '生成新报告'}
               </button>
             </div>
 
             {fetchingReport && !healthReport ? (
               <div className="flex flex-col items-center justify-center py-20 text-rose-400">
                 <Loader2 size={40} className="animate-spin mb-4" />
-                <p className="font-medium animate-pulse">DeepSeek AI is analyzing your recent data...</p>
+                <p className="font-medium animate-pulse">DeepSeek AI 正在分析您的近期数据...</p>
               </div>
             ) : healthReport ? (
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -595,12 +596,12 @@ export default function Profile() {
                 <div className="flex flex-col md:flex-row gap-8 items-center bg-gradient-to-r from-rose-50 to-orange-50 p-8 rounded-3xl">
                   <div className="relative w-32 h-32 flex items-center justify-center rounded-full bg-white shadow-lg border-4 border-rose-100">
                     <span className="text-4xl font-black text-rose-500">{healthReport.overallScore}</span>
-                    <span className="absolute bottom-2 text-[10px] font-bold text-slate-400 uppercase">Score</span>
+                    <span className="absolute bottom-2 text-[10px] font-bold text-slate-400 uppercase">评分</span>
                   </div>
                   <div className="flex-1 space-y-3 text-center md:text-left">
-                    <h4 className="text-xl font-bold text-slate-800">Your Wellness Status</h4>
+                    <h4 className="text-xl font-bold text-slate-800">您的健康状态</h4>
                     <p className="text-slate-600 leading-relaxed">
-                      Based on your study duration and daily self-assessment over the past week, here is your personalized evaluation.
+                      基于您过去一周的学习时长和每日自评，这是为您生成的个性化评估。
                     </p>
                   </div>
                 </div>
@@ -611,7 +612,7 @@ export default function Profile() {
                   <div className="bg-slate-50 p-6 rounded-3xl">
                     <h5 className="font-bold text-indigo-700 flex items-center gap-2 mb-4">
                       <Brain size={18} />
-                      Key Insights
+                      核心洞察
                     </h5>
                     <ul className="space-y-3">
                       {healthReport.insights?.map((item, i) => (
@@ -627,7 +628,7 @@ export default function Profile() {
                   <div className="bg-emerald-50 p-6 rounded-3xl">
                     <h5 className="font-bold text-emerald-700 flex items-center gap-2 mb-4">
                       <Coffee size={18} />
-                      Actionable Advice
+                      行动建议
                     </h5>
                     <ul className="space-y-3">
                       {healthReport.advice?.map((item, i) => (
@@ -645,7 +646,7 @@ export default function Profile() {
                   <div className="bg-red-50 border border-red-100 p-6 rounded-3xl">
                     <h5 className="font-bold text-red-600 flex items-center gap-2 mb-4">
                       <AlertTriangle size={18} />
-                      Attention Needed
+                      需要关注
                     </h5>
                     <ul className="space-y-3">
                       {healthReport.warnings.map((item, i) => (
@@ -661,8 +662,8 @@ export default function Profile() {
             ) : (
               <div className="flex flex-col items-center justify-center py-20 text-slate-400 border-2 border-dashed border-slate-200 rounded-3xl">
                 <HeartPulse size={48} className="text-slate-300 mb-4" />
-                <p>No health report available yet.</p>
-                <p className="text-sm mt-1">Submit your daily reviews and check back later!</p>
+                <p>暂无健康报告。</p>
+                <p className="text-sm mt-1">提交您的每日自评，过后再来查看吧！</p>
               </div>
             )}
           </div>
@@ -675,11 +676,11 @@ export default function Profile() {
           <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm space-y-6">
             <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
               <Edit3 size={20} className="text-indigo-600" />
-              Edit Profile
+              编辑资料
             </h3>
             <form onSubmit={handleUpdateProfile} className="space-y-4">
                <div className="space-y-2">
-                 <label className="text-sm font-bold text-slate-700">Nickname</label>
+                 <label className="text-sm font-bold text-slate-700">昵称</label>
                  <Input 
                    value={formData.nickname} 
                    onChange={e => setFormData({...formData, nickname: e.target.value})}
@@ -689,7 +690,7 @@ export default function Profile() {
                
                {/* Avatar Selector */}
                <div className="space-y-2">
-                 <label className="text-sm font-bold text-slate-700">Avatar</label>
+                 <label className="text-sm font-bold text-slate-700">头像</label>
                  <div className="grid grid-cols-4 gap-2 mb-2">
                     {PRESET_AVATARS.map((url, idx) => (
                       <div 
@@ -709,14 +710,14 @@ export default function Profile() {
                     <Input 
                       value={formData.avatarUrl} 
                       onChange={e => setFormData({...formData, avatarUrl: e.target.value})}
-                      placeholder="Or paste a custom image URL..."
+                      placeholder="或粘贴自定义图片 URL..."
                       className="rounded-xl pl-12 text-xs"
                     />
                  </div>
                </div>
 
                <div className="space-y-2">
-                 <label className="text-sm font-bold text-slate-700">Bio</label>
+                 <label className="text-sm font-bold text-slate-700">简介</label>
                  <textarea 
                    className="flex min-h-[80px] w-full rounded-xl border border-slate-200 bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
                    value={formData.bio}
@@ -726,7 +727,7 @@ export default function Profile() {
 
                <Button type="submit" disabled={saving} className="w-full rounded-xl bg-slate-900">
                  {saving ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2 h-4 w-4" />}
-                 Save Changes
+                 保存更改
                </Button>
             </form>
           </div>
@@ -735,11 +736,11 @@ export default function Profile() {
           <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm space-y-6">
             <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
               <Lock size={20} className="text-indigo-600" />
-              Security
+              账号安全
             </h3>
             <form onSubmit={handleChangePassword} className="space-y-4">
                <div className="space-y-2">
-                 <label className="text-sm font-bold text-slate-700">Current Password</label>
+                 <label className="text-sm font-bold text-slate-700">当前密码</label>
                  <Input 
                    type="password"
                    value={passData.currentPassword}
@@ -748,7 +749,7 @@ export default function Profile() {
                  />
                </div>
                <div className="space-y-2">
-                 <label className="text-sm font-bold text-slate-700">New Password</label>
+                 <label className="text-sm font-bold text-slate-700">新密码</label>
                  <Input 
                    type="password"
                    value={passData.newPassword}
@@ -757,7 +758,7 @@ export default function Profile() {
                  />
                </div>
                <Button type="submit" variant="outline" disabled={saving} className="w-full rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50">
-                 Update Password
+                 更新密码
                </Button>
             </form>
           </div>
@@ -766,12 +767,12 @@ export default function Profile() {
           <div className="bg-white p-8 rounded-3xl border border-red-100 shadow-sm space-y-6 md:col-span-2 mt-4">
             <h3 className="text-xl font-bold text-red-600 flex items-center gap-2">
               <LogOut size={20} />
-              Danger Zone
+              危险区域
             </h3>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-red-50 rounded-2xl border border-red-100 gap-4">
               <div>
-                <h4 className="font-bold text-red-800">Sign Out</h4>
-                <p className="text-sm text-red-600/80">Log out of your account on this device. Your data will be kept safe.</p>
+                <h4 className="font-bold text-red-800">退出登录</h4>
+                <p className="text-sm text-red-600/80">在当前设备上退出您的账户。您的数据将被安全保留。</p>
               </div>
               <Button 
                 onClick={() => {
@@ -783,7 +784,7 @@ export default function Profile() {
                 }}
                 className="bg-red-500 hover:bg-red-600 text-white rounded-xl whitespace-nowrap"
               >
-                Sign Out
+                退出登录
               </Button>
             </div>
           </div>

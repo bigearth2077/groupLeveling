@@ -327,7 +327,7 @@ export default function PomodoroDock({ isEmbedded = false }) {
                 {formatTime(timeLeft)}
               </span>
               <span className={cn("text-[10px] font-bold uppercase tracking-wider", themeColor)}>
-                {isResting ? 'Break Time' : 'Focusing'}
+                {isResting ? '休息中' : '专注中'}
               </span>
             </div>
             

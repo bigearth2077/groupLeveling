@@ -15,11 +15,11 @@ const resources = {
 };
 
 i18n
-  .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     resources,
-    fallbackLng: 'zh', // 默认兜底使用中文
+    lng: 'zh', // 强制默认使用中文
+    fallbackLng: 'zh',
     interpolation: {
       escapeValue: false, // react 自带 xss 防护
     },

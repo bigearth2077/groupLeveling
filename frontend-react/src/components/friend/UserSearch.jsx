@@ -52,7 +52,7 @@ export default function UserSearch() {
         <Input 
           value={query} 
           onChange={e => setQuery(e.target.value)}
-          placeholder="Search by nickname..."
+          placeholder="搜索昵称..."
           className="rounded-xl"
         />
         <Button type="submit" disabled={loading} size="icon" className="rounded-xl shrink-0">
@@ -62,7 +62,7 @@ export default function UserSearch() {
 
       <div className="flex-1 overflow-y-auto space-y-2 pr-1">
         {results.length === 0 && !loading && query && (
-          <div className="text-center text-slate-400 py-8 text-sm">No users found.</div>
+          <div className="text-center text-slate-400 py-8 text-sm">未找到相关用户。</div>
         )}
         
         {results.map(user => (

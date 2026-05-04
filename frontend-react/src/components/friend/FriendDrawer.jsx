@@ -89,7 +89,7 @@ export default function FriendDrawer({ children }) {
           <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50/50">
              <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
                <Users size={18} className="text-indigo-600" />
-               Social Hub
+               社交中心
              </h2>
              <button onClick={() => setIsOpen(false)} className="p-1.5 rounded-full hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition-colors">
                <X size={16} />
@@ -101,9 +101,9 @@ export default function FriendDrawer({ children }) {
         {activeTab !== 'chat' && (
           <div className="flex p-2 gap-2 border-b border-slate-100 bg-white">
              {[
-               { id: 'friends', icon: Users, label: 'Friends' },
-               { id: 'add', icon: UserPlus, label: 'Add' },
-               { id: 'requests', icon: Inbox, label: 'Requests' }
+               { id: 'friends', icon: Users, label: '好友' },
+               { id: 'add', icon: UserPlus, label: '添加' },
+               { id: 'requests', icon: Inbox, label: '申请' }
              ].map(tab => (
                <button
                  key={tab.id}
