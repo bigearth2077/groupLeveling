@@ -324,12 +324,6 @@ export default function Profile() {
                 等级 {stats?.level || 0}
               </span>
               
-              {/* Top Tags Badges */}
-              {myTags.slice(0, 3).map(tag => (
-                <span key={tag.tagId} className="px-2 py-1 rounded-lg bg-indigo-50 text-indigo-600 text-xs font-bold border border-indigo-100">
-                  {tag.tagName} Lv.{tag.levelInfo?.level || 0}
-                </span>
-              ))}
             </div>
             <p className="text-slate-500 max-w-lg">
               {user?.bio || "这个人很懒，什么都没有写。"}
@@ -348,7 +342,7 @@ export default function Profile() {
 
           {/* Actions */}
           <div className="flex gap-2 flex-wrap">
-             {['overview', 'history', 'skills', 'health', 'settings'].map(tab => (
+             {['overview', 'history', 'health', 'settings'].map(tab => (
                <button 
                  key={tab}
                  onClick={() => setActiveTab(tab)}
@@ -360,7 +354,6 @@ export default function Profile() {
                >
                  {tab === 'overview' ? '总览' : 
                   tab === 'history' ? '历史' : 
-                  tab === 'skills' ? '技能' : 
                   tab === 'health' ? '健康' : <Settings size={18} />}
                </button>
              ))}
@@ -504,68 +497,6 @@ export default function Profile() {
         </div>
       )}
 
-      {activeTab === 'skills' && (
-        <div className="space-y-6">
-          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                <Tag size={20} className="text-indigo-600" />
-                我的技能与标签
-              </h3>
-              <form onSubmit={handleAddTag} className="flex gap-2">
-                <Input 
-                  placeholder="新技能..." 
-                  value={newTag}
-                  onChange={e => setNewTag(e.target.value)}
-                  className="h-9 w-40 text-sm rounded-xl"
-                />
-                <Button type="submit" size="sm" className="rounded-xl bg-slate-900 h-9">
-                  <Plus size={16} className="mr-1" /> 添加
-                </Button>
-              </form>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {myTags.map(tag => (
-                <div key={tag.tagId} className="relative group p-5 rounded-2xl bg-slate-50 border border-slate-100 hover:shadow-md hover:border-indigo-100 transition-all">
-                   <div className="flex justify-between items-start mb-3 pl-2">
-                      <div className="font-bold text-slate-800 text-lg capitalize">{tag.tagName}</div>
-                      <div className="px-2 py-1 bg-white rounded-lg text-xs font-bold text-indigo-600 shadow-sm border border-indigo-50">
-                        Lv. {tag.levelInfo?.level || 0}
-                      </div>
-                   </div>
-                   
-                   <div className="space-y-2">
-                      <div className="flex justify-between text-xs text-slate-400 font-medium">
-                        <span>进度</span>
-                        <span>{tag.levelInfo?.currentXP || 0} 分钟</span>
-                      </div>
-                      <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-                        <div className="h-full bg-indigo-500 transition-all duration-500" style={{ width: `${tag.levelInfo?.progress || 0}%` }}></div>
-                      </div>
-                   </div>
-
-                   <button 
-                     onClick={() => handleDeleteTag(tag.tagId)}
-                     className="absolute top-2 left-2 p-1.5 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity bg-white/50 rounded-full hover:bg-white"
-                     title="移除技能"
-                   >
-                     <Trash2 size={14} />
-                   </button>
-                </div>
-              ))}
-
-              {/* Empty State */}
-              {myTags.length === 0 && (
-                <div className="col-span-full py-12 text-center text-slate-400 bg-slate-50/50 rounded-2xl border-dashed border-2 border-slate-200">
-                  <p>暂无技能追踪。</p>
-                  <p className="text-xs mt-1">在上方添加一个技能，或带上标签开始专注会话。</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {activeTab === 'health' && (
         <div className="space-y-6">

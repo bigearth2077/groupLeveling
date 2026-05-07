@@ -5,6 +5,7 @@ import FriendList from './FriendList';
 import UserSearch from './UserSearch';
 import RequestList from './RequestList';
 import ChatPanel from './ChatPanel';
+import AmbientBuddyRing from '@/feature/matching/components/AmbientBuddyRing';
 import { getMe } from '@/feature/user/api';
 import { getSocket } from '@/lib/socket';
 import request from '@/lib/request';
@@ -78,11 +79,17 @@ export default function FriendDrawer({ children }) {
         )}
       </div>
 
-      {/* Floating Panel (Popover) */}
+      {/* Floating Panel (Popover Wrapper) */}
       <div className={cn(
-        "absolute top-14 right-0 w-[360px] h-[550px] bg-white rounded-2xl shadow-2xl border border-slate-200 transform transition-all duration-200 origin-top-right flex flex-col overflow-hidden",
+        "absolute top-14 right-0 transform transition-all duration-200 origin-top-right z-50",
         isOpen ? "scale-100 opacity-100 visible" : "scale-95 opacity-0 invisible pointer-events-none"
       )}>
+        
+        {/* Ambient Buddies (Floating Left) */}
+        <AmbientBuddyRing />
+
+        {/* Drawer Content */}
+        <div className="w-[360px] h-[550px] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden">
         
         {/* Header */}
         {activeTab !== 'chat' && (
@@ -130,6 +137,7 @@ export default function FriendDrawer({ children }) {
            {activeTab === 'chat' && <ChatPanel friend={chatFriend} onBack={() => { setActiveTab('friends'); setChatFriend(null); }} />}
         </div>
 
+        </div>
       </div>
     </div>
   );

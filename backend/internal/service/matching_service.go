@@ -7,69 +7,121 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"time"
 )
 
 type MatchingService struct {
 	AnalyticsService *AnalyticsService
 }
 
-// UserProfileScore represents the calculated profile for matching
-type UserProfileScore struct {
-	UserID     string
-	TagWeights map[string]int // TagID -> Minutes Spent
-	TotalMins  int
+// UserHabitProfile represents the calculated profile for matching based on usage habits
+type UserHabitProfile struct {
+	UserID             string
+	MorningRatio       float64 // 06:00 - 12:00
+	AfternoonRatio     float64 // 12:00 - 18:00
+	EveningRatio       float64 // 18:00 - 24:00
+	NightRatio         float64 // 00:00 - 06:00
+	NormalizedAvgDur   float64 // Avg session duration normalized (e.g., max 120 min -> 1.0)
+	NormalizedDailyMin float64 // Daily avg minutes normalized (e.g., max 480 min -> 1.0)
+	RawAvgDur          int
+	TotalMins          int
+	PrimaryHabitLabel  string  // E.g., "夜猫子"
 }
 
-// AmbientBuddy represents a recommended user
-type AmbientBuddy struct {
-	model.User
-	MatchScore  float64
-	SharedTags  []string
-}
-
-// FetchUserProfile builds a user's tag activity profile for similarity comparison
-func (s *MatchingService) fetchUserProfile(userID string) (*UserProfileScore, error) {
-	var tagStats []model.UserTagStat
-	if err := database.DB.Where("user_id = ?", userID).Find(&tagStats).Error; err != nil {
+// fetchUserHabitProfile builds a user's habit profile from their recent 30-day study sessions
+func (s *MatchingService) fetchUserHabitProfile(userID string) (*UserHabitProfile, error) {
+	var sessions []model.StudySession
+	thirtyDaysAgo := time.Now().AddDate(0, 0, -30)
+	
+	if err := database.DB.Where("user_id = ? AND start_time > ? AND duration_minutes IS NOT NULL", userID, thirtyDaysAgo).Find(&sessions).Error; err != nil {
 		return nil, err
 	}
 
-	profile := &UserProfileScore{
-		UserID:     userID,
-		TagWeights: make(map[string]int),
+	profile := &UserHabitProfile{
+		UserID: userID,
 	}
 
-	for _, stat := range tagStats {
-		profile.TagWeights[stat.TagID] = stat.TotalMinutes
-		profile.TotalMins += stat.TotalMinutes
+	if len(sessions) == 0 {
+		return profile, nil
 	}
+
+	var morning, afternoon, evening, night float64
+	var totalSessions int
+	var totalMins int
+
+	for _, session := range sessions {
+		if session.DurationMinutes == nil || *session.DurationMinutes <= 0 {
+			continue
+		}
+		mins := *session.DurationMinutes
+		totalMins += mins
+		totalSessions++
+
+		hour := session.StartTime.Hour()
+		if hour >= 6 && hour < 12 {
+			morning += float64(mins)
+		} else if hour >= 12 && hour < 18 {
+			afternoon += float64(mins)
+		} else if hour >= 18 && hour <= 23 {
+			evening += float64(mins)
+		} else {
+			night += float64(mins)
+		}
+	}
+
+	if totalMins > 0 {
+		profile.MorningRatio = morning / float64(totalMins)
+		profile.AfternoonRatio = afternoon / float64(totalMins)
+		profile.EveningRatio = evening / float64(totalMins)
+		profile.NightRatio = night / float64(totalMins)
+		
+		// Find primary label
+		maxRatio := profile.MorningRatio
+		profile.PrimaryHabitLabel = "早起鸟"
+		if profile.AfternoonRatio > maxRatio {
+			maxRatio = profile.AfternoonRatio
+			profile.PrimaryHabitLabel = "下午茶"
+		}
+		if profile.EveningRatio > maxRatio {
+			maxRatio = profile.EveningRatio
+			profile.PrimaryHabitLabel = "晚高峰"
+		}
+		if profile.NightRatio > maxRatio {
+			profile.PrimaryHabitLabel = "夜猫子"
+		}
+
+		profile.RawAvgDur = totalMins / totalSessions
+		// Normalize avg duration (cap at 120)
+		profile.NormalizedAvgDur = math.Min(float64(profile.RawAvgDur)/120.0, 1.0)
+		
+		// Normalize daily mins (cap at 480)
+		dailyMins := float64(totalMins) / 30.0
+		profile.NormalizedDailyMin = math.Min(dailyMins/480.0, 1.0)
+	}
+	
+	profile.TotalMins = totalMins
 
 	return profile, nil
 }
 
-// calculateCosineSimilarity calculates similarity between two users based on their tag weights
-func (s *MatchingService) calculateCosineSimilarity(p1, p2 *UserProfileScore) float64 {
+// calculateCosineSimilarity calculates similarity between two users based on their habit vectors
+func (s *MatchingService) calculateCosineSimilarity(p1, p2 *UserHabitProfile) float64 {
 	if p1.TotalMins == 0 || p2.TotalMins == 0 {
 		return 0.0 // No shared baseline
 	}
+
+	// 6D Vector: [Morning, Afternoon, Evening, Night, AvgDur, DailyMin]
+	v1 := []float64{p1.MorningRatio, p1.AfternoonRatio, p1.EveningRatio, p1.NightRatio, p1.NormalizedAvgDur, p1.NormalizedDailyMin}
+	v2 := []float64{p2.MorningRatio, p2.AfternoonRatio, p2.EveningRatio, p2.NightRatio, p2.NormalizedAvgDur, p2.NormalizedDailyMin}
 
 	dotProduct := 0.0
 	norm1 := 0.0
 	norm2 := 0.0
 
-	// Calculate dot product and norm for p1
-	for tagID, weight1 := range p1.TagWeights {
-		w1 := float64(weight1)
-		norm1 += w1 * w1
-		if weight2, exists := p2.TagWeights[tagID]; exists {
-			dotProduct += w1 * float64(weight2)
-		}
-	}
-
-	// Calculate norm for p2
-	for _, weight2 := range p2.TagWeights {
-		w2 := float64(weight2)
-		norm2 += w2 * w2
+	for i := 0; i < 6; i++ {
+		dotProduct += v1[i] * v2[i]
+		norm1 += v1[i] * v1[i]
+		norm2 += v2[i] * v2[i]
 	}
 
 	if norm1 == 0 || norm2 == 0 {
@@ -79,18 +131,26 @@ func (s *MatchingService) calculateCosineSimilarity(p1, p2 *UserProfileScore) fl
 	return dotProduct / (math.Sqrt(norm1) * math.Sqrt(norm2))
 }
 
+// AmbientBuddy represents a recommended user
+type AmbientBuddy struct {
+	model.User
+	MatchScore  float64
+	SharedTags  []string // Repurposed for habit summary in MVP
+}
+
 // GetAmbientBuddies finds active users with similar study habits
 func (s *MatchingService) GetAmbientBuddies(userID string, limit int) ([]AmbientBuddy, error) {
-	currentUserProfile, err := s.fetchUserProfile(userID)
+	currentUserProfile, err := s.fetchUserHabitProfile(userID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch user profile: %v", err)
+		return nil, fmt.Errorf("failed to fetch user habit profile: %v", err)
 	}
 
-	// For MVP, we fetch all users who have active sessions right now or were active recently
-	// In production, you would only query users currently connected/online via Redis or Socket keys.
 	var activeUsers []model.User
-	// Just fetch top 100 recent users to avoid scanning entire DB
-	database.DB.Order("updated_at DESC").Limit(100).Find(&activeUsers)
+	threeDaysAgo := time.Now().AddDate(0, 0, -3)
+	// Fetch recent users (last 3 days active)
+	if err := database.DB.Where("updated_at > ?", threeDaysAgo).Order("updated_at DESC").Limit(50).Find(&activeUsers).Error; err != nil {
+		return nil, err
+	}
 
 	var candidates []AmbientBuddy
 
@@ -99,31 +159,38 @@ func (s *MatchingService) GetAmbientBuddies(userID string, limit int) ([]Ambient
 			continue // skip self
 		}
 
-		profile, err := s.fetchUserProfile(u.ID)
+		profile, err := s.fetchUserHabitProfile(u.ID)
 		if err != nil || profile.TotalMins == 0 {
 			continue
 		}
 
+		// Calculate similarity
 		score := s.calculateCosineSimilarity(currentUserProfile, profile)
 		
-		// If there's a meaningful match
-		if score > 0.1 {
-			// Find shared tags
-			shared := []string{}
-			for tagID := range currentUserProfile.TagWeights {
-				if _, exists := profile.TagWeights[tagID]; exists {
-					var tag model.Tag
-					if err := database.DB.Select("name").Where("id = ?", tagID).First(&tag).Error; err == nil {
-						shared = append(shared, tag.Name)
-					}
-				}
-			}
-
+		if score > 0.1 || currentUserProfile.TotalMins == 0 { // Allow new users to match randomly
+			summary := fmt.Sprintf("同为%s · 均次%dmin", profile.PrimaryHabitLabel, profile.RawAvgDur)
+			
 			candidates = append(candidates, AmbientBuddy{
 				User:       u,
 				MatchScore: score,
-				SharedTags: shared,
+				SharedTags: []string{summary},
 			})
+		}
+	}
+
+	// If no matches, fall back to simple recent list
+	if len(candidates) == 0 {
+		for _, u := range activeUsers {
+			if u.ID != userID {
+				candidates = append(candidates, AmbientBuddy{
+					User:       u,
+					MatchScore: 0.0,
+					SharedTags: []string{"近期活跃用户"},
+				})
+				if len(candidates) >= limit {
+					break
+				}
+			}
 		}
 	}
 
@@ -141,7 +208,7 @@ func (s *MatchingService) GetAmbientBuddies(userID string, limit int) ([]Ambient
 
 // GetRecommendedRooms returns active rooms sorted by relevance to the user
 func (s *MatchingService) GetRecommendedRooms(userID string) ([]dto.RoomResponse, error) {
-	currentUserProfile, err := s.fetchUserProfile(userID)
+	_, err := s.fetchUserHabitProfile(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -162,16 +229,9 @@ func (s *MatchingService) GetRecommendedRooms(userID string) ([]dto.RoomResponse
 	for _, room := range rooms {
 		score := 0.0
 
-		// 1. Tag Matching Score (Primary Match)
-		if room.TagID != nil {
-			if userTimeSpent, exists := currentUserProfile.TagWeights[*room.TagID]; exists {
-				// Base score for simply matching
-				score += 50.0 
-				// Bonus points for how heavily the user studies this tag (up to +20)
-				ratio := float64(userTimeSpent) / float64(currentUserProfile.TotalMins)
-				score += ratio * 20.0
-			}
-		}
+		// Since tags are killed, we just score based on popularity and activity
+		// or we could match room tags to user habits if we really wanted to, 
+		// but the user wants simple list for now.
 
 		// 2. Activity / Popularity score
 		var memberCount int64

@@ -178,9 +178,7 @@ export default function RoomLobby() {
               <p className="text-sm text-slate-500 line-clamp-2 mb-4 h-10">{room.description || "暂无简介。"}</p>
 
               <div className="flex items-center justify-between mt-auto">
-                 <span className="text-xs font-bold text-slate-500 bg-slate-50 px-2.5 py-1 rounded-lg">
-                   #{room.tagName || '通用'}
-                 </span>
+                 <div className="flex-1"></div>
                  <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition-all transform group-hover:translate-x-1">
                    <ArrowRight size={16} />
                  </div>
@@ -221,34 +219,14 @@ export default function RoomLobby() {
                   placeholder="介绍一下这个自习室吧"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                 <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-700">最大人数</label>
-                    <Input 
-                      type="number"
-                      value={newRoom.maxMembers} 
-                      onChange={e => setNewRoom({...newRoom, maxMembers: e.target.value})}
-                      className="rounded-xl" 
-                    />
-                 </div>
-                 <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-700">主题标签</label>
-                    <div className="relative">
-                      <Hash className="absolute left-3 top-2.5 text-slate-400" size={16} />
-                      <Input 
-                        list="my-tags-list"
-                        value={tagNameInput}
-                        onChange={e => setTagNameInput(e.target.value)}
-                        placeholder="选择或输入标签..."
-                        className="pl-9 rounded-xl"
-                      />
-                      <datalist id="my-tags-list">
-                        {myTags.map(tag => (
-                          <option key={tag.tagId} value={tag.tagName} />
-                        ))}
-                      </datalist>
-                    </div>
-                 </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-700">最大人数</label>
+                <Input 
+                  type="number"
+                  value={newRoom.maxMembers} 
+                  onChange={e => setNewRoom({...newRoom, maxMembers: e.target.value})}
+                  className="rounded-xl" 
+                />
               </div>
 
               <div className="flex items-center space-x-2 pt-2">

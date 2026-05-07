@@ -51,7 +51,7 @@ const AmbientBuddyRing = () => {
   };
 
   return (
-    <div className="fixed top-1/2 -translate-y-1/2 right-8 z-40 hidden xl:flex flex-col gap-4 transition-all">
+    <div className="absolute right-full mr-4 top-4 z-40 hidden md:flex flex-col gap-4 transition-all">
       <div className="bg-white/80 backdrop-blur-md border border-slate-200 rounded-full py-3 px-2 flex flex-col items-center gap-3 shadow-sm hover:shadow transition-shadow">
         
         <div className="p-1.5 rounded-full bg-blue-50 text-blue-500 mb-1" title="Top Algorithm Matches">
@@ -96,21 +96,21 @@ const AmbientBuddyRing = () => {
                 <div className="bg-slate-900 text-white text-xs whitespace-nowrap py-2 px-3 rounded-xl shadow-xl flex flex-col gap-1 items-start">
                   <div className="font-bold">{buddy.nickname}</div>
                   <div className="text-slate-400 flex items-center gap-1">
-                    <span className="text-orange-400">⚡ {Math.round(buddy.matchScore * 100)}%</span> Match
+                    <span className="text-orange-400">⚡ {Math.round(buddy.matchScore)}%</span> 匹配度
                   </div>
                   {buddy.sharedTags && buddy.sharedTags.length > 0 && (
-                    <div className="bg-slate-800 rounded px-1.5 py-0.5 mt-0.5 max-w-[120px] truncate">
+                    <div className="bg-slate-800 text-emerald-400 rounded px-1.5 py-0.5 mt-0.5 max-w-[160px] truncate">
                       {buddy.sharedTags[0]}
                     </div>
                   )}
                   <div className="text-[10px] text-indigo-300 mt-1 font-medium bg-white/10 px-2 py-0.5 rounded-full w-full text-center">
-                    Click to High Five 👏
+                    点击击掌 👏
                   </div>
                   <button 
                     onClick={(e) => handleAddFriend(e, buddy.id)}
                     className="mt-1 w-full flex items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs py-1 rounded-md transition-colors"
                   >
-                    <UserPlus size={12} /> Add Friend
+                    <UserPlus size={12} /> 加为好友
                   </button>
                 </div>
               </div>

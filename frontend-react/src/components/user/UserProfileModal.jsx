@@ -110,19 +110,6 @@ export default function UserProfileModal({ userId, isOpen, onClose, isFriend: in
                 {user.bio || "No bio provided."}
               </p>
 
-              {/* Stats / Tags */}
-              {user.topTags && user.topTags.length > 0 && (
-                <div className="mt-6 w-full space-y-3">
-                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider text-center">Top Skills</h3>
-                  <div className="flex flex-wrap justify-center gap-2">
-                    {user.topTags.map(tag => (
-                      <span key={tag.tagId} className="px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-bold rounded-lg border border-indigo-100">
-                        {tag.tagName} Lv.{tag.levelInfo?.level || 0}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* Actions */}
               <div className="mt-8 w-full flex gap-3">

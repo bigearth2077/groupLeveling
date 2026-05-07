@@ -12,7 +12,7 @@ import (
 )
 
 // StartSessionReaper 启动后台清理任务
-// 建议在 main.go 中 go service.StartSessionReaper() 调用
+// 在 main.go 中 go service.StartSessionReaper() 调用
 func StartSessionReaper() {
 	ticker := time.NewTicker(5 * time.Minute)
 	defer ticker.Stop()
@@ -38,7 +38,7 @@ func reapSessions() {
 		key := fmt.Sprintf("study:heartbeat:%s", session.ID)
 		_, err := database.RDB.Get(ctx, key).Result()
 
-		// 情况 A: Key 存在 (用户在线)
+		// 情况：Key 存在 (用户在线)
 		if err == nil {
 			continue
 		}

@@ -19,40 +19,46 @@ func main() {
 	database.InitDB()
 	database.InitRedis()
 
-	// 1. Ensure target user exists (or create one)
+	// 1. Nuclear Option: Clear ALL data from the database for a truly clean start
+	fmt.Println("Cleaning up all old data from database...")
+	
+	// Order matters due to foreign keys. Delete join tables and dependent tables first.
+	database.DB.Exec("DELETE FROM blog_tags")
+	database.DB.Exec("DELETE FROM refresh_tokens")
+	database.DB.Exec("DELETE FROM room_members")
+	database.DB.Exec("DELETE FROM rooms")
+	database.DB.Exec("DELETE FROM study_sessions")
+	database.DB.Exec("DELETE FROM user_tag_stats")
+	database.DB.Exec("DELETE FROM daily_stats")
+	database.DB.Exec("DELETE FROM health_data")
+	database.DB.Exec("DELETE FROM blog_likes")
+	database.DB.Exec("DELETE FROM blog_bookmarks")
+	database.DB.Exec("DELETE FROM blogs")
+	database.DB.Exec("DELETE FROM friends")
+	database.DB.Exec("DELETE FROM notifications")
+	database.DB.Exec("DELETE FROM users")
+	database.DB.Exec("DELETE FROM tags")
+
+	// 2. Ensure target user exists
 	var targetUser model.User
 	email := "test@test.com"
-	if err := database.DB.Where("email = ?", email).First(&targetUser).Error; err != nil {
-		hash, _ := bcrypt.GenerateFromPassword([]byte("123456"), bcrypt.DefaultCost)
-		nickname := "Edward"
-		avatar := "https://api.dicebear.com/7.x/avataaars/svg?seed=Edward"
-		
-		targetUser = model.User{
-			Email:        email,
-			PasswordHash: string(hash),
-			Nickname:     nickname,
-			AvatarUrl:    &avatar,
-		}
-		if err := database.DB.Create(&targetUser).Error; err != nil {
-			log.Fatalf("Failed to create test user: %v", err)
-		}
-		fmt.Printf("Created Test User: %s (pw: 123456)\n", email)
-	} else {
-		fmt.Printf("Found Target User: %s\n", email)
+	hash, _ := bcrypt.GenerateFromPassword([]byte("123456"), bcrypt.DefaultCost)
+	nickname := "小王"
+	avatar := "https://api.dicebear.com/7.x/avataaars/svg?seed=XiaoWang"
+	
+	targetUser = model.User{
+		Email:        email,
+		PasswordHash: string(hash),
+		Nickname:     nickname,
+		AvatarUrl:    &avatar,
 	}
+	if err := database.DB.Create(&targetUser).Error; err != nil {
+		log.Fatalf("Failed to create test user: %v", err)
+	}
+	fmt.Printf("Created Fresh Test User: %s (pw: 123456)\n", email)
 
-	// 2. Clear old test data for this user to avoid unique constraint mess
-	database.DB.Where("user_id = ?", targetUser.ID).Delete(&model.DailyStat{})
-	database.DB.Where("user_id = ?", targetUser.ID).Delete(&model.StudySession{})
-	database.DB.Where("user_id = ?", targetUser.ID).Delete(&model.UserTagStat{})
-	database.DB.Where("user_id = ?", targetUser.ID).Delete(&model.HealthData{})
-	database.DB.Where("user_id = ?", targetUser.ID).Delete(&model.Blog{})
-	database.DB.Where("user_id = ?", targetUser.ID).Delete(&model.BlogLike{})
-	database.DB.Where("user_id = ?", targetUser.ID).Delete(&model.BlogBookmark{})
-	database.DB.Where("user_id = ?", targetUser.ID).Delete(&model.AIReport{})
-
-	// 3. Create Basic Tags
-	tagNames := []string{"Go", "React", "Docker", "Machine Learning", "Math"}
+	// 3. Create Basic Tags (Chinese)
+	tagNames := []string{"Go语言", "前端开发", "云原生", "机器学习", "高等数学"}
 	var tags []model.Tag
 	for _, n := range tagNames {
 		var tag model.Tag
@@ -90,19 +96,16 @@ func main() {
 		database.DB.Create(&dailyStats)
 	}
 
-	// 5. Generate Study Sessions (for 24h Time Matrix) - focus typically at night
+	// 5. Generate Study Sessions (for 24h Time Matrix) - mixed habits
 	fmt.Println("Generating TimeMatrix (StudySession) mock data (last 30 days)...")
 	var sessions []model.StudySession
 	now := time.Now()
 	for i := 0; i < 60; i++ { // 60 sessions
 		daysAgo := rand.Intn(30)
-		// Bias towards 8 PM to 2 AM
-		hour := rand.Intn(6) + 20
-		if hour > 23 {
-			hour = hour - 24
-		}
+		// Random distribution across the day
+		hour := rand.Intn(24)
 		
-		start := time.Date(now.Year(), now.Month(), now.Day()-daysAgo, hour, rand.Intn(60), 0, 0, time.UTC)
+		start := time.Date(now.Year(), now.Month(), now.Day()-daysAgo, hour, rand.Intn(60), 0, 0, time.Local)
 		dur := rand.Intn(90) + 30 // 30-120 mins
 		end := start.Add(time.Duration(dur) * time.Minute)
 		
@@ -132,49 +135,70 @@ func main() {
 	}
 
 	// 7. Create Ambient Buddies (Algorithm Matches)
-	fmt.Println("Generating fake ambient buddies...")
-	buddyNames := []string{"Alex", "Jessica", "Bob", "Sam"}
+	fmt.Println("Generating fake ambient buddies with diverse habits...")
+	buddyConfigs := []struct {
+		Name     string
+		HourBias int // Base hour for sessions
+	}{
+		{"张三", 8},  // 早起鸟
+		{"李四", 14}, // 下午茶
+		{"王五", 20}, // 晚高峰
+		{"赵六", 1},  // 夜猫子
+	}
+	
 	var buddies []model.User
-	for _, bName := range buddyNames {
-		email := bName + "@mock.com"
+	for _, config := range buddyConfigs {
+		email := config.Name + "@mock.com"
 		var buddy model.User
 		
 		if err := database.DB.Where("email = ?", email).First(&buddy).Error; err != nil {
-			avatar := "https://api.dicebear.com/7.x/avataaars/svg?seed=" + bName
+			avatar := "https://api.dicebear.com/7.x/avataaars/svg?seed=" + config.Name
 			buddy = model.User{
 				Email:        email,
 				PasswordHash: "nil",
-				Nickname:     bName,
+				Nickname:     config.Name,
 				AvatarUrl:    &avatar,
+				Bio:          ptrString("专注于" + tagNames[rand.Intn(len(tagNames))] + "的学习者"),
 			}
 			database.DB.Create(&buddy)
 		}
 		
-		// clear old stats for this buddy to prevent duplicate keys
+		// clear old data
 		database.DB.Where("user_id = ?", buddy.ID).Delete(&model.UserTagStat{})
+		database.DB.Where("user_id = ?", buddy.ID).Delete(&model.StudySession{})
 		database.DB.Where("user_id = ?", buddy.ID).Delete(&model.Blog{})
 		buddies = append(buddies, buddy)
 
-		// Give them EXACT SAME TAGS as user to guarantee high Match Score
-		for i := 0; i < 3; i++ {
-			database.DB.Create(&model.UserTagStat{
-				UserID:       buddy.ID,
-				TagID:        tags[i].ID,
-				TotalMinutes: rand.Intn(2000),
+		// Generate habit sessions for this buddy
+		var bSessions []model.StudySession
+		for i := 0; i < 40; i++ {
+			daysAgo := rand.Intn(30)
+			hour := (config.HourBias + rand.Intn(4)) % 24 // 4 hour window
+			start := time.Date(now.Year(), now.Month(), now.Day()-daysAgo, hour, rand.Intn(60), 0, 0, time.Local)
+			dur := rand.Intn(60) + 30
+			end := start.Add(time.Duration(dur) * time.Minute)
+			
+			bSessions = append(bSessions, model.StudySession{
+				UserID:          buddy.ID,
+				StartTime:       start,
+				EndTime:         &end,
+				DurationMinutes: &dur,
+				Type:            model.SessionTypeLearning,
 			})
 		}
+		database.DB.Create(&bSessions)
 	}
 
 	// 8. Create Active Rooms populated with buddies
 	fmt.Println("Populating active recommended rooms...")
 	database.DB.Model(&model.Room{}).Where("1=1").Update("is_private", true) // make old rooms private to clean view
 	for i, b := range buddies {
-		roomDesc := "Hardcore coding session"
+		roomDesc := "专注自习，谢绝闲聊，共勉！"
 		room := model.Room{
-			Name:        fmt.Sprintf("%s's Deep Work Squad", b.Nickname),
+			Name:        fmt.Sprintf("%s的沉浸自习室", b.Nickname),
 			Description: &roomDesc,
 			CreatorID:   b.ID,
-			TagID:       &tags[i].ID, // Highly matched tags
+			TagID:       &tags[i%len(tags)].ID,
 			IsPrivate:   false,
 			MaxMembers:  10,
 		}
@@ -317,6 +341,10 @@ func main() {
 		})
 	}
 
-	fmt.Println("\n✅ SEEDING COMPLETE!")
-	fmt.Println("Check the browser! You should now see Mock Blogs, Health Data, and AI Stats ready for testing.")
+	fmt.Println("\n✅ 播种成功！")
+	fmt.Println("现在可以在前端查看模拟博客、健康数据以及基于习惯匹配的同频学伴了。")
+}
+
+func ptrString(s string) *string {
+	return &s
 }

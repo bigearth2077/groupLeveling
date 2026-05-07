@@ -5,7 +5,7 @@ const REFRESH_TOKEN_KEY = 'refreshToken';
 /**
  * 设置 Token
  * @param {string} token - accessToken
- * @param {string} refreshToken - refreshToken (可选)
+ * @param {string} refreshToken - refreshToken 
  */
 export const setToken = (token, refreshToken) => {
   if (token) {

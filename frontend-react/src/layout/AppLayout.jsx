@@ -5,7 +5,6 @@ import FriendDrawer from '@/components/friend/FriendDrawer';
 import RoomConnectionManager from '@/components/room/RoomConnectionManager';
 import DailyReviewPanel from '@/components/DailyReviewPanel';
 import NotificationBell from '@/components/notification/NotificationBell';
-import AmbientBuddyRing from '@/feature/matching/components/AmbientBuddyRing';
 import { LayoutDashboard, Users, User } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { connectSocket } from '@/lib/socket';
@@ -95,7 +94,6 @@ const AppLayout = () => {
         </div>
       </div>
 
-      <AmbientBuddyRing />
     </div>
   );
 };

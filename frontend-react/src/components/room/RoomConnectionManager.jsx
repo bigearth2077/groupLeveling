@@ -7,13 +7,13 @@ import { getRoomMembers } from '@/feature/room/api';
 import { getMe } from '@/feature/user/api';
 
 export default function RoomConnectionManager() {
-  const { 
-    activeRoomId, 
+  const {
+    activeRoomId,
     roomPassword,
-    setMembers, 
-    addMember, 
-    removeMember, 
-    updateMemberStatus, 
+    setMembers,
+    addMember,
+    removeMember,
+    updateMemberStatus,
     addMessage,
     setSocketStatus,
     incrementUnread,
@@ -23,23 +23,23 @@ export default function RoomConnectionManager() {
   const { status: studyStatus } = useStudyStore();
   const location = useLocation();
   const locationRef = useRef(location);
-  const navigate = useNavigate(); // Need to import useNavigate
-  
+  const navigate = useNavigate(); // 需要 import useNavigate
+
   const socketRef = useRef(null);
   const myIdRef = useRef(null);
 
-  // Keep location ref sync
+  // 保持 location ref 同步
   useEffect(() => {
     locationRef.current = location;
   }, [location]);
 
-  // 1. Get My ID once
+  // 1. 获取 My ID
   useEffect(() => {
-    getMe().then(u => { if(u) myIdRef.current = u.id });
+    getMe().then(u => { if (u) myIdRef.current = u.id });
   }, []);
 
   const checkUnread = () => {
-    // If not in the specific room page, increment unread
+    // 如果不在这个特定的房间页面，增加 unread 计数
     if (!activeRoomId) return;
     const inRoom = locationRef.current.pathname.includes(`/room/${activeRoomId}`);
     if (!inRoom) {
@@ -47,7 +47,7 @@ export default function RoomConnectionManager() {
     }
   };
 
-  // 2. Manage Connection & Room Join/Leave
+  // 2. 管理连接&房间加入/离开
   useEffect(() => {
     if (!activeRoomId) {
       return;
@@ -61,7 +61,7 @@ export default function RoomConnectionManager() {
     const handleConnect = () => {
       console.log('[RoomManager] Connected');
       setSocketStatus('connected');
-      
+
       // Join
       const payload = { roomId: activeRoomId };
       if (roomPassword) {
@@ -71,23 +71,23 @@ export default function RoomConnectionManager() {
       socket.emit('join_room', JSON.stringify(payload), (ack) => {
         console.log('[RoomManager] Joined Ack:', ack);
         const ackData = typeof ack === 'string' ? JSON.parse(ack) : ack;
-        
+
         if (ackData && ackData.error) {
-           alert("Failed to join room: " + ackData.error);
-           leaveRoom(); // Reset store state
-           navigate('/rooms'); // Go back to lobby
-           return;
+          alert("Failed to join room: " + ackData.error);
+          leaveRoom(); // 重置store state
+          navigate('/rooms'); // 返回大厅
+          return;
         }
 
-        // Load Snapshot on join success
+        // 加入成功，加载快照
         loadSnapshot(activeRoomId);
       });
     };
 
     const handleUserJoined = (data) => {
-      // Ignore self
+      // 忽略自己的加入
       if (myIdRef.current && data.user.id === myIdRef.current) return;
-      
+
       const newUser = {
         userId: data.user.id,
         nickname: data.user.nickname,
@@ -102,7 +102,7 @@ export default function RoomConnectionManager() {
 
     const handleUserLeft = (data) => {
       if (myIdRef.current && data.userId === myIdRef.current) return;
-      
+
       removeMember(data.userId);
       addMessage({ id: Date.now(), isSystem: true, content: `User left.` });
       checkUnread();
@@ -124,12 +124,12 @@ export default function RoomConnectionManager() {
     socket.on('status_updated', handleStatusUpdated);
     socket.on('new_message', handleNewMessage);
 
-    // If already connected
+    // 如果已经连接
     if (socket.connected) {
       handleConnect();
     }
 
-    // Cleanup: Leave Room when activeRoomId changes or unmount
+    // Cleanup
     return () => {
       if (socket) {
         socket.emit('leave_room', JSON.stringify({ roomId: activeRoomId }));
@@ -167,5 +167,5 @@ export default function RoomConnectionManager() {
     }
   };
 
-  return null; // Invisible component
+  return null; // 无ui组件
 }
