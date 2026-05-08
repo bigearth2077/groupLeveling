@@ -39,19 +39,19 @@ export default function RoomDetail() {
   const [inputMsg, setInputMsg] = useState('');
   const [selectedUserId, setSelectedUserId] = useState(null);
   
-  // Room Metadata & Host Check
+  // 房间元数据及主持人检查
   const [roomInfo, setRoomInfo] = useState(null);
   const [isHost, setIsHost] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
-  // Initialize Room & Fetch Metadata
+  // 初始化房间并获取元数据
   useEffect(() => {
     if (activeRoomId !== roomId) {
       setActiveRoomId(roomId);
     }
     
     fetchRoomDetails();
-  }, [roomId]); // Removed activeRoomId dependency
+  }, [roomId]); // 移除activeRoomId依赖
 
   const fetchRoomDetails = async () => {
     try {
@@ -69,7 +69,7 @@ export default function RoomDetail() {
     }
   };
 
-  // Scroll to bottom on new messages
+  // 新消息时滚动到底部
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -89,7 +89,7 @@ export default function RoomDetail() {
     if (!confirm("Are you sure you want to delete this room? This cannot be undone.")) return;
     try {
       await deleteRoom(roomId);
-      leaveRoom(); // Cleanup store
+      leaveRoom(); // 清理存储
       navigate('/rooms');
     } catch (err) {
       alert("Failed to delete room");
@@ -122,9 +122,9 @@ export default function RoomDetail() {
   return (
     <div className="h-[calc(100vh-100px)] flex flex-col md:flex-row gap-6 pb-24">
       
-      {/* Main Area: Members Grid */}
+      {/* 主区域：成员网格*/}
       <div className="flex-1 flex flex-col bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-        {/* Header */}
+        {/* 头部*/}
         <div className="p-6 border-b border-slate-100 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <button onClick={() => navigate('/rooms')} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
@@ -178,7 +178,7 @@ export default function RoomDetail() {
           </div>
         </div>
 
-        {/* Grid */}
+        {/* 网格*/}
         <div className="flex-1 p-6 overflow-y-auto bg-slate-50/50">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {members.map(m => {
@@ -199,7 +199,7 @@ export default function RoomDetail() {
                   )}>
                     {m.avatarUrl ? <img src={m.avatarUrl} className="w-full h-full object-cover" /> : <User size={32} className="text-slate-300" />}
                     
-                    {/* Status Icon Overlay */}
+                    {/* 状态图标覆盖层*/}
                     {(isLearning || isResting) && (
                       <div className={cn(
                         "absolute inset-0 bg-black/10 flex items-center justify-center backdrop-blur-[1px] transition-opacity",
@@ -225,7 +225,7 @@ export default function RoomDetail() {
         </div>
       </div>
 
-      {/* Sidebar: Chat */}
+      {/* 侧边栏：聊天*/}
       <div className="w-full md:w-80 flex flex-col bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden h-[400px] md:h-auto">
         <div className="p-4 border-b border-slate-100 font-bold text-slate-700 flex items-center gap-2">
           <MessageSquare size={18} /> 聊天室

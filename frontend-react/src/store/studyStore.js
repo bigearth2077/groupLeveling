@@ -5,40 +5,40 @@ import { startSession, endSession, sendHeartbeat, getActiveSession } from '@/fea
 export const useStudyStore = create(
   persist(
     (set, get) => ({
-      status: 'idle', // 'idle', 'running', 'paused' (backend doesn't explicitly support pause, but frontend can UI pause -> actually we shouldn't allow pause for strict pomodoro, let's stick to 'running' vs 'idle')
-      // Let's support 'idle' | 'focusing' | 'resting'
+      status: 'idle', // '空闲', '运行中', '暂停'（后端未明确支持暂停，但前端可通过UI暂停 -> 实际上严格番茄钟不应允许暂停，我们应坚持仅用'运行中'和'空闲'）
+      // 支持'空闲' | '专注中' | '休息中'
       
-      mode: 'learning', // 'learning' | 'rest'
+      mode: 'learning', // '学习' | '休息'
       sessionId: null,
       startTime: null,
-      duration: 25, // minutes
-      timeLeft: 25 * 60, // seconds
+      duration: 25, // 分钟
+      timeLeft: 25 * 60, // 秒
       
       defaultFocusDuration: 25, // 用户配置的专注时长
       defaultBreakDuration: 10, // 用户配置的休息时长
       
-      selectedTag: null, // { id, name } or null
+      selectedTag: null, // { id, name } 或 null
       
       timerInterval: null,
 
-      // Actions
+      // 操作
       setDefaultFocusDuration: (val) => set({ defaultFocusDuration: val }),
       setDefaultBreakDuration: (val) => set({ defaultBreakDuration: val }),
       setSelectedTag: (tag) => set({ selectedTag: tag }),
       
-      // Check if there is an active session from backend (e.g. on page reload)
+      // 检查后端是否存在活跃会话（例如页面重载时）
       checkActiveSession: async () => {
         try {
           const session = await getActiveSession();
           if (session && session.id) {
-             // Found active session
+             // 发现活跃会话
              const now = new Date();
              const start = new Date(session.startTime);
              const elapsedSec = Math.floor((now - start) / 1000);
              
              const currentId = get().sessionId;
              if (currentId === session.id) {
-               // Resume local state
+               // 恢复本地状态
                const intendedDurationSec = get().duration * 60;
                const remaining = intendedDurationSec - elapsedSec;
                
@@ -75,10 +75,10 @@ export const useStudyStore = create(
 
       startFocus: async (minutes, type = 'learning', tagName = null) => {
         try {
-          // 1. Call Backend
+          // 1. 调用后端
           const res = await startSession({ type, tagName });
           if (res && res.id) {
-            // 2. Set Local State
+            // 2. 设置本地状态
             set({
               status: type === 'learning' ? 'focusing' : 'resting',
               mode: type,
@@ -87,7 +87,7 @@ export const useStudyStore = create(
               duration: minutes,
               timeLeft: minutes * 60
             });
-            // 3. Start Interval
+            // 3. 启动计时器
             get().startTimer();
           }
         } catch (err) {
@@ -116,7 +116,7 @@ export const useStudyStore = create(
         });
       },
 
-      // Internal Timer Logic
+      // 内部计时逻辑
       startTimer: () => {
         const { timerInterval } = get();
         if (timerInterval) clearInterval(timerInterval);
@@ -125,12 +125,12 @@ export const useStudyStore = create(
           const { timeLeft, sessionId } = get();
           
           if (timeLeft <= 0) {
-            // Time's up!
+            // 时间到！
             get().handleTimerComplete();
             return;
           }
 
-          // Heartbeat every minute (approx)
+          // 每分钟心跳（约）
           if (timeLeft % 60 === 0 && sessionId) {
              sendHeartbeat(sessionId).catch(console.error);
           }
@@ -150,24 +150,24 @@ export const useStudyStore = create(
       handleTimerComplete: () => {
         const { mode, endFocus, startFocus, defaultBreakDuration } = get();
         
-        // Stop current
+        // 停止当前
         endFocus(); 
 
-        // Vibration feedback
+        // 震动反馈
         if (typeof navigator !== 'undefined' && navigator.vibrate) {
           navigator.vibrate([200, 100, 200]);
         }
         
         if (mode === 'learning') {
           setTimeout(() => {
-             // Create a rest session
+             // 创建休息会话
              startFocus(defaultBreakDuration, 'rest');
              if (Notification.permission === 'granted') {
                new Notification("Focus Complete!", { body: `Starting ${defaultBreakDuration}min Break.` });
              }
           }, 1000);
         } else {
-          // Rest over
+          // 休息结束
            if (Notification.permission === 'granted') {
              new Notification("Break Over!", { body: "Ready to focus again?" });
            }

@@ -7,17 +7,17 @@ const MorningCheckIn = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Determine if we should show the modal
+    // 判断是否应显示模态框
     const checkVisibility = () => {
       const now = new Date();
       const hour = now.getHours();
       
-      // Look for waking hours (e.g. 4:00 AM to 12:00 PM)
+      // 查找清醒时段（例如凌晨4:00至中午12:00）
       if (hour >= 4 && hour <= 12) {
         const todayStr = now.toISOString().slice(0, 10);
         const lastCheckIn = localStorage.getItem('lastMorningCheckIn');
         
-        // Show if not checked in today yet
+        // 若今日尚未签到则显示
         if (lastCheckIn !== todayStr) {
           setIsVisible(true);
         }
@@ -37,11 +37,11 @@ const MorningCheckIn = () => {
         sleepHours: parseFloat(sleepHours),
         sleepQuality: quality
       });
-      // Save local state to prevent popping up again today
+      // 保存本地状态以防止今日再次弹出
       const todayStr = new Date().toISOString().slice(0, 10);
       localStorage.setItem('lastMorningCheckIn', todayStr);
       
-      // Glacial disappear animation handled by css, we just unmount here for simplicity
+      // 冰川消失动画由css处理，此处仅为简化而卸载
       setIsVisible(false);
     } catch (err) {
       console.error("Health check-in failed", err);
@@ -60,7 +60,7 @@ const MorningCheckIn = () => {
     <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5 fade-in duration-500">
       <div className="backdrop-blur-xl bg-white/70 border border-white max-w-sm rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
         
-        {/* Header */}
+        {/* 标题*/}
         <div className="flex justify-between items-start mb-4">
           <div>
             <h3 className="font-extrabold text-xl text-slate-800 tracking-tight">Good Morning! ☀️</h3>
@@ -74,7 +74,7 @@ const MorningCheckIn = () => {
           </button>
         </div>
 
-        {/* Interactive Slider */}
+        {/* 交互式滑块*/}
         <div className="mb-6">
           <div className="flex justify-between items-baseline mb-2">
             <span className="text-xs font-bold text-slate-400 uppercase">Duration</span>
@@ -95,7 +95,7 @@ const MorningCheckIn = () => {
           </div>
         </div>
 
-        {/* Auto-submit Emoji Buttons */}
+        {/* 自动提交表情按钮*/}
         <div className="grid grid-cols-3 gap-3">
           <button 
             onClick={() => handleStatusClick('bad')}

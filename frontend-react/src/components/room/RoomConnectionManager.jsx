@@ -53,7 +53,7 @@ export default function RoomConnectionManager() {
       return;
     }
 
-    // Connect
+    // 连接
     const socket = connectSocket();
     socketRef.current = socket;
     setSocketStatus('connecting');
@@ -62,7 +62,7 @@ export default function RoomConnectionManager() {
       console.log('[RoomManager] Connected');
       setSocketStatus('connected');
 
-      // Join
+      // 加入
       const payload = { roomId: activeRoomId };
       if (roomPassword) {
         payload.password = roomPassword;
@@ -117,7 +117,7 @@ export default function RoomConnectionManager() {
       checkUnread();
     };
 
-    // Attach Listeners
+    // 附加监听器
     socket.on('connect', handleConnect);
     socket.on('user_joined', handleUserJoined);
     socket.on('user_left', handleUserLeft);
@@ -129,7 +129,7 @@ export default function RoomConnectionManager() {
       handleConnect();
     }
 
-    // Cleanup
+    // 清理
     return () => {
       if (socket) {
         socket.emit('leave_room', JSON.stringify({ roomId: activeRoomId }));
@@ -142,7 +142,7 @@ export default function RoomConnectionManager() {
     };
   }, [activeRoomId]);
 
-  // 3. Sync Study Status
+  // 3. 同步学习状态
   useEffect(() => {
     if (!activeRoomId || !socketRef.current || !socketRef.current.connected) return;
 

@@ -28,19 +28,19 @@ export function useRoomJoin() {
     setError(null);
 
     try {
-      // Pre-flight validation
+      //预检验证
       await validateRoomPassword({ 
         roomId: passwordModalRoom.id, 
         password 
       });
 
-      // If successful:
+      //如果成功：
       setRoomPassword(password);
       setPasswordModalRoom(null);
       navigate(`/room/${passwordModalRoom.id}`);
       
     } catch (err) {
-      // Backend should return 403 or similar
+      //后端应返回403或类似状态
       setError(err.message || 'Incorrect password');
     } finally {
       setLoading(false);

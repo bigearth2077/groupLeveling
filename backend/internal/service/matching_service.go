@@ -14,21 +14,21 @@ type MatchingService struct {
 	AnalyticsService *AnalyticsService
 }
 
-// UserHabitProfile represents the calculated profile for matching based on usage habits
+// UserHabitProfile 表示基于学习习惯计算的用户画像，用于匹配
 type UserHabitProfile struct {
 	UserID             string
-	MorningRatio       float64 // 06:00 - 12:00
-	AfternoonRatio     float64 // 12:00 - 18:00
-	EveningRatio       float64 // 18:00 - 24:00
-	NightRatio         float64 // 00:00 - 06:00
-	NormalizedAvgDur   float64 // Avg session duration normalized (e.g., max 120 min -> 1.0)
-	NormalizedDailyMin float64 // Daily avg minutes normalized (e.g., max 480 min -> 1.0)
-	RawAvgDur          int
-	TotalMins          int
-	PrimaryHabitLabel  string  // E.g., "夜猫子"
+	MorningRatio       float64 // 上午学习时间段占比 (06:00 - 12:00)
+	AfternoonRatio     float64 // 下午学习时间段占比 (12:00 - 18:00)
+	EveningRatio       float64 // 晚上学习时间段占比 (18:00 - 24:00)
+	NightRatio         float64 // 深夜学习时间段占比 (00:00 - 06:00)
+	NormalizedAvgDur   float64 // 归一化后的单次平均学习时长 (例如：最大值 120 分钟归一化为 1.0)
+	NormalizedDailyMin float64 // 归一化后的日均学习时长 (例如：最大值 480 分钟归一化为 1.0)
+	RawAvgDur          int     // 原始单次平均时长 (分钟)
+	TotalMins          int     // 累计学习总分钟数
+	PrimaryHabitLabel  string  // 核心习惯标签，例如 "夜猫子"
 }
 
-// fetchUserHabitProfile builds a user's habit profile from their recent 30-day study sessions
+// fetchUserHabitProfile 根据用户最近 30 天的学习记录，构建用户的习惯画像
 func (s *MatchingService) fetchUserHabitProfile(userID string) (*UserHabitProfile, error) {
 	var sessions []model.StudySession
 	thirtyDaysAgo := time.Now().AddDate(0, 0, -30)
@@ -75,7 +75,7 @@ func (s *MatchingService) fetchUserHabitProfile(userID string) (*UserHabitProfil
 		profile.EveningRatio = evening / float64(totalMins)
 		profile.NightRatio = night / float64(totalMins)
 		
-		// Find primary label
+		// 寻找占比最高的时间段，赋予核心习惯标签
 		maxRatio := profile.MorningRatio
 		profile.PrimaryHabitLabel = "早起鸟"
 		if profile.AfternoonRatio > maxRatio {
@@ -91,10 +91,10 @@ func (s *MatchingService) fetchUserHabitProfile(userID string) (*UserHabitProfil
 		}
 
 		profile.RawAvgDur = totalMins / totalSessions
-		// Normalize avg duration (cap at 120)
+		// 归一化单次平均时长（以 120 分钟为上限进行归一化）
 		profile.NormalizedAvgDur = math.Min(float64(profile.RawAvgDur)/120.0, 1.0)
 		
-		// Normalize daily mins (cap at 480)
+		// 归一化日均时长（以 480 分钟为上限进行归一化）
 		dailyMins := float64(totalMins) / 30.0
 		profile.NormalizedDailyMin = math.Min(dailyMins/480.0, 1.0)
 	}
@@ -104,13 +104,13 @@ func (s *MatchingService) fetchUserHabitProfile(userID string) (*UserHabitProfil
 	return profile, nil
 }
 
-// calculateCosineSimilarity calculates similarity between two users based on their habit vectors
+// calculateCosineSimilarity 基于用户的习惯向量计算两个用户之间的余弦相似度
 func (s *MatchingService) calculateCosineSimilarity(p1, p2 *UserHabitProfile) float64 {
 	if p1.TotalMins == 0 || p2.TotalMins == 0 {
-		return 0.0 // No shared baseline
+		return 0.0 // 无历史学习数据，缺乏对比基准
 	}
 
-	// 6D Vector: [Morning, Afternoon, Evening, Night, AvgDur, DailyMin]
+	// 构建 6 维特征向量: [上午占比, 下午占比, 晚上占比, 深夜占比, 归一化单次时长, 归一化日均时长]
 	v1 := []float64{p1.MorningRatio, p1.AfternoonRatio, p1.EveningRatio, p1.NightRatio, p1.NormalizedAvgDur, p1.NormalizedDailyMin}
 	v2 := []float64{p2.MorningRatio, p2.AfternoonRatio, p2.EveningRatio, p2.NightRatio, p2.NormalizedAvgDur, p2.NormalizedDailyMin}
 
@@ -131,14 +131,14 @@ func (s *MatchingService) calculateCosineSimilarity(p1, p2 *UserHabitProfile) fl
 	return dotProduct / (math.Sqrt(norm1) * math.Sqrt(norm2))
 }
 
-// AmbientBuddy represents a recommended user
+// AmbientBuddy 表示推荐的学伴对象
 type AmbientBuddy struct {
 	model.User
 	MatchScore  float64
-	SharedTags  []string // Repurposed for habit summary in MVP
+	SharedTags  []string // 极简版本中用于展示习惯摘要（例如："同为夜猫子 · 均次45min"）
 }
 
-// GetAmbientBuddies finds active users with similar study habits
+// GetAmbientBuddies 寻找具有相似学习习惯的活跃学伴
 func (s *MatchingService) GetAmbientBuddies(userID string, limit int) ([]AmbientBuddy, error) {
 	currentUserProfile, err := s.fetchUserHabitProfile(userID)
 	if err != nil {
@@ -146,9 +146,9 @@ func (s *MatchingService) GetAmbientBuddies(userID string, limit int) ([]Ambient
 	}
 
 	var activeUsers []model.User
-	threeDaysAgo := time.Now().AddDate(0, 0, -3)
-	// Fetch recent users (last 3 days active)
-	if err := database.DB.Where("updated_at > ?", threeDaysAgo).Order("updated_at DESC").Limit(50).Find(&activeUsers).Error; err != nil {
+	sevenDaysAgo := time.Now().AddDate(0, 0, -7)
+	// 查询最近活跃的用户（最近 7 天内活跃过，最大限制 50 名）
+	if err := database.DB.Where("updated_at > ?", sevenDaysAgo).Order("updated_at DESC").Limit(50).Find(&activeUsers).Error; err != nil {
 		return nil, err
 	}
 
@@ -156,7 +156,7 @@ func (s *MatchingService) GetAmbientBuddies(userID string, limit int) ([]Ambient
 
 	for _, u := range activeUsers {
 		if u.ID == userID {
-			continue // skip self
+			continue // 跳过自己
 		}
 
 		profile, err := s.fetchUserHabitProfile(u.ID)
@@ -164,10 +164,10 @@ func (s *MatchingService) GetAmbientBuddies(userID string, limit int) ([]Ambient
 			continue
 		}
 
-		// Calculate similarity
+		// 计算余弦相似度
 		score := s.calculateCosineSimilarity(currentUserProfile, profile)
 		
-		if score > 0.1 || currentUserProfile.TotalMins == 0 { // Allow new users to match randomly
+		if score > 0.1 || currentUserProfile.TotalMins == 0 { // 允许新注册无数据的用户随机匹配
 			summary := fmt.Sprintf("同为%s · 均次%dmin", profile.PrimaryHabitLabel, profile.RawAvgDur)
 			
 			candidates = append(candidates, AmbientBuddy{
@@ -178,7 +178,7 @@ func (s *MatchingService) GetAmbientBuddies(userID string, limit int) ([]Ambient
 		}
 	}
 
-	// If no matches, fall back to simple recent list
+	// 如果没有习惯匹配的对象，则降级为展示最近活跃的用户列表
 	if len(candidates) == 0 {
 		for _, u := range activeUsers {
 			if u.ID != userID {
@@ -194,7 +194,7 @@ func (s *MatchingService) GetAmbientBuddies(userID string, limit int) ([]Ambient
 		}
 	}
 
-	// Sort candidates by score descending
+	// 按照匹配度得分从高到低排序
 	sort.Slice(candidates, func(i, j int) bool {
 		return candidates[i].MatchScore > candidates[j].MatchScore
 	})
@@ -206,7 +206,7 @@ func (s *MatchingService) GetAmbientBuddies(userID string, limit int) ([]Ambient
 	return candidates, nil
 }
 
-// GetRecommendedRooms returns active rooms sorted by relevance to the user
+// GetRecommendedRooms 返回推荐的房间列表，按照与用户的关联度（活跃度与人数）排序
 func (s *MatchingService) GetRecommendedRooms(userID string) ([]dto.RoomResponse, error) {
 	_, err := s.fetchUserHabitProfile(userID)
 	if err != nil {
@@ -214,7 +214,7 @@ func (s *MatchingService) GetRecommendedRooms(userID string) ([]dto.RoomResponse
 	}
 
 	var rooms []model.Room
-	// Fetch public rooms
+	// 查询所有的公共房间
 	if err := database.DB.Preload("Tag").Preload("Creator").Where("is_private = ?", false).Find(&rooms).Error; err != nil {
 		return nil, err
 	}
@@ -229,24 +229,23 @@ func (s *MatchingService) GetRecommendedRooms(userID string) ([]dto.RoomResponse
 	for _, room := range rooms {
 		score := 0.0
 
-		// Since tags are killed, we just score based on popularity and activity
-		// or we could match room tags to user habits if we really wanted to, 
-		// but the user wants simple list for now.
+		// 目前由于去掉了复杂的标签系统，简单基于房间的流行度和成员人数进行评分
+		// 开发者也可以在此处根据需要将房间的主题与用户画像中的偏好进行深度结合。
 
-		// 2. Activity / Popularity score
+		// 计算房间活跃度/人数得分
 		var memberCount int64
 		database.DB.Model(&model.RoomMember{}).Where("room_id = ?", room.ID).Count(&memberCount)
-		score += float64(memberCount) * 2.0 // small bump for active rooms
+		score += float64(memberCount) * 2.0 // 对活跃人数较多的房间进行加权推荐
 
 		matchGrid = append(matchGrid, RoomWithScore{Room: room, Score: score})
 	}
 
-	// Sort by score
+	// 按照推荐得分从高到低排序
 	sort.Slice(matchGrid, func(i, j int) bool {
 		return matchGrid[i].Score > matchGrid[j].Score
 	})
 
-	// Convert to DTO
+	// 转换为前端需要的 DTO 格式
 	var response []dto.RoomResponse
 	for _, item := range matchGrid {
 		var onlineCount int64
@@ -269,7 +268,7 @@ func (s *MatchingService) GetRecommendedRooms(userID string) ([]dto.RoomResponse
 			TagName:     tagName,
 			OnlineCount: int(onlineCount),
 			HasPassword: item.Room.Password != nil,
-			MatchScore:  math.Round(item.Score * 100) / 100, // Round to 2 decimals
+			MatchScore:  math.Round(item.Score * 100) / 100, // 四舍五入保留两位小数
 		})
 	}
 

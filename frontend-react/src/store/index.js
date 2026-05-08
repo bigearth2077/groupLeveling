@@ -6,7 +6,7 @@ export const useAppStore = create((set) => ({
   user: null,
   isLoggedIn: false,
   
-  // actions
+  //操作
   increment: () => set((state) => ({ count: state.count + 1 })),
   setUser: (user) => set({ user, isLoggedIn: !!user }),
   logout: () => {

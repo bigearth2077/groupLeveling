@@ -26,7 +26,7 @@ export default function RoomSettingsModal({
         description: room.description || '',
         maxMembers: room.maxMembers || 50,
         isPrivate: room.isPrivate || false,
-        password: '' // Don't fill password for security, only if changing
+        password: '' // 出于安全考虑，不要填写密码，仅在更改时填写
       });
     }
   }, [room, isOpen]);
@@ -41,22 +41,22 @@ export default function RoomSettingsModal({
         ...formData,
         maxMembers: Number(formData.maxMembers),
         description: formData.description || null,
-        password: formData.password || null // Send null if empty to keep existing or clear? 
-        // Backend logic: if pointer is nil, it ignores? 
-        // Wait, if I want to clear password, I might need explicit action.
-        // For now, let's assume empty password input means "no change" if private, or "remove" if public.
-        // Actually, let's just send what we have. 
-        // If isPrivate is false, password should be cleared.
+        password: formData.password || null // 如果为空发送null以保留原值或清空？
+        // 后端逻辑：若指针为nil则忽略？
+        // 等等，若要清空密码，可能需要显式操作。
+        // 目前假设：私有时空密码输入表示“不更改”，公开时表示“移除”。
+        // 其实，直接发送现有数据即可。
+        // 若isPrivate为false，应清空密码。
       };
       
       if (!payload.isPrivate) {
-          payload.password = null; // Clear password if public
+          payload.password = null; // 公开时清空密码
       } else if (!payload.password) {
-          delete payload.password; // If private and empty, don't update password (keep existing)
+          delete payload.password; // 若为私有且为空，则不更新密码（保留原值）
       }
 
       await updateRoom(room.id, payload);
-      onUpdate(); // Refresh parent
+      onUpdate(); // 刷新父级
       onClose();
     } catch (err) {
       alert("Failed to update room settings");

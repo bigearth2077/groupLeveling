@@ -27,18 +27,18 @@ const ActivityHeatmap = () => {
     fetchData();
   }, [currentYear]);
 
-  // Aggregate data into a 12 (Month) x 7 (Weekday) grid
+  // 将数据聚合到一个12（月）x7（工作日）的网格中
   const processedData = useMemo(() => {
-    // grid[weekday][month] initialized to 0
-    // weekday index: 0 (Mon) to 6 (Sun)
+    // grid[weekday][month] 初始化为0
+    // 工作日索引：0（周一）至6（周日）
     const grid = Array.from({ length: 7 }, () => Array(12).fill(0));
 
     rawData.forEach(item => {
       const date = new Date(item.date);
       const month = date.getMonth(); // 0-11
       
-      // getDay() returns 0 for Sunday, 1 for Monday...
-      // We want 0 for Monday, 6 for Sunday
+      // getDay() 返回0表示周日，1表示周一...
+      // 我们希望0表示周一，6表示周日
       let day = date.getDay(); 
       const weekdayIndex = day === 0 ? 6 : day - 1; 
 
@@ -96,7 +96,7 @@ const ActivityHeatmap = () => {
     yAxis: {
       type: 'category',
       data: days,
-      inverse: true, // Monday at the top
+      inverse: true, // 周一在最上方
       splitArea: { show: false },
       axisLine: { show: false },
       axisTick: { show: false },
@@ -104,7 +104,7 @@ const ActivityHeatmap = () => {
     },
     visualMap: {
       min: 0,
-      max: 300, // Adjusted max for monthly aggregation
+      max: 300, // 调整后的月度聚合最大值
       calculable: false,
       orient: 'horizontal',
       left: 'center',

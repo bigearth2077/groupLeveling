@@ -2,13 +2,13 @@ import { create } from 'zustand';
 
 export const useRoomStore = create((set, get) => ({
   activeRoomId: null,
-  roomPassword: null, // Password for private rooms
+  roomPassword: null, // 私人房间密码
   members: [],
   messages: [],
-  socketStatus: 'disconnected', // 'disconnected' | 'connecting' | 'connected'
+  socketStatus: 'disconnected', // '已断开' | '连接中' | '已连接'
   unreadCount: 0,
   
-  // Actions
+  // 操作
   setActiveRoomId: (id) => set({ activeRoomId: id }),
   setRoomPassword: (password) => set({ roomPassword: password }),
   

@@ -11,7 +11,7 @@ export const connectSocket = () => {
 
   socket = io('/', {
     query: { token },
-    transports: ['websocket'], // Force websocket only
+    transports: ['websocket'], //强制仅使用 WebSocket
     reconnection: true,
   });
 

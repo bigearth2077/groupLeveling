@@ -66,7 +66,7 @@ const BlogFeed = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      {/* Header */}
+      {/*页眉*/}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-black text-slate-800 tracking-tight">博客广场</h1>
@@ -81,7 +81,7 @@ const BlogFeed = () => {
         </button>
       </div>
 
-      {/* Filters */}
+      {/*筛选器*/}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <form onSubmit={handleSearch} className="flex-1 relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -117,7 +117,7 @@ const BlogFeed = () => {
         </div>
       </div>
 
-      {/* Blog Cards Grid */}
+      {/*博客卡片网格*/}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
@@ -148,7 +148,7 @@ const BlogFeed = () => {
               onClick={() => navigate(`/blog/${blog.id}`)}
               className="group bg-white rounded-[2rem] border border-slate-100/60 p-6 cursor-pointer hover:shadow-md hover:border-blue-100 transition-all duration-300 hover:-translate-y-0.5 shadow-sm"
             >
-              {/* Quality Badge + Tags */}
+              {/*质量徽章 + 标签*/}
               <div className="flex items-center gap-2 mb-3 flex-wrap">
                 {getQualityBadge(blog.aiQuality)}
                 {blog.tags?.slice(0, 3).map((tag) => (
@@ -159,17 +159,17 @@ const BlogFeed = () => {
                 ))}
               </div>
 
-              {/* Title */}
+              {/*标题*/}
               <h2 className="text-lg font-bold text-slate-800 group-hover:text-blue-600 transition-colors line-clamp-2 mb-2">
                 {blog.title}
               </h2>
 
-              {/* Summary */}
+              {/*摘要*/}
               <p className="text-sm text-slate-500 line-clamp-2 mb-4">
                 {blog.summary || blog.content?.slice(0, 100) + '...'}
               </p>
 
-              {/* Footer */}
+              {/*页脚*/}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   {blog.author?.avatarUrl ? (
@@ -198,7 +198,7 @@ const BlogFeed = () => {
         </div>
       )}
 
-      {/* Pagination */}
+      {/*分页*/}
       {totalPages > 1 && (
         <div className="flex justify-center gap-2 mt-8">
           <button

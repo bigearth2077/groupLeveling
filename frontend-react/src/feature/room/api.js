@@ -1,7 +1,7 @@
 import request from '@/lib/request';
 
 export const getRooms = (params = {}) => {
-  // params: { page, pageSize, tag, search }
+  //参数：{ page, pageSize, tag, search }
   return request.get('/rooms', { params });
 };
 
@@ -26,6 +26,6 @@ export const getRoomMembers = (roomId) => {
 };
 
 export const validateRoomPassword = (data) => {
-  // data: { roomId, password }
+  //数据：{ roomId, password }
   return request.post('/rooms/validate-password', data);
 };

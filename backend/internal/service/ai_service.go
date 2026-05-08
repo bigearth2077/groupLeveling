@@ -16,7 +16,7 @@ type AIService struct{}
 
 const (
 	siliconFlowBaseURL = "https://api.siliconflow.cn/v1/chat/completions"
-	siliconFlowModel   = "deepseek-ai/DeepSeek-V4-Flash" // 确保是模型广场中实际的 ID, V4 可能不存在，如果是V3可以用 deepseek-ai/DeepSeek-V3
+	siliconFlowModel   = "deepseek-ai/DeepSeek-V3"
 )
 
 // AIAnalysisResult 博客分析结果
@@ -131,11 +131,20 @@ XP 评估参考标准：
 	}
 
 	contentStr := aiResp.Choices[0].Message.Content
-	// 清理可能包含的 Markdown JSON 标记
-	contentStr = strings.TrimPrefix(contentStr, "```json")
-	contentStr = strings.TrimPrefix(contentStr, "```")
-	contentStr = strings.TrimSuffix(contentStr, "```")
-	contentStr = strings.TrimSpace(contentStr)
+	
+	// Robust JSON extraction
+	start := strings.Index(contentStr, "{")
+	end := strings.LastIndex(contentStr, "}")
+	if start != -1 && end != -1 && end >= start {
+		contentStr = contentStr[start : end+1]
+	} else {
+		// Fallback clean up
+		contentStr = strings.TrimSpace(contentStr)
+		contentStr = strings.TrimPrefix(contentStr, "```json")
+		contentStr = strings.TrimPrefix(contentStr, "```")
+		contentStr = strings.TrimSuffix(contentStr, "```")
+		contentStr = strings.TrimSpace(contentStr)
+	}
 
 	var result AIAnalysisResult
 	if err := json.Unmarshal([]byte(contentStr), &result); err != nil {
@@ -235,10 +244,19 @@ func (s *AIService) GenerateHealthReport(userDataSummary string) (*AIHealthRepor
 	}
 
 	contentStr := aiResp.Choices[0].Message.Content
-	contentStr = strings.TrimPrefix(contentStr, "```json")
-	contentStr = strings.TrimPrefix(contentStr, "```")
-	contentStr = strings.TrimSuffix(contentStr, "```")
-	contentStr = strings.TrimSpace(contentStr)
+	
+	// Robust JSON extraction
+	start := strings.Index(contentStr, "{")
+	end := strings.LastIndex(contentStr, "}")
+	if start != -1 && end != -1 && end >= start {
+		contentStr = contentStr[start : end+1]
+	} else {
+		contentStr = strings.TrimSpace(contentStr)
+		contentStr = strings.TrimPrefix(contentStr, "```json")
+		contentStr = strings.TrimPrefix(contentStr, "```")
+		contentStr = strings.TrimSuffix(contentStr, "```")
+		contentStr = strings.TrimSpace(contentStr)
+	}
 
 	var result AIHealthReport
 	if err := json.Unmarshal([]byte(contentStr), &result); err != nil {

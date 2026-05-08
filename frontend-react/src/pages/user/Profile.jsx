@@ -51,23 +51,23 @@ const PRESET_AVATARS = [
 export default function Profile() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'history' | 'skills' | 'health' | 'settings'
+  const [activeTab, setActiveTab] = useState('overview'); // '概览' | '历史' | '技能' | '健康' | '设置'
   const [user, setUser] = useState(null);
-  const [stats, setStats] = useState(null); // LevelInfo
+  const [stats, setStats] = useState(null); // 等级信息
   
-  // Stats Data
+  // 统计数据
   const [summary, setSummary] = useState(null);
   const [statsRange, setStatsRange] = useState('7'); // '7' | '30'
 
-  // History Data
+  // 历史数据
   const [sessions, setSessions] = useState([]);
   const [sessionPage, setSessionPage] = useState(1);
   const [hasMoreSessions, setHasMoreSessions] = useState(false);
 
-  // Skills Data
+  // 技能数据
   const [myTags, setMyTags] = useState([]);
   const [newTag, setNewTag] = useState('');
-  // Edit Form State
+  // 编辑表单状态
   const [formData, setFormData] = useState({
     nickname: '',
     bio: '',
@@ -79,7 +79,7 @@ export default function Profile() {
   });
   const [saving, setSaving] = useState(false);
 
-  // Health Report
+  // 健康报告
   const [healthReport, setHealthReport] = useState(null);
   const [fetchingReport, setFetchingReport] = useState(false);
 
@@ -87,7 +87,7 @@ export default function Profile() {
     fetchData();
   }, []);
 
-  // Re-fetch stats when range changes
+  // 范围变更时重新获取统计数据
   useEffect(() => {
     if (user) {
       fetchStatsOnly();
@@ -121,15 +121,15 @@ export default function Profile() {
           setStats(profile.levelInfo);
         }
         
-        // Also fetch tags for the header (Top Skills)
+        // 同时获取标题标签（顶级技能）
         const tags = await getMyTags();
         if (tags) {
-          // Sort by XP (TotalMinutes) desc
+          // 按经验值（总分钟数）降序排序
           const sorted = [...tags].sort((a, b) => b.totalMinutes - a.totalMinutes);
           setMyTags(sorted);
         }
 
-        // Initial stats fetch
+        // 初始数据获取
         const sumResp = await getStatsSummary({ range: statsRange });
         if (sumResp) setSummary(sumResp);
       }
@@ -194,7 +194,7 @@ export default function Profile() {
     try {
       await addMyTag(newTag.trim());
       setNewTag('');
-      fetchTags(); // Refresh list
+      fetchTags(); // 刷新列表
     } catch (err) {
       alert("Failed to add tag");
     }
@@ -214,7 +214,7 @@ export default function Profile() {
     e.preventDefault();
     setSaving(true);
     try {
-      // Sanitize payload
+      // 净化载荷
       const payload = {
         nickname: formData.nickname,
         bio: formData.bio,
@@ -223,8 +223,8 @@ export default function Profile() {
 
       await updateProfile(payload);
       
-      // Refresh local user state
-      const updated = { ...user, ...payload, avatarUrl: payload.avatarUrl || null }; // handle null specifically
+      // 刷新本地用户状态
+      const updated = { ...user, ...payload, avatarUrl: payload.avatarUrl || null }; // 特别处理空值
       setUser(updated);
       alert('Profile updated successfully!');
     } catch (error) {
@@ -251,7 +251,7 @@ export default function Profile() {
   const getChartOption = () => {
     if (!summary || !summary.daily) return {};
 
-    const dates = summary.daily.map(d => d.date.slice(5)); // 'MM-DD'
+    const dates = summary.daily.map(d => d.date.slice(5)); // '月-日'
     const values = summary.daily.map(d => d.minutes);
 
     return {
@@ -265,7 +265,7 @@ export default function Profile() {
         type: 'category',
         data: dates,
         axisLine: { lineStyle: { color: '#94a3b8' } },
-        axisLabel: { interval: statsRange === '30' ? 2 : 0 } // Skip labels if many points
+        axisLabel: { interval: statsRange === '30' ? 2 : 0 } // 点数过多时跳过标签
       },
       yAxis: {
         type: 'value',
@@ -300,12 +300,12 @@ export default function Profile() {
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-20">
       
-      {/* Header Card */}
+      {/* 头部卡片*/}
       <div className="relative overflow-hidden rounded-3xl bg-white p-8 shadow-lg shadow-slate-200/50 border border-slate-100">
         <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-indigo-500 to-purple-500 opacity-10"></div>
         
         <div className="relative flex flex-col md:flex-row gap-8 items-start md:items-end pt-10">
-          {/* Avatar */}
+          {/* 头像*/}
           <div className="relative group">
             <div className="h-32 w-32 rounded-3xl bg-slate-100 border-4 border-white shadow-xl overflow-hidden flex items-center justify-center text-slate-300">
                {user?.avatarUrl ? (
@@ -316,7 +316,7 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Info */}
+          {/* 信息*/}
           <div className="flex-1 space-y-2 mb-2">
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-3xl font-extrabold text-slate-800">{user?.nickname}</h1>
@@ -340,7 +340,7 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Actions */}
+          {/* 操作*/}
           <div className="flex gap-2 flex-wrap">
              {['overview', 'history', 'health', 'settings'].map(tab => (
                <button 
@@ -361,10 +361,10 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* Content Tabs */}
+      {/* 内容标签页*/}
       {activeTab === 'overview' && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Left Col: Stats */}
+          {/* 左列: 统计*/}
           <div className="space-y-6">
             <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">
               <h3 className="font-bold text-slate-800 flex items-center gap-2">
@@ -398,7 +398,7 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Right Col: Charts */}
+          {/* 右列: 图表*/}
           <div className="md:col-span-2 space-y-6">
              <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm min-h-[350px]">
                 <div className="flex items-center justify-between mb-4">
@@ -523,7 +523,7 @@ export default function Profile() {
               </div>
             ) : healthReport ? (
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                {/* Score Header */}
+                {/* 分数标题*/}
                 <div className="flex flex-col md:flex-row gap-8 items-center bg-gradient-to-r from-rose-50 to-orange-50 p-8 rounded-3xl">
                   <div className="relative w-32 h-32 flex items-center justify-center rounded-full bg-white shadow-lg border-4 border-rose-100">
                     <span className="text-4xl font-black text-rose-500">{healthReport.overallScore}</span>
@@ -537,9 +537,9 @@ export default function Profile() {
                   </div>
                 </div>
 
-                {/* Grid */}
+                {/* 网格*/}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Insights */}
+                  {/* 洞察*/}
                   <div className="bg-slate-50 p-6 rounded-3xl">
                     <h5 className="font-bold text-indigo-700 flex items-center gap-2 mb-4">
                       <Brain size={18} />
@@ -555,7 +555,7 @@ export default function Profile() {
                     </ul>
                   </div>
 
-                  {/* Advice */}
+                  {/* 建议*/}
                   <div className="bg-emerald-50 p-6 rounded-3xl">
                     <h5 className="font-bold text-emerald-700 flex items-center gap-2 mb-4">
                       <Coffee size={18} />
@@ -572,7 +572,7 @@ export default function Profile() {
                   </div>
                 </div>
 
-                {/* Warnings (if any) */}
+                {/* 警告(如有)*/}
                 {healthReport.warnings && healthReport.warnings.length > 0 && (
                   <div className="bg-red-50 border border-red-100 p-6 rounded-3xl">
                     <h5 className="font-bold text-red-600 flex items-center gap-2 mb-4">
@@ -603,7 +603,7 @@ export default function Profile() {
 
       {activeTab === 'settings' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Edit Profile */}
+          {/* 编辑资料*/}
           <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm space-y-6">
             <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
               <Edit3 size={20} className="text-indigo-600" />
@@ -619,7 +619,7 @@ export default function Profile() {
                  />
                </div>
                
-               {/* Avatar Selector */}
+               {/* 头像选择器*/}
                <div className="space-y-2">
                  <label className="text-sm font-bold text-slate-700">头像</label>
                  <div className="grid grid-cols-4 gap-2 mb-2">
@@ -663,7 +663,7 @@ export default function Profile() {
             </form>
           </div>
 
-          {/* Change Password */}
+          {/* 修改密码*/}
           <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm space-y-6">
             <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
               <Lock size={20} className="text-indigo-600" />
@@ -694,7 +694,7 @@ export default function Profile() {
             </form>
           </div>
 
-          {/* Danger Zone */}
+          {/*危险区域*/}
           <div className="bg-white p-8 rounded-3xl border border-red-100 shadow-sm space-y-6 md:col-span-2 mt-4">
             <h3 className="text-xl font-bold text-red-600 flex items-center gap-2">
               <LogOut size={20} />

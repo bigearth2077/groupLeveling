@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { getSocket } from '@/lib/socket';
 import { getMe } from '@/feature/user/api';
 
-// You'll need to create this API endpoint in frontend
+// 你需要在前端创建这个API端点
 import { getMessageHistory, getUnreadCount } from '@/feature/friend/api'; 
 
 export default function ChatPanel({ friend, onBack }) {
@@ -40,7 +40,7 @@ export default function ChatPanel({ friend, onBack }) {
     try {
       const res = await getMessageHistory(friend.id, 1, 50);
       if (res && res.items) {
-        // Reverse because history is ordered DESC, we want ASC for chat display
+        // 反转因为历史记录是降序排列，聊天显示需要升序
         setMessages(res.items.reverse());
       }
     } catch (err) {
@@ -55,7 +55,7 @@ export default function ChatPanel({ friend, onBack }) {
     if (!socket) return;
 
     const handleNewMessage = (data) => {
-      // data.message is the MessageResponse
+      // data.message 是 MessageResponse
       if (
         data.message.senderId === friend.id || 
         data.message.receiverId === friend.id
@@ -81,7 +81,7 @@ export default function ChatPanel({ friend, onBack }) {
         receiverId: friend.id,
         content: inputMsg
       }));
-      // We will receive it back via receive_private_message if we are sender
+      // 如果我们作为发送者，将通过 receive_private_message 接收返回
       setInputMsg('');
     } else {
       alert("Not connected to chat server");
@@ -98,7 +98,7 @@ export default function ChatPanel({ friend, onBack }) {
 
   return (
     <div className="h-full flex flex-col bg-white">
-      {/* Header */}
+      {/* 头部*/}
       <div className="flex items-center gap-3 pb-3 border-b border-slate-100 mb-3">
         <button onClick={onBack} className="p-1 hover:bg-slate-100 rounded-lg text-slate-500">
           <ArrowLeft size={18} />
@@ -111,7 +111,7 @@ export default function ChatPanel({ friend, onBack }) {
         </div>
       </div>
 
-      {/* Message List */}
+      {/* 消息列表*/}
       <div className="flex-1 overflow-y-auto pr-2 space-y-3 pb-2">
         {messages.map((msg) => {
           const isMe = msg.senderId === myId;
@@ -132,7 +132,7 @@ export default function ChatPanel({ friend, onBack }) {
         <div ref={scrollRef} />
       </div>
 
-      {/* Input */}
+      {/* 输入*/}
       <form onSubmit={sendMessage} className="pt-2 flex gap-2">
         <Input 
           value={inputMsg}

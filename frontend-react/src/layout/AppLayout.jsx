@@ -19,7 +19,7 @@ const AppLayout = () => {
     return () => {};
   }, []);
 
-  // Global Chinese forced
+  //全局强制中文
   React.useEffect(() => {
     i18n.changeLanguage('zh');
   }, [i18n]);
@@ -32,7 +32,7 @@ const AppLayout = () => {
 
   return (
     <div className="h-screen w-full bg-[#f0f4f9] text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-700 overflow-hidden relative flex flex-col">
-      {/* Top Bar (Integrated into NotebookLM style) */}
+      {/*顶部栏（集成到NotebookLM风格）*/}
       <header className="h-16 flex-shrink-0 flex items-center justify-between px-6 z-30">
         <div className="flex items-center gap-3">
           <div className="h-8 w-8 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold shadow-sm">GL</div>
@@ -46,12 +46,12 @@ const AppLayout = () => {
         </div>
       </header>
 
-      {/* Panels Area */}
+      {/*面板区域*/}
       <div className="flex-1 flex gap-4 p-4 pt-0 overflow-hidden">
-        {/* Global Room Manager */}
+        {/*全局房间管理器*/}
         <RoomConnectionManager />
 
-        {/* Left Nav Card */}
+        {/*左侧导航卡片*/}
         <aside className="w-20 lg:w-64 flex-shrink-0 bg-white rounded-[2rem] shadow-sm border border-slate-200/30 flex flex-col py-6 transition-all">
           <nav className="flex-1 w-full px-4 flex flex-col gap-2">
             {navItems.map((item) => {
@@ -74,20 +74,20 @@ const AppLayout = () => {
             })}
           </nav>
 
-          {/* Sidebar Bottom: Pomodoro */}
+          {/*侧边栏底部：番茄钟*/}
           <div className="mt-auto border-t border-slate-100 px-4 py-4">
             <PomodoroDock isEmbedded={true} />
           </div>
         </aside>
 
-        {/* Main Content Card */}
+        {/*主内容卡片*/}
         <main className="flex-1 bg-white rounded-[2rem] shadow-sm border border-slate-200/30 overflow-hidden flex flex-col">
           <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
             <Outlet />
           </div>
         </main>
       </div>
-      {/* Unified Right-Bottom Floating Tools */}
+      {/*统一右下角浮动工具*/}
       <div className="fixed bottom-8 right-8 z-50 pointer-events-none">
         <div className="pointer-events-auto">
           <DailyReviewPanel />

@@ -17,12 +17,12 @@ export default function FriendDrawer({ children }) {
   const [chatFriend, setChatFriend] = useState(null);
 
   useEffect(() => {
-    // Only fetch if we need to display it inside
+    // 仅在需要显示时获取
     getMe().then(u => {
         if (u) setMyAvatar(u.avatarUrl);
     }).catch(() => {});
     
-    // Fetch initial global unread counts (messages + requests)
+    // 获取初始全局未读计数（消息 + 请求）
     fetchBadges();
   }, []);
 
@@ -30,11 +30,11 @@ export default function FriendDrawer({ children }) {
 
   const fetchBadges = async () => {
     try {
-      // 1. messages
+      // 1. 消息
       const msgRes = await request.get('/messages/unread/per-friend');
       const totalMsg = Object.values(msgRes).reduce((a, b) => a + b, 0);
       
-      // 2. pending requests (we could make an api for count, or just fetch requests)
+      // 2. 待处理请求（可以创建计数接口或直接获取请求）
       const reqRes = await request.get('/friends/requests/incoming', { params: { page: 1, pageSize: 1 } });
       const totalReq = reqRes.total || 0;
       
@@ -56,7 +56,7 @@ export default function FriendDrawer({ children }) {
     return () => socket.off('receive_private_message', handleNewMessage);
   }, []);
 
-  // When drawer opens, maybe refresh badges
+  // 抽屉打开时，或许刷新徽标
   useEffect(() => {
     if (isOpen) {
       fetchBadges();
@@ -67,7 +67,7 @@ export default function FriendDrawer({ children }) {
 
   return (
     <div className="relative z-50">
-      {/* Trigger */}
+      {/* 触发*/}
       <div onClick={toggle} className="cursor-pointer relative">
         {children ? children : (
             <div className={`h-8 w-8 rounded-full bg-slate-200 ring-2 ring-white hover:ring-indigo-100 transition-all overflow-hidden ${isOpen ? 'ring-indigo-200 ring-offset-2' : ''}`}>
@@ -79,19 +79,19 @@ export default function FriendDrawer({ children }) {
         )}
       </div>
 
-      {/* Floating Panel (Popover Wrapper) */}
+      {/* 浮动面板（弹出式包装器）*/}
       <div className={cn(
         "absolute top-14 right-0 transform transition-all duration-200 origin-top-right z-50",
         isOpen ? "scale-100 opacity-100 visible" : "scale-95 opacity-0 invisible pointer-events-none"
       )}>
         
-        {/* Ambient Buddies (Floating Left) */}
+        {/* 环境伙伴（左侧浮动）*/}
         <AmbientBuddyRing />
 
-        {/* Drawer Content */}
+        {/* 抽屉内容*/}
         <div className="w-[360px] h-[550px] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden">
         
-        {/* Header */}
+        {/* 头部*/}
         {activeTab !== 'chat' && (
           <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50/50">
              <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
@@ -104,7 +104,7 @@ export default function FriendDrawer({ children }) {
           </div>
         )}
 
-        {/* Tabs */}
+        {/* 标签页*/}
         {activeTab !== 'chat' && (
           <div className="flex p-2 gap-2 border-b border-slate-100 bg-white">
              {[
@@ -129,7 +129,7 @@ export default function FriendDrawer({ children }) {
           </div>
         )}
 
-        {/* Content */}
+        {/* 内容*/}
         <div className="flex-1 overflow-hidden p-4 bg-white">
            {activeTab === 'friends' && <FriendList onChat={(user) => { setChatFriend(user); setActiveTab('chat'); }} />}
            {activeTab === 'add' && <UserSearch />}

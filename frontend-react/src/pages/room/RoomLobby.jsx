@@ -30,7 +30,7 @@ export default function RoomLobby() {
   const [myTags, setMyTags] = useState([]);
   const [tagNameInput, setTagNameInput] = useState('');
   
-  // Use Custom Hook for Join Logic
+  // 使用自定义钩子处理加入逻辑
   const { 
     passwordModalRoom, 
     loading: joiningLoading, 
@@ -40,11 +40,11 @@ export default function RoomLobby() {
     closePasswordModal 
   } = useRoomJoin();
 
-  // Create Form
+  // 创建表单
   const [newRoom, setNewRoom] = useState({
     name: '',
     description: '',
-    tagId: '', // Will be resolved from tagNameInput
+    tagId: '', // 将从tagNameInput解析
     maxMembers: 20,
     isPrivate: false,
     password: ''
@@ -58,7 +58,7 @@ export default function RoomLobby() {
   const fetchUserTags = async () => {
     try {
       const res = await getMyTags();
-      // res is array of UserTagResponse { tagId, tagName, ... }
+      // res是UserTagResponse数组 { tagId, tagName, ... }
       if (Array.isArray(res)) {
         setMyTags(res);
       }
@@ -84,17 +84,17 @@ export default function RoomLobby() {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      // Basic validation
+      // 基础验证
       if (!newRoom.name) return;
       
-      // Resolve Tag ID
+      // 解析标签ID
       let finalTagId = null;
       if (tagNameInput.trim()) {
         const existing = myTags.find(t => t.tagName.toLowerCase() === tagNameInput.trim().toLowerCase());
         if (existing) {
           finalTagId = existing.tagId;
         } else {
-          // Create new tag (attach to user)
+          // 创建新标签（关联到用户）
           const tagRes = await addMyTag(tagNameInput.trim());
           if (tagRes && tagRes.tagId) {
             finalTagId = tagRes.tagId;
@@ -112,8 +112,8 @@ export default function RoomLobby() {
       
       await createRoom(payload);
       setShowCreateModal(false);
-      fetchRooms(); // Refresh
-      fetchUserTags(); // Refresh tags in case new one was added
+      fetchRooms(); // 刷新
+      fetchUserTags(); // 刷新标签（以防新增了标签）
     } catch (err) {
       console.error(err);
       alert("Failed to create room");
@@ -123,7 +123,7 @@ export default function RoomLobby() {
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-20">
       
-      {/* Header */}
+      {/* 页眉*/}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-6 rounded-[2rem] border border-slate-100/60 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="p-3 rounded-2xl bg-blue-50 text-blue-600">
@@ -151,7 +151,7 @@ export default function RoomLobby() {
         </div>
       </div>
 
-      {/* Grid */}
+      {/* 网格*/}
       {loading ? (
         <div className="flex justify-center py-20">
           <Loader2 className="w-10 h-10 animate-spin text-indigo-600" />
@@ -188,7 +188,7 @@ export default function RoomLobby() {
         </div>
       )}
 
-      {/* Create Modal */}
+      {/* 创建模态框*/}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-sm p-4">
           <div className="bg-white rounded-[2rem] w-full max-w-md p-8 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
@@ -262,7 +262,7 @@ export default function RoomLobby() {
         </div>
       )}
 
-      {/* Reusable Password Modal */}
+      {/* 可重复使用的密码模态框*/}
       <RoomPasswordModal
         isOpen={!!passwordModalRoom}
         onClose={closePasswordModal}

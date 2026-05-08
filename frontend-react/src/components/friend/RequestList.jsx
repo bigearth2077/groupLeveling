@@ -32,7 +32,7 @@ export default function RequestList() {
   const handleAct = async (reqId, action) => {
     try {
       await handleFriendRequest(reqId, action);
-      // Remove from list
+      //从列表中移除
       setList(prev => prev.filter(item => item.id !== reqId));
     } catch (err) {
       alert('Failed: ' + err.message);
@@ -64,8 +64,8 @@ export default function RequestList() {
         )}
 
         {list.map(req => {
-          // For incoming: req.user is the sender.
-          // For outgoing: req.friend is the receiver (Fixed).
+          //对于 incoming：req.user 是发送者。
+          //对于 outgoing：req.friend 是接收者（已修复）。
           const target = type === 'incoming' ? req.user : req.friend;
           
           return (

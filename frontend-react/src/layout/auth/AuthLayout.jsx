@@ -5,7 +5,7 @@ import { Zap } from 'lucide-react';
 const AuthLayout = ({ children, title, subtitle, footerText, footerLinkText, footerLinkPath }) => {
   return (
     <div className="min-h-screen flex w-full bg-white">
-      {/* Left Side - Visual & Branding (Hidden on mobile) */}
+      {/* 左侧 - 视觉与品牌（移动端隐藏） */}
       <div className="hidden lg:flex w-1/2 bg-slate-900 relative overflow-hidden items-center justify-center p-12">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-20"></div>
         <div className="relative z-10 max-w-lg text-white space-y-6">
@@ -33,7 +33,7 @@ const AuthLayout = ({ children, title, subtitle, footerText, footerLinkText, foo
         </div>
       </div>
 
-      {/* Right Side - Form */}
+      {/* 右侧 - 表单 */}
       <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 sm:p-12 lg:p-24 bg-white">
         <div className="w-full max-w-sm space-y-8">
           <div className="text-center lg:text-left">

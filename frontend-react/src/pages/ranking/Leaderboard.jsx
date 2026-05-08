@@ -6,21 +6,21 @@ import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 
 export default function Leaderboard() {
-  const [scope, setScope] = useState('week'); // 'week' | 'all'
-  const [type, setType] = useState('global'); // 'global' | 'friends'
-  const [tag, setTag] = useState(''); // Tag filter for global
+  const [scope, setScope] = useState('week'); // '周' | '全部'
+  const [type, setType] = useState('global'); // '全局' | '好友'
+  const [tag, setTag] = useState(''); // 全局标签筛选器
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [me, setMe] = useState(null);
 
   useEffect(() => {
-    // Load my info to highlight myself
+    // 加载我的信息以高亮显示自己
     getMe().then(setMe).catch(() => {});
   }, []);
 
   useEffect(() => {
     fetchRankings();
-  }, [scope, type]); // Tag changes require manual submit or debounce
+  }, [scope, type]); // 标签变更需手动提交或防抖处理
 
   const fetchRankings = async () => {
     setLoading(true);
@@ -52,7 +52,7 @@ export default function Leaderboard() {
   const topThree = data.slice(0, 3);
   const restList = data.slice(3);
 
-  // Helper to get crown color
+  // 获取皇冠颜色的辅助函数
   const getRankColor = (index) => {
     if (index === 0) return "text-yellow-500 bg-yellow-50 border-yellow-200";
     if (index === 1) return "text-slate-400 bg-slate-50 border-slate-200";
@@ -63,7 +63,7 @@ export default function Leaderboard() {
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-20">
       
-      {/* Header & Controls */}
+      {/* 标题与控制项 */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="p-3 rounded-2xl bg-indigo-50 text-indigo-600">
@@ -76,7 +76,7 @@ export default function Leaderboard() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-           {/* Scope Toggle */}
+           {/* 范围切换 */}
            <div className="flex bg-slate-100 p-1 rounded-xl">
              {['week', 'all'].map(s => (
                <button
@@ -92,7 +92,7 @@ export default function Leaderboard() {
              ))}
            </div>
 
-           {/* Type Toggle */}
+           {/* 类型切换 */}
            <div className="flex bg-slate-100 p-1 rounded-xl">
              <button
                onClick={() => setType('global')}
@@ -110,7 +110,7 @@ export default function Leaderboard() {
         </div>
       </div>
 
-      {/* Tag Filter (Global Only) */}
+      {/* 标签筛选器（仅全局） */}
       {type === 'global' && (
         <form onSubmit={handleTagSearch} className="relative max-w-md mx-auto">
           <input 
@@ -130,10 +130,10 @@ export default function Leaderboard() {
         </div>
       ) : (
         <>
-          {/* Podium */}
+          {/* 领奖台 */}
           {data.length > 0 && (
             <div className="flex justify-center items-end gap-4 md:gap-8 min-h-[240px] pt-8">
-              {/* 2nd Place */}
+              {/* 第二名 */}
               {topThree[1] && (
                 <div className="flex flex-col items-center animate-in slide-in-from-bottom-8 duration-700 delay-100">
                   <div className="relative mb-3">
@@ -152,7 +152,7 @@ export default function Leaderboard() {
                 </div>
               )}
 
-              {/* 1st Place */}
+              {/* 第一名 */}
               {topThree[0] && (
                 <div className="flex flex-col items-center animate-in slide-in-from-bottom-8 duration-700 z-10">
                   <Crown size={32} className="text-yellow-500 mb-2 fill-yellow-200 animate-bounce" />
@@ -174,7 +174,7 @@ export default function Leaderboard() {
                 </div>
               )}
 
-              {/* 3rd Place */}
+              {/* 第三名 */}
               {topThree[2] && (
                 <div className="flex flex-col items-center animate-in slide-in-from-bottom-8 duration-700 delay-200">
                   <div className="relative mb-3">
@@ -195,7 +195,7 @@ export default function Leaderboard() {
             </div>
           )}
 
-          {/* Rank List */}
+          {/* 排行榜 */}
           <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden animate-in fade-in duration-500 mt-8">
             {restList.length === 0 && topThree.length === 0 && (
               <div className="p-12 text-center text-slate-400">No ranking data available yet.</div>

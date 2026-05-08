@@ -4,8 +4,8 @@ import { toast } from 'sonner';
 
 // 创建 axios 实例
 const request = axios.create({
-  baseURL: '/api', // Use proxy
-  timeout: 10000, // 请求超时时间 10秒
+  baseURL: '/api', //使用代理
+  timeout: 60000, // 请求超时时间 60秒
   headers: {
     'Content-Type': 'application/json;charset=UTF-8',
   },
@@ -23,7 +23,7 @@ request.interceptors.request.use(
     }
     
     // 可以在这里添加其他统一的请求头
-    // config.headers['X-Requested-With'] = 'XMLHttpRequest';
+    //config.headers['X-Requested-With'] = 'XMLHttpRequest';
     
     return config;
   },

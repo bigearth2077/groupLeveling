@@ -7,19 +7,19 @@ const TimeMatrix = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // X-axis: Hours of the day
+  // X轴：一天中的小时
   const hours = Array.from({ length: 24 }, (_, i) => `${i}h`);
-  // Y-axis: Days of the week (API returns 0=Sunday, 6=Saturday)
+  // Y轴：一周中的天（API返回0=周日，6=周六）
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        // Fetch data for the last 30 days
+        // 获取最近30天的数据
         const res = await getTimeMatrix(30);
         if (res && res.items) {
-          // Format for echarts heatmap: [xIndex, yIndex, value] => [hour, day, count]
+          // echarts热力图格式：[x索引, y索引, 值] => [小时, 天, 计数]
           const formattedData = res.items.map(item => [item.hour, item.day, item.count]);
           setData(formattedData);
         }
@@ -40,9 +40,9 @@ const TimeMatrix = () => {
     );
   }
 
-  // Find maximum value to scale the visual map dynamically
+  // 查找最大值以动态调整视觉映射比例
   const maxCount = data.reduce((max, item) => Math.max(max, item[2]), 0);
-  // Default to 60 if maxCount is zero to avoid broken scale
+  // 若maxCount为零则默认设为60，避免比例异常
   const visualMax = maxCount > 0 ? maxCount : 60; 
 
   const option = {
@@ -93,9 +93,9 @@ const TimeMatrix = () => {
       orient: 'horizontal',
       left: 'center',
       bottom: '15%',
-      show: false, // Hide legend to stick to clean UI
+      show: false, // 隐藏图例以保持简洁UI
       inRange: {
-        // Light to dark purple/indigo gradient
+        // 浅紫到深紫/靛蓝渐变
         color: ['#f8fafc', '#c7d2fe', '#818cf8', '#4f46e5', '#312e81']
       }
     },

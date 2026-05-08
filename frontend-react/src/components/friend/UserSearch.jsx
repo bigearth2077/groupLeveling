@@ -24,7 +24,7 @@ export default function UserSearch() {
     try {
       const resp = await searchUsers(query);
       if (resp && resp.items) {
-        // Filter out self
+        // 过滤掉自身
         const filtered = resp.items.filter(u => u.id !== myId);
         setResults(filtered);
       } else {

@@ -83,7 +83,7 @@ const DailyReviewPanel = () => {
           isOpen ? 'scale-100 opacity-100 pointer-events-auto' : 'scale-0 opacity-0 pointer-events-none'
         }`}
       >
-        {/* Header */}
+        {/*页眉*/}
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
           <div className="flex items-center gap-2">
             <ClipboardCheck size={18} className="text-indigo-500" />
@@ -97,7 +97,7 @@ const DailyReviewPanel = () => {
           </button>
         </div>
 
-        {/* Content */}
+        {/*内容*/}
         <div className="px-5 py-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
           <CustomSlider
             icon={Moon}

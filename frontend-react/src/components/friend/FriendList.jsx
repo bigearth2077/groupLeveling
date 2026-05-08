@@ -26,8 +26,8 @@ export default function FriendList({ onChat }) {
     if (!socket) return;
 
     const handleNewMessage = (data) => {
-      // If we receive a message from someone, increment their unread count
-      // only if the chat isn't currently open (this might need global state, but for now just increment)
+      //如果收到某人的消息，增加其未读计数
+      //仅当聊天窗口未打开时增加（可能需要全局状态，但目前仅增加）
       const senderId = data.message.senderId;
       setUnreadCounts(prev => ({
         ...prev,
@@ -41,7 +41,7 @@ export default function FriendList({ onChat }) {
 
   const loadUnreadCounts = async () => {
     try {
-      // Need to import getUnreadPerFriend
+      //需要导入 getUnreadPerFriend
       const { getUnreadPerFriend } = await import('@/feature/friend/api');
       const counts = await getUnreadPerFriend();
       setUnreadCounts(counts || {});
@@ -106,11 +106,11 @@ export default function FriendList({ onChat }) {
                      <div className="h-10 w-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-400 font-bold overflow-hidden border border-slate-100">
                        {user.avatarUrl ? <img src={user.avatarUrl} className="w-full h-full object-cover"/> : <User size={20} />}
                      </div>
-                     {/* Online Indicator */}
+                     {/*在线状态指示器*/}
                      {user.isOnline && (
                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full z-10"></div>
                      )}
-                     {/* Unread Badge */}
+                     {/*未读标记*/}
                      {(unreadCounts[user.id] > 0) && (
                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border border-white z-10">
                          {unreadCounts[user.id] > 99 ? '99+' : unreadCounts[user.id]}
@@ -132,7 +132,7 @@ export default function FriendList({ onChat }) {
                </div>
 
                <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity gap-1 shrink-0">
-                  {/* Action Buttons */}
+                  {/*操作按钮*/}
                   {user.roomId && user.roomId !== activeRoomId && (
                      <Button 
                        size="icon" 
@@ -167,7 +167,7 @@ export default function FriendList({ onChat }) {
                     title="Chat"
                     onClick={(e) => { 
                       e.stopPropagation(); 
-                      // Clear local unread count
+                      //清除本地未读计数
                       setUnreadCounts(prev => ({...prev, [user.id]: 0}));
                       onChat && onChat(user); 
                     }}
@@ -193,7 +193,7 @@ export default function FriendList({ onChat }) {
       <UserProfileModal 
         userId={selectedUserId} 
         isOpen={!!selectedUserId} 
-        onClose={() => { setSelectedUserId(null); loadFriends(); }} // Reload list on close in case of unfriend
+        onClose={() => { setSelectedUserId(null); loadFriends(); }} //关闭时重新加载列表以防被删除好友
         isFriend={true}
       />
     </>

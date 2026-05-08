@@ -1,14 +1,14 @@
 import request from '@/lib/request';
 
-// --- Blog CRUD ---
+// --- 博客增删改查 ---
 
 export const createBlog = (data) => {
-  // data: { title, content, format, status }
+  // 数据: { 标题, 内容, 格式, 状态 }
   return request.post('/blogs', data);
 };
 
 export const getBlogs = (params = {}) => {
-  // params: { page, pageSize, tag, search, sort }
+  // 参数: { 页码, 每页数量, 标签, 搜索, 排序 }
   return request.get('/blogs', { params });
 };
 

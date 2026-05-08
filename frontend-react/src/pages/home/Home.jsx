@@ -39,7 +39,7 @@ const Home = () => {
 
   const [rooms, setRooms] = useState([]);
 
-  // Use Custom Hook for Join Logic
+  //使用自定义Hook处理加入逻辑
   const {
     passwordModalRoom,
     loading: joiningLoading,
@@ -53,7 +53,7 @@ const Home = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        // 1. Fetch User Info & Profile
+        //1. 获取用户信息及资料
         const me = await getMe();
         let myId = null;
 
@@ -61,19 +61,19 @@ const Home = () => {
           myId = me.id;
           const profile = await getUserProfile(me.id);
 
-          // Get Today's Stats
-          const stats = await getStatsSummary({ range: '1' }); // Assuming backend handles '1' as today or last 1 day
+          //获取今日统计
+          const stats = await getStatsSummary({ range: '1' }); //假设后端将'1'视为今天或最近1天
 
           setUserStats(prev => ({
             ...prev,
             ...(profile && profile.levelInfo ? profile.levelInfo : {}),
             nickname: me.nickname,
-            streak: stats?.currentStreak || 0, // If backend stats summary has streak, use it
+            streak: stats?.currentStreak || 0, //若后端统计摘要包含连续天数则使用
             todayMinutes: stats?.totalMinutes || 0
           }));
         }
 
-        // 2. Fetch Rooms (Simple Pagination)
+        //2. 获取房间列表（简单分页）
         const roomsResp = await getRooms({ page: 1, pageSize: 3 });
         if (roomsResp && roomsResp.items) {
           setRooms(roomsResp.items.slice(0, 3));
@@ -100,7 +100,7 @@ const Home = () => {
   return (
     <div className="space-y-6 pb-20">
 
-      {/* 1. Hero Section: Level & Status */}
+      {/*1. 英雄区：等级与状态*/}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         <div className="col-span-1 md:col-span-12 lg:col-span-8 group relative overflow-hidden rounded-[2rem] bg-white border border-slate-100/60 p-8 sm:p-10 shadow-sm hover:shadow transition-shadow">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
@@ -128,7 +128,7 @@ const Home = () => {
                 </p>
               </div>
 
-              {/* XP Bar */}
+              {/*经验条*/}
               <div className="space-y-2 max-w-lg">
                 <div className="flex justify-between text-xs font-semibold text-slate-400">
                   <span>当前经验值</span>
@@ -143,7 +143,7 @@ const Home = () => {
               </div>
             </div>
 
-            {/* CTA Button */}
+            {/*行动号召按钮*/}
             <button
               onClick={() => navigate('/rooms')}
               className="shrink-0 rounded-2xl bg-blue-600 px-8 py-4 text-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md hover:bg-blue-500 active:translate-y-0 active:scale-95 flex items-center gap-3 group/btn"
@@ -156,7 +156,7 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Mini Stats (Desktop Sidebar Top) */}
+        {/*迷你统计（桌面侧边栏顶部）*/}
         <div className="col-span-1 md:col-span-6 lg:col-span-4">
           <div className="rounded-[2rem] bg-orange-50 p-6 flex flex-col justify-between border border-orange-100/50 h-full">
             <div className="rounded-full bg-white/60 w-10 h-10 flex items-center justify-center text-orange-600 mb-2">
@@ -170,7 +170,7 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Analytics Section (New Heatmaps) */}
+      {/*分析区（新增热力图）*/}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-12 xl:col-span-5 rounded-[2rem] bg-white border border-slate-100/60 p-8 shadow-sm">
           <h3 className="font-bold text-slate-800 mb-1 text-lg flex items-center gap-2">
@@ -190,10 +190,10 @@ const Home = () => {
         </div>
       </div>
 
-      {/* 2. Main Layout: Active Rooms */}
+      {/*2. 主布局：活跃房间*/}
       <div className="grid grid-cols-1 gap-8">
 
-        {/* Left: Active Rooms Grid */}
+        {/*左侧：活跃房间网格*/}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
@@ -211,7 +211,7 @@ const Home = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Create Room Card */}
+            {/*创建房间卡片*/}
             <div
               onClick={() => navigate('/rooms')}
               className="group cursor-pointer rounded-3xl border border-dashed border-slate-300 bg-white p-6 flex flex-col items-center justify-center text-center gap-3 transition-colors hover:border-blue-400 hover:bg-blue-50/30"
@@ -225,7 +225,7 @@ const Home = () => {
               </div>
             </div>
 
-            {/* Room Cards */}
+            {/*房间卡片*/}
             {rooms.length === 0 ? (
               <div className="col-span-1 md:col-span-2 p-8 text-center text-slate-400 bg-slate-50 rounded-2xl border border-slate-100">
                 暂无活跃自习室。快去创建一个吧！
@@ -266,7 +266,7 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Password Modal */}
+      {/*密码模态框*/}
       <RoomPasswordModal
         isOpen={!!passwordModalRoom}
         onClose={closePasswordModal}

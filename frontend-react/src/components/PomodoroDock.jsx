@@ -28,7 +28,7 @@ export default function PomodoroDock({ isEmbedded = false }) {
   const [showSettings, setShowSettings] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // Check if we are in a room but not viewing it
+  // 检查是否在房间中但未查看
   const isRoomBackground = activeRoomId && !location.pathname.includes(`/room/${activeRoomId}`);
 
   useEffect(() => {
@@ -68,11 +68,11 @@ export default function PomodoroDock({ isEmbedded = false }) {
   const glowColor = isResting ? 'shadow-emerald-500/20' : 'shadow-indigo-500/20';
   const borderColor = isResting ? 'border-emerald-500/30' : 'border-indigo-500/30';
 
-  // --- Collapsed View ---
+  // --- 折叠视图 ---
   if (status !== 'idle' && isCollapsed && !isEmbedded) {
     return (
       <div className="flex flex-col items-end gap-2">
-        {/* Room Pill (Background Mode) */}
+        {/* 房间标识（后台模式）*/}
         {isRoomBackground && (
           <div
             onClick={handleReturnToRoom}
@@ -102,7 +102,7 @@ export default function PomodoroDock({ isEmbedded = false }) {
           className={cn(
             "relative cursor-pointer group",
             "flex items-center gap-3 px-4 py-2 rounded-full border bg-white/90 backdrop-blur-md text-slate-800 shadow-md transition-all hover:scale-105 hover:-translate-y-1",
-            "border-slate-100" // minimal border
+            "border-slate-100" // 最小边框
           )}
         >
           <div className={cn("flex items-center justify-center transition-colors", themeColor)}>
@@ -112,7 +112,7 @@ export default function PomodoroDock({ isEmbedded = false }) {
             {formatTime(timeLeft)}
           </span>
 
-          {/* Progress Bar Background */}
+          {/* 进度条背景*/}
           <div className="absolute bottom-0 left-2 right-2 h-[2px] bg-blue-100 rounded-full overflow-hidden">
             <div
               className={cn("h-full transition-all duration-1000", isResting ? "bg-emerald-500" : "bg-blue-600")}
@@ -124,14 +124,14 @@ export default function PomodoroDock({ isEmbedded = false }) {
     );
   }
 
-  // --- Expanded View ---
+  // --- 展开视图 ---
   return (
     <div className={cn(
       "relative flex flex-col items-center gap-3",
       !isEmbedded && "items-end"
     )}>
 
-      {/* Room Pill (Background Mode) */}
+      {/* 房间标识（后台模式）*/}
       {isRoomBackground && (
         <div
           onClick={handleReturnToRoom}
@@ -157,7 +157,7 @@ export default function PomodoroDock({ isEmbedded = false }) {
       )}
 
 
-      {/* Settings Bubble */}
+      {/* 设置气泡*/}
       {status === 'idle' && showSettings && (
         <div className="bg-white/95 backdrop-blur-xl border border-slate-100 rounded-3xl p-5 shadow-xl w-64 animate-in fade-in slide-in-from-bottom-4 duration-200 mb-2">
           <div className="mb-5">
@@ -195,7 +195,7 @@ export default function PomodoroDock({ isEmbedded = false }) {
         </div>
       )}
 
-      {/* Main Dock */}
+      {/* 主停靠栏*/}
       <div className={cn(
         "relative flex items-center gap-3 transition-all duration-300",
         isEmbedded
@@ -203,7 +203,7 @@ export default function PomodoroDock({ isEmbedded = false }) {
           : "bg-white/95 backdrop-blur-xl border border-slate-200 shadow-lg text-slate-800 rounded-full px-3 py-2.5"
       )}>
 
-        {/* Toggle Collapse Button (Only when running and NOT embedded) */}
+        {/* 切换折叠按钮（仅当运行且未嵌入时）*/}
         {status !== 'idle' && !isEmbedded && (
           <button
             onClick={() => setIsCollapsed(true)}
@@ -213,7 +213,7 @@ export default function PomodoroDock({ isEmbedded = false }) {
           </button>
         )}
 
-        {/* Left Section: Icon & Current Tag */}
+        {/* 左侧区域：图标和当前标签*/}
         <div className={cn(
           "pl-2 pr-1 flex items-center gap-2 transition-colors",
           themeColor
@@ -224,10 +224,10 @@ export default function PomodoroDock({ isEmbedded = false }) {
           {status === 'idle' && <Timer size={18} />}
         </div>
 
-        {/* Divider */}
+        {/* 分隔线*/}
         <div className={cn("w-px h-6", isEmbedded ? "bg-slate-200" : "bg-slate-200")}></div>
 
-        {/* Middle Section: Controls & Time */}
+        {/* 中间区域：控件和时间*/}
         {status === 'idle' ? (
           <div className="flex items-center gap-2">
             <button
@@ -274,7 +274,7 @@ export default function PomodoroDock({ isEmbedded = false }) {
           </div>
         )}
 
-        {/* Divider (Optional) */}
+        {/* 分隔线（可选）*/}
         {status !== 'idle' && <div className="w-px h-6 bg-slate-200"></div>}
       </div>
     </div>

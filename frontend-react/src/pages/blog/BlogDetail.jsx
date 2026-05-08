@@ -122,7 +122,7 @@ const BlogDetail = () => {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      {/* Back */}
+      {/* 返回 */}
       <button
         onClick={() => navigate('/blogs')}
         className="flex items-center gap-1.5 text-slate-500 hover:text-slate-700 font-medium text-sm mb-8 transition-colors"
@@ -130,7 +130,7 @@ const BlogDetail = () => {
         <ArrowLeft size={16} /> 返回广场
       </button>
 
-      {/* AI Tags + Quality */}
+      {/* AI标签 + 质量 */}
       {(blog.tags?.length > 0 || qualityInfo) && (
         <div className="flex items-center gap-2 flex-wrap mb-4">
           {qualityInfo && (
@@ -147,12 +147,12 @@ const BlogDetail = () => {
         </div>
       )}
 
-      {/* Title */}
+      {/* 标题 */}
       <h1 className="text-3xl font-black text-slate-800 tracking-tight mb-4 leading-tight">
         {blog.title}
       </h1>
 
-      {/* Author + Meta */}
+      {/* 作者 + 元信息 */}
       <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-100">
         <div className="flex items-center gap-3">
           {blog.author?.avatarUrl ? (
@@ -171,7 +171,7 @@ const BlogDetail = () => {
           </div>
         </div>
 
-        {/* Owner Actions */}
+        {/* 所有者操作 */}
         {isOwner && (
           <div className="flex items-center gap-2">
             <button
@@ -190,7 +190,7 @@ const BlogDetail = () => {
         )}
       </div>
 
-      {/* AI Analysis Banner */}
+      {/* AI分析横幅 */}
       {blog.summary && (
         <div className="mb-8 p-4 bg-gradient-to-r from-indigo-50 via-violet-50 to-purple-50 border border-indigo-100 rounded-2xl">
           <div className="flex items-center gap-2 mb-2">
@@ -206,12 +206,12 @@ const BlogDetail = () => {
         </div>
       )}
 
-      {/* Content */}
+      {/* 内容 */}
       <article className="mb-10">
         {renderContent(blog.content, blog.format)}
       </article>
 
-      {/* Interaction Bar */}
+      {/* 互动栏 */}
       <div className="sticky bottom-6 flex justify-center">
         <div className="flex items-center gap-2 p-2 bg-white/80 backdrop-blur-xl border border-slate-200 rounded-2xl shadow-lg">
           <button

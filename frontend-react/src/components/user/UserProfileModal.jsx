@@ -51,7 +51,7 @@ export default function UserProfileModal({ userId, isOpen, onClose, isFriend: in
     try {
       await deleteFriend(userId);
       setIsFriend(false);
-      onClose(); // Close modal after action?
+      onClose(); // 操作后关闭模态框？
     } catch (err) {
       alert("Failed to remove friend");
     }
@@ -61,16 +61,16 @@ export default function UserProfileModal({ userId, isOpen, onClose, isFriend: in
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
-      {/* Backdrop */}
+      {/* 背景幕*/}
       <div 
         className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" 
         onClick={onClose}
       />
 
-      {/* Card */}
+      {/* 卡片*/}
       <div className="relative bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
         
-        {/* Close Button */}
+        {/* 关闭按钮*/}
         <button 
           onClick={onClose}
           className="absolute top-4 right-4 p-2 bg-black/10 hover:bg-black/20 text-white rounded-full z-10 transition-colors"
@@ -84,24 +84,24 @@ export default function UserProfileModal({ userId, isOpen, onClose, isFriend: in
           </div>
         ) : user ? (
           <>
-            {/* Header / Cover */}
+            {/* 头部/封面*/}
             <div className="h-28 bg-gradient-to-r from-indigo-500 to-purple-600"></div>
             
-            {/* Content */}
+            {/* 内容区*/}
             <div className="px-6 pb-6 -mt-12 flex flex-col items-center">
-              {/* Avatar */}
+              {/* 头像*/}
               <div className="w-24 h-24 rounded-3xl border-4 border-white shadow-lg overflow-hidden bg-slate-100 flex items-center justify-center">
                  {user.avatarUrl ? <img src={user.avatarUrl} className="w-full h-full object-cover" /> : <User size={40} className="text-slate-300" />}
               </div>
 
-              {/* Name & Level */}
+              {/* 名称与等级*/}
               <div className="mt-3 text-center space-y-1">
                 <h2 className="text-xl font-black text-slate-800">{user.nickname}</h2>
                 <div className="flex items-center justify-center gap-2">
                    <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs font-bold rounded-full border border-slate-200">
                      Lv. {user.levelInfo?.level || 0}
                    </span>
-                   {/* Optional: Online status if we had it */}
+                   {/* 可选：若有则显示在线状态*/}
                 </div>
               </div>
 
@@ -111,7 +111,7 @@ export default function UserProfileModal({ userId, isOpen, onClose, isFriend: in
               </p>
 
 
-              {/* Actions */}
+              {/* 操作区*/}
               <div className="mt-8 w-full flex gap-3">
                 {isFriend ? (
                   <Button 

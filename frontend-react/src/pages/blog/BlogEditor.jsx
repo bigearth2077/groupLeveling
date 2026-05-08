@@ -17,7 +17,7 @@ const BlogEditor = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Tiptap editor setup
+  // Tiptap 编辑器设置
   const editor = useEditor({
     extensions: [StarterKit],
     content: '',
@@ -137,7 +137,7 @@ const BlogEditor = () => {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      {/* Top Bar */}
+      {/* 顶部工具栏 */}
       <div className="flex items-center justify-between mb-6">
         <button
           onClick={() => navigate('/blogs')}
@@ -164,7 +164,7 @@ const BlogEditor = () => {
         </div>
       </div>
 
-      {/* Title */}
+      {/* 标题 */}
       <input
         type="text"
         value={title}
@@ -173,7 +173,7 @@ const BlogEditor = () => {
         className="w-full text-3xl font-black text-slate-800 placeholder-slate-300 border-none outline-none mb-6 bg-transparent"
       />
 
-      {/* Editor Mode Tabs + Preview Toggle */}
+      {/* 编辑器模式标签 + 预览切换 */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl">
           <button
@@ -205,7 +205,7 @@ const BlogEditor = () => {
         </div>
       </div>
 
-      {/* Editor Area */}
+      {/* 编辑区域 */}
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden" data-color-mode="light">
         {format === 'markdown' ? (
           <MDEditor
@@ -223,7 +223,7 @@ const BlogEditor = () => {
         )}
       </div>
 
-      {/* AI Info Banner */}
+      {/* AI 信息横幅 */}
       {wordCount >= 200 && (
         <div className="mt-4 px-4 py-3 bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-100 rounded-xl">
           <p className="text-xs font-medium text-indigo-600">

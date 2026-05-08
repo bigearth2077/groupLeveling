@@ -16,7 +16,7 @@ export default function NotificationBell() {
   useEffect(() => {
     fetchUnreadCount();
     
-    // Close popover on outside click
+    //点击外部关闭弹出框
     const handleClickOutside = (e) => {
       if (popoverRef.current && !popoverRef.current.contains(e.target)) {
         setIsOpen(false);
@@ -34,7 +34,7 @@ export default function NotificationBell() {
     const handleNewNotif = (data) => {
       setUnreadCount(prev => prev + 1);
       if (isOpen) {
-        // If open, add to list top
+        //如果打开，添加到列表顶部
         setNotifications(prev => [data.notification, ...prev]);
       }
     };
@@ -43,7 +43,7 @@ export default function NotificationBell() {
     return () => socket.off('new_notification', handleNewNotif);
   }, [isOpen]);
 
-  // When opened, fetch the list
+  //打开时获取列表
   useEffect(() => {
     if (isOpen) {
       fetchNotifications();
@@ -95,12 +95,12 @@ export default function NotificationBell() {
   };
 
   const handleAction = async (n) => {
-    // If it's an invite, join the room
+    //如果是邀请，加入房间
     if (n.type === 'invite' && n.relatedId) {
       navigate(`/room/${n.relatedId}`);
       setIsOpen(false);
     }
-    // Mark as read automatically when clicked
+    //点击时自动标记为已读
     if (!n.isRead) {
       await handleMarkAsRead(n.id, { stopPropagation: () => {} });
     }
@@ -118,7 +118,7 @@ export default function NotificationBell() {
         )}
       </button>
 
-      {/* Popover */}
+      {/*弹出框*/}
       <div className={cn(
         "absolute top-12 right-0 w-80 bg-white rounded-2xl shadow-xl border border-slate-200 transform transition-all duration-200 origin-top-right flex flex-col overflow-hidden",
         isOpen ? "scale-100 opacity-100 visible" : "scale-95 opacity-0 invisible pointer-events-none"
