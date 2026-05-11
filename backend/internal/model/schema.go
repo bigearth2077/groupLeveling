@@ -193,6 +193,7 @@ type Room struct {
 	// 房间属性
 	CreatorID   string    `gorm:"type:uuid;not null"`         // 房主
 	TagID       *string   `gorm:"type:uuid;default:null"`     // 关联标签
+	Tags        string    `gorm:"type:varchar(255);default:''"` // 类似名字的伪标签，逗号分隔
 	IsPrivate   bool      `gorm:"default:false"`              // 是否私密(不公开列出)
 	Password    *string   `gorm:"default:null"`               // 访问密码
 	MaxMembers  int       `gorm:"default:50"`                 // 人数上限
@@ -210,6 +211,7 @@ type RoomMember struct {
 	RoomID   string     `gorm:"type:uuid;not null"`
 	UserID   string     `gorm:"type:uuid;not null"`
 	Status   RoomStatus `gorm:"type:varchar(20);not null"`
+	Role     string     `gorm:"type:varchar(20);default:'member'"` // owner, admin, member
 	JoinedAt time.Time  `gorm:"autoCreateTime"`
 	LeftAt   *time.Time `gorm:"default:null"`
 

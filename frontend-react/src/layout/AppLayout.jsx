@@ -5,7 +5,7 @@ import FriendDrawer from '@/components/friend/FriendDrawer';
 import RoomConnectionManager from '@/components/room/RoomConnectionManager';
 import DailyReviewPanel from '@/components/DailyReviewPanel';
 import NotificationBell from '@/components/notification/NotificationBell';
-import { LayoutDashboard, Users, User } from 'lucide-react';
+import { LayoutDashboard, Users, User, Trophy } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { connectSocket } from '@/lib/socket';
 import { cn } from '@/lib/utils';
@@ -27,6 +27,7 @@ const AppLayout = () => {
   const navItems = [
     { name: t('nav.dashboard'), path: '/', icon: LayoutDashboard },
     { name: t('nav.rooms'), path: '/rooms', icon: Users },
+    { name: '排行榜', path: '/leaderboard', icon: Trophy },
     { name: t('nav.profile'), path: '/profile', icon: User },
   ];
 

@@ -51,6 +51,10 @@ const router = createBrowserRouter([
             element: <RoomDetail />,
           },
           {
+            path: 'leaderboard',
+            element: <Leaderboard />,
+          },
+          {
             path: 'profile',
             element: <Profile />,
           }

@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getRooms, createRoom } from '@/feature/room/api';
-import { getMyTags, addMyTag } from '@/feature/tag/api';
+import { getMe } from '@/feature/user/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -27,8 +27,7 @@ export default function RoomLobby() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [myTags, setMyTags] = useState([]);
-  const [tagNameInput, setTagNameInput] = useState('');
+  const [me, setMe] = useState(null);
   
   // 使用自定义钩子处理加入逻辑
   const { 
@@ -44,28 +43,19 @@ export default function RoomLobby() {
   const [newRoom, setNewRoom] = useState({
     name: '',
     description: '',
-    tagId: '', // 将从tagNameInput解析
+    tags: '',
     maxMembers: 20,
     isPrivate: false,
     password: ''
   });
 
   useEffect(() => {
-    fetchRooms();
-    fetchUserTags();
-  }, [searchQuery]); 
+    getMe().then(setMe).catch(() => {});
+  }, []);
 
-  const fetchUserTags = async () => {
-    try {
-      const res = await getMyTags();
-      // res是UserTagResponse数组 { tagId, tagName, ... }
-      if (Array.isArray(res)) {
-        setMyTags(res);
-      }
-    } catch (err) {
-      console.error("Failed to fetch tags", err);
-    }
-  };
+  useEffect(() => {
+    fetchRooms();
+  }, [searchQuery]); 
 
   const fetchRooms = async () => {
     setLoading(true);
@@ -86,34 +76,19 @@ export default function RoomLobby() {
     try {
       // 基础验证
       if (!newRoom.name) return;
-      
-      // 解析标签ID
-      let finalTagId = null;
-      if (tagNameInput.trim()) {
-        const existing = myTags.find(t => t.tagName.toLowerCase() === tagNameInput.trim().toLowerCase());
-        if (existing) {
-          finalTagId = existing.tagId;
-        } else {
-          // 创建新标签（关联到用户）
-          const tagRes = await addMyTag(tagNameInput.trim());
-          if (tagRes && tagRes.tagId) {
-            finalTagId = tagRes.tagId;
-          }
-        }
-      }
 
       const payload = { 
         ...newRoom, 
         maxMembers: Number(newRoom.maxMembers),
         description: newRoom.description || null,
-        tagId: finalTagId,
+        tags: newRoom.tags || "",
+        tagId: null, // explicit null
         password: newRoom.password || null
       };
       
       await createRoom(payload);
       setShowCreateModal(false);
       fetchRooms(); // 刷新
-      fetchUserTags(); // 刷新标签（以防新增了标签）
     } catch (err) {
       console.error(err);
       alert("Failed to create room");
@@ -157,34 +132,98 @@ export default function RoomLobby() {
           <Loader2 className="w-10 h-10 animate-spin text-indigo-600" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {rooms.map(room => (
-            <div 
-              key={room.id}
-              onClick={() => handleJoinAttempt(room)}
-              className="group relative bg-white p-6 rounded-3xl border border-slate-100/60 shadow-sm hover:shadow-md hover:border-blue-100 transition-all cursor-pointer overflow-hidden"
-            >
-              <div className="flex justify-between items-start mb-4">
-                <div className="p-3 rounded-2xl bg-slate-50 text-slate-600 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
-                  {room.isPrivate ? <Lock size={20} /> : <Unlock size={20} />}
-                </div>
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-50 text-xs font-bold text-slate-600">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                  {room.onlineCount} / {room.maxMembers}
-                </div>
-              </div>
+        <div className="space-y-8">
+          {/* 我的自习室 */}
+          {me && rooms.find(r => r.creatorId === me.id) && (
+            <div>
+              <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <div className="w-2 h-6 bg-blue-500 rounded-full"></div>
+                我的自习室
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {rooms.filter(r => r.creatorId === me.id).map(room => (
+                  <div 
+                    key={room.id}
+                    onClick={() => handleJoinAttempt(room)}
+                    className="group relative bg-blue-50/50 p-6 rounded-3xl border-2 border-blue-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all cursor-pointer overflow-hidden"
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="p-3 rounded-2xl bg-white text-blue-600 transition-colors">
+                        {room.isPrivate ? <Lock size={20} /> : <Unlock size={20} />}
+                      </div>
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white text-xs font-bold text-blue-600">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                        {room.onlineCount} / {room.maxMembers}
+                      </div>
+                    </div>
 
-              <h3 className="text-lg font-bold text-slate-800 mb-1 group-hover:text-blue-600 transition-colors">{room.name}</h3>
-              <p className="text-sm text-slate-500 line-clamp-2 mb-4 h-10">{room.description || "暂无简介。"}</p>
+                    <h3 className="text-lg font-bold text-blue-900 mb-1">{room.name}</h3>
+                    <p className="text-sm text-blue-700/70 line-clamp-2 mb-2 h-10">{room.description || "暂无简介。"}</p>
+                    
+                    {room.tags && (
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {room.tags.split(',').map(t => (
+                          <span key={t} className="text-xs bg-white text-blue-600 px-2 py-1 rounded-md font-medium border border-blue-100">{t.trim()}</span>
+                        ))}
+                      </div>
+                    )}
 
-              <div className="flex items-center justify-between mt-auto">
-                 <div className="flex-1"></div>
-                 <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition-all transform group-hover:translate-x-1">
-                   <ArrowRight size={16} />
-                 </div>
+                    <div className="flex items-center justify-between mt-auto">
+                       <div className="flex-1"></div>
+                       <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white group-hover:bg-blue-500 transition-all transform group-hover:translate-x-1">
+                         <ArrowRight size={16} />
+                       </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
+          )}
+
+          {/* 所有自习室 */}
+          <div>
+            <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <div className="w-2 h-6 bg-slate-300 rounded-full"></div>
+              发现自习室
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {rooms.filter(r => !me || r.creatorId !== me.id).map(room => (
+                <div 
+                  key={room.id}
+                  onClick={() => handleJoinAttempt(room)}
+                  className="group relative bg-white p-6 rounded-3xl border border-slate-100/60 shadow-sm hover:shadow-md hover:border-blue-100 transition-all cursor-pointer overflow-hidden"
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="p-3 rounded-2xl bg-slate-50 text-slate-600 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
+                      {room.isPrivate ? <Lock size={20} /> : <Unlock size={20} />}
+                    </div>
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-50 text-xs font-bold text-slate-600">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                      {room.onlineCount} / {room.maxMembers}
+                    </div>
+                  </div>
+
+                  <h3 className="text-lg font-bold text-slate-800 mb-1 group-hover:text-blue-600 transition-colors">{room.name}</h3>
+                  <p className="text-sm text-slate-500 line-clamp-2 mb-2 h-10">{room.description || "暂无简介。"}</p>
+                  
+                  {room.tags && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {room.tags.split(',').map(t => (
+                        <span key={t} className="text-xs bg-slate-50 text-slate-500 px-2 py-1 rounded-md font-medium border border-slate-100">{t.trim()}</span>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between mt-auto">
+                     <div className="flex-1"></div>
+                     <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition-all transform group-hover:translate-x-1">
+                       <ArrowRight size={16} />
+                     </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
@@ -217,6 +256,15 @@ export default function RoomLobby() {
                   onChange={e => setNewRoom({...newRoom, description: e.target.value})}
                   className="rounded-xl" 
                   placeholder="介绍一下这个自习室吧"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-700">标签 (逗号分隔)</label>
+                <Input 
+                  value={newRoom.tags} 
+                  onChange={e => setNewRoom({...newRoom, tags: e.target.value})}
+                  className="rounded-xl" 
+                  placeholder="例如: 前端, 考研, 闲聊"
                 />
               </div>
               <div className="space-y-2">

@@ -70,8 +70,8 @@ export default function Leaderboard() {
             <Trophy size={24} />
           </div>
           <div>
-            <h1 className="text-2xl font-black text-slate-800 tracking-tight">Leaderboard</h1>
-            <p className="text-sm text-slate-500 font-medium">Compete with the best</p>
+            <h1 className="text-2xl font-black text-slate-800 tracking-tight">排行榜</h1>
+            <p className="text-sm text-slate-500 font-medium">与优秀者并肩前行</p>
           </div>
         </div>
 
@@ -87,7 +87,7 @@ export default function Leaderboard() {
                    scope === s ? "bg-white shadow-sm text-indigo-600" : "text-slate-500 hover:text-slate-700"
                  )}
                >
-                 {s === 'week' ? 'This Week' : 'All Time'}
+                 {s === 'week' ? '本周' : '总榜'}
                </button>
              ))}
            </div>
@@ -98,13 +98,13 @@ export default function Leaderboard() {
                onClick={() => setType('global')}
                className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2", type === 'global' ? "bg-white shadow-sm text-indigo-600" : "text-slate-500")}
              >
-               <Globe size={14} /> Global
+               <Globe size={14} /> 全站
              </button>
              <button
                onClick={() => setType('friends')}
                className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2", type === 'friends' ? "bg-white shadow-sm text-emerald-600" : "text-slate-500")}
              >
-               <Users size={14} /> Friends
+               <Users size={14} /> 好友
              </button>
            </div>
         </div>
@@ -115,7 +115,7 @@ export default function Leaderboard() {
         <form onSubmit={handleTagSearch} className="relative max-w-md mx-auto">
           <input 
             type="text" 
-            placeholder="Filter by skill tag (e.g. Code, Math)..."
+            placeholder="输入标签过滤 (例如: 英语, 考研)..."
             value={tag}
             onChange={e => setTag(e.target.value)}
             className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
@@ -198,7 +198,7 @@ export default function Leaderboard() {
           {/* 排行榜 */}
           <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden animate-in fade-in duration-500 mt-8">
             {restList.length === 0 && topThree.length === 0 && (
-              <div className="p-12 text-center text-slate-400">No ranking data available yet.</div>
+              <div className="p-12 text-center text-slate-400">暂无排行数据</div>
             )}
             
             {restList.map((item, index) => {
@@ -221,12 +221,12 @@ export default function Leaderboard() {
                     </div>
                     <div className="font-bold text-slate-700">
                       {item.nickname}
-                      {isMe && <span className="ml-2 text-[10px] bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full uppercase">You</span>}
+                      {isMe && <span className="ml-2 text-[10px] bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full uppercase">我</span>}
                     </div>
                   </div>
 
                   <div className="text-right font-mono font-bold text-slate-600 w-24">
-                    {item.minutes} <span className="text-xs text-slate-400 font-sans font-normal">min</span>
+                    {item.minutes} <span className="text-xs text-slate-400 font-sans font-normal">分钟</span>
                   </div>
                 </div>
               );

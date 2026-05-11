@@ -29,3 +29,7 @@ export const validateRoomPassword = (data) => {
   //数据：{ roomId, password }
   return request.post('/rooms/validate-password', data);
 };
+
+export const updateMemberRole = (roomId, userId, role) => {
+  return request.patch(`/rooms/${roomId}/members/${userId}/role`, { role });
+};

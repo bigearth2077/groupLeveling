@@ -118,6 +118,7 @@ func SetupRouter(r *gin.Engine) {
 			roomGroup.DELETE("/:id", roomHandler.DeleteRoom) // 删除房间
 			roomGroup.POST("/validate-password", roomHandler.ValidatePassword) // 新增验证接口
 			roomGroup.GET("/:id/members", roomHandler.GetRoomMembers)
+			roomGroup.PATCH("/:id/members/:userId/role", roomHandler.UpdateMemberRole) // 修改成员角色
 		}
 
 		// Analytics 路由

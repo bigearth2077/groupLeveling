@@ -17,11 +17,17 @@ func (s *RoomService) CreateRoom(creatorID string, req dto.CreateRoomRequest) (*
 		maxMembers = req.MaxMembers
 	}
 
+	var tagID *string = req.TagID
+	if tagID != nil && *tagID == "" {
+		tagID = nil
+	}
+
 	room := model.Room{
 		Name:        req.Name,
 		Description: req.Description,
 		CreatorID:   creatorID,
-		TagID:       req.TagID,
+		TagID:       tagID,
+		Tags:        req.Tags,
 		IsPrivate:   req.IsPrivate,
 		Password:    req.Password,
 		MaxMembers:  maxMembers,
@@ -51,7 +57,7 @@ func (s *RoomService) GetRooms(page, pageSize int, tagID, search string) (*dto.R
 
 	if search != "" {
 		searchPattern := "%" + search + "%"
-		db = db.Where("name ILIKE ? OR description ILIKE ?", searchPattern, searchPattern)
+		db = db.Where("name ILIKE ? OR description ILIKE ? OR tags ILIKE ?", searchPattern, searchPattern, searchPattern)
 	}
 
 	db.Count(&total)
@@ -74,6 +80,7 @@ func (s *RoomService) GetRooms(page, pageSize int, tagID, search string) (*dto.R
 			Description: r.Description,
 			TagID:       r.TagID,
 			TagName:     tagName,
+			Tags:        r.Tags,
 			IsPrivate:   r.IsPrivate,
 			MaxMembers:  r.MaxMembers,
 			CreatorID:   r.CreatorID,
@@ -115,6 +122,7 @@ func (s *RoomService) GetRoom(roomID string) (*dto.RoomResponse, error) {
 		Description: room.Description,
 		TagID:       room.TagID,
 		TagName:     tagName,
+		Tags:        room.Tags,
 		IsPrivate:   room.IsPrivate,
 		MaxMembers:  room.MaxMembers,
 		CreatorID:   room.CreatorID,
@@ -164,8 +172,15 @@ func (s *RoomService) UpdateRoom(userID, roomID string, req dto.UpdateRoomReques
 	if req.Name != "" {
 		room.Name = req.Name
 	}
-	room.Description = req.Description // 指针类型，允许为 nil 或新值
-	room.TagID = req.TagID
+	room.Description = req.Description 
+	
+	var tagID *string = req.TagID
+	if tagID != nil && *tagID == "" {
+		tagID = nil
+	}
+	room.TagID = tagID
+	
+	room.Tags = req.Tags
 	room.IsPrivate = req.IsPrivate
 	room.Password = req.Password
 	
@@ -213,10 +228,16 @@ func (s *RoomService) JoinRoom(userID, roomID string, password *string) error {
 		return nil
 	}
 
+	role := "member"
+	if userID == room.CreatorID {
+		role = "owner"
+	}
+
 	member := model.RoomMember{
 		RoomID:   roomID,
 		UserID:   userID,
 		Status:   model.RoomStatusIdle, // 默认状态
+		Role:     role,
 		JoinedAt: time.Now(),
 		LeftAt:   nil,
 	}
@@ -253,19 +274,91 @@ func (s *RoomService) GetRoomMembers(roomID string) ([]dto.RoomMemberResponse, e
 		return nil, err
 	}
 
+	// 获取用户的 Level
+	var userIDs []string
+	for _, m := range members {
+		userIDs = append(userIDs, m.UserID)
+	}
+
+	// 批量查询经验值
+	var stats []struct {
+		UserID       string
+		TotalMinutes int
+	}
+	database.DB.Model(&model.DailyStat{}).
+		Select("user_id, COALESCE(SUM(total_minutes), 0) as total_minutes").
+		Where("user_id IN ?", userIDs).
+		Group("user_id").
+		Scan(&stats)
+
+	xpMap := make(map[string]int)
+	for _, s := range stats {
+		xpMap[s.UserID] = s.TotalMinutes
+	}
+
+	levelService := &LevelService{}
+
 	// 转换为 DTO
 	resp := make([]dto.RoomMemberResponse, len(members))
 	for i, m := range members {
+		xp := xpMap[m.UserID]
+		levelInfo := levelService.CalculateLevel(xp)
+
 		resp[i] = dto.RoomMemberResponse{
 			UserID:    m.UserID,
 			Nickname:  m.User.Nickname,
 			AvatarURL: m.User.AvatarUrl,
-			Status:    m.Status, // 状态：learning / rest / idle
+			Status:    m.Status,
+			Role:      m.Role,
+			Level:     levelInfo.Level,
 			JoinedAt:  m.JoinedAt,
 		}
 	}
 
+	// 内存排序: 按 Level 降序，如果 Level 一样，owner 排前面，admin 其次
+
+	// Because we don't have sort imported directly here with func easily without import, we'll manually implement a simple sort or use sort.Slice
+	// wait, "sort" is imported? Let's check imports. No, "sort" is not imported in room_service.go, need to use another way or just import it.
+	// Actually I will use a simple bubble sort or just add sort package.
+	for i := 0; i < len(resp); i++ {
+		for j := i + 1; j < len(resp); j++ {
+			if resp[i].Level < resp[j].Level || (resp[i].Level == resp[j].Level && getRoleWeight(resp[i].Role) < getRoleWeight(resp[j].Role)) {
+				resp[i], resp[j] = resp[j], resp[i]
+			}
+		}
+	}
+
 	return resp, nil
+}
+
+func getRoleWeight(role string) int {
+	if role == "owner" { return 3 }
+	if role == "admin" { return 2 }
+	return 1
+}
+
+// UpdateMemberRole 设置管理员权限
+func (s *RoomService) UpdateMemberRole(operatorID, roomID, targetUserID, newRole string) error {
+	var room model.Room
+	if err := database.DB.First(&room, "id = ?", roomID).Error; err != nil {
+		return errors.New("room not found")
+	}
+
+	if room.CreatorID != operatorID {
+		return errors.New("permission denied: only owner can set roles")
+	}
+
+	if targetUserID == room.CreatorID {
+		return errors.New("cannot change owner's role")
+	}
+
+	if newRole != "admin" && newRole != "member" {
+		return errors.New("invalid role")
+	}
+
+	return database.DB.Model(&model.RoomMember{}).
+		Where("room_id = ? AND user_id = ? AND left_at IS NULL", roomID, targetUserID).
+		Update("role", newRole).Error
 }
 
 // ValidatePassword 验证房间密码

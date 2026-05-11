@@ -13,6 +13,7 @@ export default function RoomSettingsModal({
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    tags: '',
     maxMembers: 50,
     isPrivate: false,
     password: ''
@@ -24,6 +25,7 @@ export default function RoomSettingsModal({
       setFormData({
         name: room.name || '',
         description: room.description || '',
+        tags: room.tags || '',
         maxMembers: room.maxMembers || 50,
         isPrivate: room.isPrivate || false,
         password: '' // 出于安全考虑，不要填写密码，仅在更改时填写
@@ -41,12 +43,8 @@ export default function RoomSettingsModal({
         ...formData,
         maxMembers: Number(formData.maxMembers),
         description: formData.description || null,
-        password: formData.password || null // 如果为空发送null以保留原值或清空？
-        // 后端逻辑：若指针为nil则忽略？
-        // 等等，若要清空密码，可能需要显式操作。
-        // 目前假设：私有时空密码输入表示“不更改”，公开时表示“移除”。
-        // 其实，直接发送现有数据即可。
-        // 若isPrivate为false，应清空密码。
+        tags: formData.tags || "",
+        password: formData.password || null
       };
       
       if (!payload.isPrivate) {
@@ -91,6 +89,16 @@ export default function RoomSettingsModal({
               value={formData.description} 
               onChange={e => setFormData({...formData, description: e.target.value})}
               className="rounded-xl" 
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-slate-700">标签 (逗号分隔)</label>
+            <Input 
+              value={formData.tags} 
+              onChange={e => setFormData({...formData, tags: e.target.value})}
+              className="rounded-xl" 
+              placeholder="例如: 前端, 考研"
             />
           </div>
 

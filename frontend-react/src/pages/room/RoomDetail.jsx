@@ -209,13 +209,20 @@ export default function RoomDetail() {
                     )}
                   </div>
                   
-                  <div className="mt-3 text-center">
-                    <div className="font-bold text-slate-700 text-sm truncate w-24">{m.nickname}</div>
-                    <div className={cn(
-                      "text-[10px] uppercase font-bold tracking-wider mt-0.5",
-                      isLearning ? "text-indigo-600" : isResting ? "text-emerald-600" : "text-slate-400"
-                    )}>
-                      {isLearning ? '专注中' : isResting ? '休息中' : '空闲'}
+                  <div className="mt-3 text-center w-full px-2">
+                    <div className="font-bold text-slate-700 text-sm truncate w-full flex items-center justify-center gap-1">
+                      {m.role === 'owner' && <span className="text-[10px] bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-sm whitespace-nowrap">房主</span>}
+                      {m.role === 'admin' && <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-sm whitespace-nowrap">管理</span>}
+                      <span className="truncate">{m.nickname}</span>
+                    </div>
+                    <div className="flex items-center justify-center gap-2 mt-0.5">
+                      <div className="text-[10px] font-bold text-slate-400 bg-slate-100 px-1.5 rounded-full">Lv.{m.level || 1}</div>
+                      <div className={cn(
+                        "text-[10px] uppercase font-bold tracking-wider",
+                        isLearning ? "text-indigo-600" : isResting ? "text-emerald-600" : "text-slate-400"
+                      )}>
+                        {isLearning ? '专注中' : isResting ? '休息中' : '空闲'}
+                      </div>
                     </div>
                   </div>
                 </div>

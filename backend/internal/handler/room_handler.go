@@ -33,6 +33,7 @@ func (h *RoomHandler) CreateRoom(c *gin.Context) {
 		Description: room.Description,
 		TagID:       room.TagID,
 		TagName:     "", // 创建时暂不查标签名，或者如果 Service 里做了 Preload 可以加
+		Tags:        room.Tags,
 		IsPrivate:   room.IsPrivate,
 		MaxMembers:  room.MaxMembers,
 		CreatorID:   room.CreatorID,
@@ -108,6 +109,7 @@ func (h *RoomHandler) UpdateRoom(c *gin.Context) {
 		Description: room.Description,
 		TagID:       room.TagID,
 		TagName:     "", // 更新后可能需要重新查 Tag Name，或者让前端刷新
+		Tags:        room.Tags,
 		IsPrivate:   room.IsPrivate,
 		MaxMembers:  room.MaxMembers,
 		CreatorID:   room.CreatorID,
@@ -143,6 +145,32 @@ func (h *RoomHandler) ValidatePassword(c *gin.Context) {
 	if err := h.Service.ValidatePassword(req.RoomID, req.Password); err != nil {
 		// 返回 403 Forbidden 表示密码错误
 		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"ok": true})
+}
+
+// UpdateMemberRole 设置成员角色
+func (h *RoomHandler) UpdateMemberRole(c *gin.Context) {
+	roomID := c.Param("id")
+	targetUserID := c.Param("userId")
+	userID := c.GetString("userId")
+
+	var req struct {
+		Role string `json:"role" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := h.Service.UpdateMemberRole(userID, roomID, targetUserID, req.Role); err != nil {
+		if err.Error() == "permission denied: only owner can set roles" {
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
 

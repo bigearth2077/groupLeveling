@@ -11,6 +11,7 @@ type CreateRoomRequest struct {
 	Name        string  `json:"name" binding:"required,max=50"`
 	Description *string `json:"description"`
 	TagID       *string `json:"tagId"`
+	Tags        string  `json:"tags"`       // 逗号分隔的伪标签
 	IsPrivate   bool    `json:"isPrivate"`
 	Password    *string `json:"password"`   // 只有私密房才需要
 	MaxMembers  int     `json:"maxMembers"` // 默认50
@@ -20,6 +21,7 @@ type UpdateRoomRequest struct {
 	Name        string  `json:"name" binding:"max=50"`
 	Description *string `json:"description"`
 	TagID       *string `json:"tagId"`
+	Tags        string  `json:"tags"`
 	IsPrivate   bool    `json:"isPrivate"`
 	Password    *string `json:"password"`
 	MaxMembers  int     `json:"maxMembers"`
@@ -31,6 +33,7 @@ type RoomResponse struct {
 	Description *string   `json:"description"`
 	TagID       *string   `json:"tagId"`
 	TagName     string    `json:"tagName"` // 为了方便展示
+	Tags        string    `json:"tags"`
 	IsPrivate   bool      `json:"isPrivate"`
 	MaxMembers  int       `json:"maxMembers"`
 	CreatorID   string    `json:"creatorId"`
@@ -116,5 +119,7 @@ type RoomMemberResponse struct {
 	Nickname  string           `json:"nickname"`
 	AvatarURL *string          `json:"avatarUrl"`
 	Status    model.RoomStatus `json:"status"` // learning, rest, idle
+	Role      string           `json:"role"`   // owner, admin, member
+	Level     int              `json:"level"`  // 用于小排行榜排序
 	JoinedAt  time.Time        `json:"joinedAt"`
 }
