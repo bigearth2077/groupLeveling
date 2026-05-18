@@ -272,3 +272,85 @@ func (s *AIService) GenerateHealthReport(userDataSummary string) (*AIHealthRepor
 
 	return &result, nil
 }
+
+// GenerateRoomChat 根据房间上下文生成模拟聊天消息
+func (s *AIService) GenerateRoomChat(roomName, tags string) ([]string, error) {
+	apiKey := os.Getenv("SILICONFLOW_API_KEY")
+	if apiKey == "" || apiKey == "your_siliconflow_api_key_here" {
+		return nil, errors.New("SILICONFLOW_API_KEY is not configured")
+	}
+
+	systemPrompt := `你是一个自习室聊天模拟器。根据自习室的名称和标签，生成学习者之间的真实闲聊消息。
+要求：
+- 生成5条简短的中文消息（每条10-30个字）
+- 口语化、自然、像真人在自习室里发的
+- 内容与房间主题相关（学习进度、吐槽、鼓励、提问等）
+- 不要包含任何格式标记，直接返回 JSON 数组
+- 示例：["刚做完一套真题，错了好多","这个知识点终于搞懂了！","有人能解释一下这道题吗","休息五分钟继续冲","今天的目标是刷完这一章"]
+只返回 JSON 数组，不要其他内容。`
+
+	userPrompt := fmt.Sprintf("自习室名称：%s\n标签：%s", roomName, tags)
+
+	reqBody := openaiRequest{
+		Model: siliconFlowModel,
+		Messages: []openaiMessage{
+			{Role: "system", Content: systemPrompt},
+			{Role: "user", Content: userPrompt},
+		},
+	}
+
+	jsonData, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", siliconFlowBaseURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+
+	client := &http.Client{Timeout: 15 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("AI API call failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("AI API returned status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var aiResp openaiResponse
+	if err := json.Unmarshal(body, &aiResp); err != nil {
+		return nil, fmt.Errorf("failed to parse AI response: %w", err)
+	}
+
+	if len(aiResp.Choices) == 0 {
+		return nil, errors.New("AI returned empty choices")
+	}
+
+	contentStr := aiResp.Choices[0].Message.Content
+	contentStr = strings.TrimSpace(contentStr)
+
+	// 提取 JSON 数组
+	start := strings.Index(contentStr, "[")
+	end := strings.LastIndex(contentStr, "]")
+	if start != -1 && end != -1 && end > start {
+		contentStr = contentStr[start : end+1]
+	}
+
+	var messages []string
+	if err := json.Unmarshal([]byte(contentStr), &messages); err != nil {
+		return nil, fmt.Errorf("failed to parse messages: %w", err)
+	}
+
+	return messages, nil
+}

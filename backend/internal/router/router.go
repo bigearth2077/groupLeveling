@@ -38,6 +38,8 @@ func SetupRouter(r *gin.Engine) {
 	blogService := &service.BlogService{AIService: aiService}
 	blogHandler := handler.NewBlogHandler(blogService)
 
+	aiHandler := handler.NewAIHandler(aiService)
+
 	// --- Socket.IO 路由挂载 ---
 	// 必须在 main 中先 InitSocket()
 	// 注意 CORS：Socket.IO 需要专门处理 CORS，或者在 Nginx 层处理
@@ -135,6 +137,12 @@ func SetupRouter(r *gin.Engine) {
 			healthGroup.GET("/today", healthHandler.GetToday)
 			healthGroup.GET("/history", healthHandler.GetHistory)
 			healthGroup.GET("/ai-report", healthHandler.GetAIReport)
+		}
+
+		// AI 模拟路由
+		aiGroup := protected.Group("/ai")
+		{
+			aiGroup.GET("/room-chat", aiHandler.GenerateRoomChat)
 		}
 
 		// Blog 路由

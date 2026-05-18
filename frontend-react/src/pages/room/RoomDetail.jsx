@@ -24,6 +24,7 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import UserProfileModal from '@/components/user/UserProfileModal';
 import RoomSettingsModal from '@/components/room/RoomSettingsModal';
+import { useRoomSimulation } from '@/hooks/useRoomSimulation';
 
 export default function RoomDetail() {
   const { id: roomId } = useParams();
@@ -46,6 +47,9 @@ export default function RoomDetail() {
   const [roomInfo, setRoomInfo] = useState(null);
   const [isHost, setIsHost] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+
+  // 🎭 AI 驱动的房间氛围模拟器
+  useRoomSimulation(roomInfo, !!roomInfo);
 
   // 初始化房间并获取元数据
   useEffect(() => {
