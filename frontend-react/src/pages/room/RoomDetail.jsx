@@ -76,9 +76,11 @@ export default function RoomDetail() {
     }
   };
 
-  // 新消息时滚动到底部
+  // 新消息时滚动到底部（仅当有消息时）
   useEffect(() => {
-    scrollToBottom();
+    if (messages.length > 0) {
+      scrollToBottom();
+    }
   }, [messages]);
 
   const scrollToBottom = () => {
@@ -127,7 +129,7 @@ export default function RoomDetail() {
   }
 
   return (
-    <div className="h-[calc(100vh-100px)] flex flex-col md:flex-row gap-6 pb-24">
+    <div className="h-[calc(100vh-100px)] flex flex-col md:flex-row gap-6 pb-6">
       
       {/* 主区域：成员网格*/}
       <div className="flex-1 flex flex-col bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
