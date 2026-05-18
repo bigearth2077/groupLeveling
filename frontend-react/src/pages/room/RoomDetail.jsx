@@ -11,7 +11,9 @@ import {
   Loader2,
   LogOut,
   Trash2,
-  Settings
+  Settings,
+  Trophy,
+  LayoutGrid
 } from 'lucide-react';
 import { getSocket } from '@/lib/socket';
 import { useRoomStore } from '@/store/roomStore';
@@ -38,6 +40,7 @@ export default function RoomDetail() {
 
   const [inputMsg, setInputMsg] = useState('');
   const [selectedUserId, setSelectedUserId] = useState(null);
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'ranking'
   
   // 房间元数据及主持人检查
   const [roomInfo, setRoomInfo] = useState(null);
@@ -178,57 +181,186 @@ export default function RoomDetail() {
           </div>
         </div>
 
-        {/* 网格*/}
-        <div className="flex-1 p-6 overflow-y-auto bg-slate-50/50">
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {members.map(m => {
-              const isLearning = m.status === 'learning';
-              const isResting = m.status === 'rest';
-              
-              return (
-                <div 
-                  key={m.userId} 
-                  onClick={() => setSelectedUserId(m.userId)}
-                  className="flex flex-col items-center animate-in zoom-in duration-300 cursor-pointer hover:scale-105 transition-transform"
-                >
-                  <div className={cn(
-                    "relative w-20 h-20 rounded-full border-4 transition-all duration-500 flex items-center justify-center bg-white shadow-sm overflow-hidden",
-                    isLearning ? "border-indigo-500 shadow-indigo-200 shadow-lg scale-105" : 
-                    isResting ? "border-emerald-400 shadow-emerald-200" : 
-                    "border-slate-200 grayscale-[0.5]"
-                  )}>
-                    {m.avatarUrl ? <img src={m.avatarUrl} className="w-full h-full object-cover" /> : <User size={32} className="text-slate-300" />}
-                    
-                    {/* 状态图标覆盖层*/}
-                    {(isLearning || isResting) && (
-                      <div className={cn(
-                        "absolute inset-0 bg-black/10 flex items-center justify-center backdrop-blur-[1px] transition-opacity",
-                      )}>
-                         {isLearning ? <Brain className="text-white drop-shadow-md animate-pulse" size={28} /> : <Coffee className="text-white drop-shadow-md" size={28} />}
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="mt-3 text-center w-full px-2">
-                    <div className="font-bold text-slate-700 text-sm truncate w-full flex items-center justify-center gap-1">
-                      {m.role === 'owner' && <span className="text-[10px] bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-sm whitespace-nowrap">房主</span>}
-                      {m.role === 'admin' && <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-sm whitespace-nowrap">管理</span>}
-                      <span className="truncate">{m.nickname}</span>
+        {/* 视图切换标签栏 */}
+        <div className="px-6 pt-4 pb-0 bg-slate-50/50 flex gap-1">
+          <button
+            onClick={() => setViewMode('grid')}
+            className={cn(
+              "flex items-center gap-1.5 px-4 py-2 rounded-t-xl text-sm font-bold transition-all",
+              viewMode === 'grid'
+                ? "bg-white text-slate-800 shadow-sm border border-b-0 border-slate-100"
+                : "text-slate-400 hover:text-slate-600"
+            )}
+          >
+            <LayoutGrid size={15} /> 成员动态
+          </button>
+          <button
+            onClick={() => setViewMode('ranking')}
+            className={cn(
+              "flex items-center gap-1.5 px-4 py-2 rounded-t-xl text-sm font-bold transition-all",
+              viewMode === 'ranking'
+                ? "bg-white text-slate-800 shadow-sm border border-b-0 border-slate-100"
+                : "text-slate-400 hover:text-slate-600"
+            )}
+          >
+            <Trophy size={15} /> 等级排行
+          </button>
+        </div>
+
+        {/* 内容区域 */}
+        <div className="flex-1 p-6 overflow-y-auto bg-white border-t-0">
+
+          {/* ===== 视图 A：成员动态（原始网格） ===== */}
+          {viewMode === 'grid' && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {members.map(m => {
+                const isLearning = m.status === 'learning';
+                const isResting = m.status === 'rest';
+                return (
+                  <div
+                    key={m.userId}
+                    onClick={() => setSelectedUserId(m.userId)}
+                    className="flex flex-col items-center animate-in zoom-in duration-300 cursor-pointer hover:scale-105 transition-transform"
+                  >
+                    <div className={cn(
+                      "relative w-20 h-20 rounded-full border-4 transition-all duration-500 flex items-center justify-center bg-white shadow-sm overflow-hidden",
+                      isLearning ? "border-indigo-500 shadow-indigo-200 shadow-lg scale-105" :
+                      isResting ? "border-emerald-400 shadow-emerald-200" :
+                      "border-slate-200 grayscale-[0.5]"
+                    )}>
+                      {m.avatarUrl ? <img src={m.avatarUrl} className="w-full h-full object-cover" /> : <User size={32} className="text-slate-300" />}
+                      {(isLearning || isResting) && (
+                        <div className="absolute inset-0 bg-black/10 flex items-center justify-center backdrop-blur-[1px]">
+                          {isLearning ? <Brain className="text-white drop-shadow-md animate-pulse" size={28} /> : <Coffee className="text-white drop-shadow-md" size={28} />}
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center justify-center gap-2 mt-0.5">
-                      <div className="text-[10px] font-bold text-slate-400 bg-slate-100 px-1.5 rounded-full">Lv.{m.level || 1}</div>
-                      <div className={cn(
-                        "text-[10px] uppercase font-bold tracking-wider",
-                        isLearning ? "text-indigo-600" : isResting ? "text-emerald-600" : "text-slate-400"
-                      )}>
-                        {isLearning ? '专注中' : isResting ? '休息中' : '空闲'}
+                    <div className="mt-3 text-center w-full px-2">
+                      <div className="font-bold text-slate-700 text-sm truncate w-full flex items-center justify-center gap-1">
+                        {m.role === 'owner' && <span className="text-[10px] bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-sm whitespace-nowrap">房主</span>}
+                        {m.role === 'admin' && <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-sm whitespace-nowrap">管理</span>}
+                        <span className="truncate">{m.nickname}</span>
+                      </div>
+                      <div className="flex items-center justify-center gap-2 mt-0.5">
+                        <div className="text-[10px] font-bold text-slate-400 bg-slate-100 px-1.5 rounded-full">Lv.{m.level || 1}</div>
+                        <div className={cn(
+                          "text-[10px] uppercase font-bold tracking-wider",
+                          isLearning ? "text-indigo-600" : isResting ? "text-emerald-600" : "text-slate-400"
+                        )}>
+                          {isLearning ? '专注中' : isResting ? '休息中' : '空闲'}
+                        </div>
                       </div>
                     </div>
                   </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ===== 视图 B：等级排行榜 ===== */}
+          {viewMode === 'ranking' && (
+            <div>
+              {/* 🏆 领奖台：前三名 */}
+              {members.length >= 3 && (
+                <div className="flex items-end justify-center gap-3 mb-8 pt-4">
+                  {/* 第2名 */}
+                  {(() => { const m = members[1]; const isLearning = m.status === 'learning'; return (
+                    <div onClick={() => setSelectedUserId(m.userId)} className="flex flex-col items-center cursor-pointer group">
+                      <div className="relative">
+                        <div className={cn("w-16 h-16 rounded-full border-[3px] border-slate-300 overflow-hidden bg-white shadow-md transition-transform group-hover:scale-110", isLearning && "ring-2 ring-indigo-400 ring-offset-2")}>
+                          {m.avatarUrl ? <img src={m.avatarUrl} className="w-full h-full object-cover" /> : <User size={24} className="text-slate-300" />}
+                        </div>
+                        <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-gradient-to-br from-slate-300 to-slate-400 text-white text-xs font-black flex items-center justify-center shadow">2</div>
+                      </div>
+                      <div className="mt-2 text-center">
+                        <div className="text-xs font-bold text-slate-700 truncate max-w-[80px]">{m.nickname}</div>
+                        <div className="text-[10px] font-bold text-slate-400">Lv.{m.level || 1}</div>
+                      </div>
+                      <div className="w-20 h-16 bg-gradient-to-t from-slate-200 to-slate-100 rounded-t-xl mt-1 flex items-center justify-center">
+                        <span className="text-lg">🥈</span>
+                      </div>
+                    </div>
+                  );})()}
+
+                  {/* 第1名 */}
+                  {(() => { const m = members[0]; const isLearning = m.status === 'learning'; return (
+                    <div onClick={() => setSelectedUserId(m.userId)} className="flex flex-col items-center cursor-pointer group -mt-4">
+                      <div className="relative">
+                        <div className={cn("w-20 h-20 rounded-full border-[3px] border-yellow-400 overflow-hidden bg-white shadow-lg transition-transform group-hover:scale-110", isLearning && "ring-2 ring-indigo-400 ring-offset-2")}>
+                          {m.avatarUrl ? <img src={m.avatarUrl} className="w-full h-full object-cover" /> : <User size={32} className="text-slate-300" />}
+                        </div>
+                        <div className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 text-white text-sm font-black flex items-center justify-center shadow-lg">1</div>
+                        {m.role === 'owner' && <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[9px] bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap border border-yellow-200">房主</div>}
+                      </div>
+                      <div className="mt-3 text-center">
+                        <div className="text-sm font-black text-slate-800 truncate max-w-[100px]">{m.nickname}</div>
+                        <div className="text-xs font-bold text-amber-500">Lv.{m.level || 1}</div>
+                      </div>
+                      <div className="w-24 h-24 bg-gradient-to-t from-amber-200 to-yellow-50 rounded-t-xl mt-1 flex items-center justify-center">
+                        <span className="text-3xl">🏆</span>
+                      </div>
+                    </div>
+                  );})()}
+
+                  {/* 第3名 */}
+                  {(() => { const m = members[2]; const isLearning = m.status === 'learning'; return (
+                    <div onClick={() => setSelectedUserId(m.userId)} className="flex flex-col items-center cursor-pointer group">
+                      <div className="relative">
+                        <div className={cn("w-16 h-16 rounded-full border-[3px] border-amber-600/60 overflow-hidden bg-white shadow-md transition-transform group-hover:scale-110", isLearning && "ring-2 ring-indigo-400 ring-offset-2")}>
+                          {m.avatarUrl ? <img src={m.avatarUrl} className="w-full h-full object-cover" /> : <User size={24} className="text-slate-300" />}
+                        </div>
+                        <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-gradient-to-br from-amber-600 to-amber-700 text-white text-xs font-black flex items-center justify-center shadow">3</div>
+                      </div>
+                      <div className="mt-2 text-center">
+                        <div className="text-xs font-bold text-slate-700 truncate max-w-[80px]">{m.nickname}</div>
+                        <div className="text-[10px] font-bold text-slate-400">Lv.{m.level || 1}</div>
+                      </div>
+                      <div className="w-20 h-12 bg-gradient-to-t from-amber-200/60 to-orange-50 rounded-t-xl mt-1 flex items-center justify-center">
+                        <span className="text-lg">🥉</span>
+                      </div>
+                    </div>
+                  );})()}
                 </div>
-              );
-            })}
-          </div>
+              )}
+
+              {/* 第4名起的列表 */}
+              <div className="space-y-2">
+                {(members.length >= 3 ? members.slice(3) : members).map((m, idx) => {
+                  const rank = members.length >= 3 ? idx + 4 : idx + 1;
+                  const isLearning = m.status === 'learning';
+                  const isResting = m.status === 'rest';
+                  return (
+                    <div key={m.userId} onClick={() => setSelectedUserId(m.userId)}
+                      className="flex items-center gap-4 p-3 bg-slate-50/80 rounded-2xl border border-slate-100 hover:border-blue-200 hover:shadow-sm transition-all cursor-pointer group">
+                      <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-sm font-black text-slate-400 shrink-0 group-hover:bg-blue-50 group-hover:text-blue-500 transition-colors">{rank}</div>
+                      <div className={cn("relative w-10 h-10 rounded-full border-2 overflow-hidden bg-white shrink-0",
+                        isLearning ? "border-indigo-400" : isResting ? "border-emerald-400" : "border-slate-200"
+                      )}>
+                        {m.avatarUrl ? <img src={m.avatarUrl} className="w-full h-full object-cover" /> : <User size={18} className="text-slate-300" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-sm text-slate-800 truncate">{m.nickname}</span>
+                          {m.role === 'owner' && <span className="text-[9px] bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full font-bold shrink-0 border border-yellow-200">房主</span>}
+                          {m.role === 'admin' && <span className="text-[9px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-bold shrink-0 border border-blue-200">管理</span>}
+                        </div>
+                        <span className={cn("text-[10px] font-bold", isLearning ? "text-indigo-500" : isResting ? "text-emerald-500" : "text-slate-400")}>
+                          {isLearning ? '🔥 专注中' : isResting ? '☕ 休息中' : '💤 空闲'}
+                        </span>
+                      </div>
+                      <div className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-slate-100 to-slate-50 border border-slate-200">
+                        <span className="text-xs font-black text-slate-600">Lv.{m.level || 1}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {members.length === 0 && (
+            <div className="text-center text-slate-400 py-20 text-sm">暂无成员在线</div>
+          )}
         </div>
       </div>
 
