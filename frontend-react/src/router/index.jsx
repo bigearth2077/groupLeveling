@@ -3,7 +3,7 @@ import App from '../App';
 import GuestGuard from '../components/auth/GuestGuard';
 import Login from '../pages/login/Login';
 import Register from '../pages/register/Register';
-import Auth from '../components/Auth';
+import Auth from '../components/auth';
 import Home from '../pages/home/Home';
 
 // 路由配置
