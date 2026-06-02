@@ -2,20 +2,28 @@ package socket
 
 import (
 	"backend/internal/dto"
+	"backend/internal/model"
 	"backend/internal/service"
 	"backend/pkg/utils"
 	"encoding/json"
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	socketio "github.com/googollee/go-socket.io"
+	"github.com/googollee/go-socket.io/engineio"
+	"github.com/googollee/go-socket.io/engineio/transport"
+	"github.com/googollee/go-socket.io/engineio/transport/polling"
+	"github.com/googollee/go-socket.io/engineio/transport/websocket"
 )
 
 var Server *socketio.Server
 var roomService service.RoomService
 var userService service.UserService // 需要获取用户信息
+var messageService service.MessageService
+var notificationService service.NotificationService
 
 // 辅助结构体，存入 Context
 type SocketContext struct {
@@ -26,7 +34,20 @@ type SocketContext struct {
 // InitSocket 初始化 Socket.IO 服务
 func InitSocket() {
 	var err error
-	Server = socketio.NewServer(nil)
+	Server = socketio.NewServer(&engineio.Options{
+		Transports: []transport.Transport{
+			&polling.Transport{
+				CheckOrigin: func(r *http.Request) bool {
+					return true
+				},
+			},
+			&websocket.Transport{
+				CheckOrigin: func(r *http.Request) bool {
+					return true
+				},
+			},
+		},
+	})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -68,8 +89,8 @@ func InitSocket() {
 		ctx := s.Context().(*SocketContext)
 		userID := ctx.UserID
 
-		// 业务逻辑：写库
-		if err := roomService.JoinRoom(userID, payload.RoomID); err != nil {
+		// 业务逻辑：写库 (校验密码、人数)
+		if err := roomService.JoinRoom(userID, payload.RoomID, payload.Password); err != nil {
 			return errorResponse(err.Error())
 		}
 
@@ -163,6 +184,88 @@ func InitSocket() {
 		broadcastEvent(payload.RoomID, "status_updated", dto.StatusUpdatedEvent{
 			UserID: userID,
 			Status: payload.Status,
+		})
+
+		return successResponse(gin.H{"ok": true})
+	})
+
+	// --- 5.1 事件: invite_to_room ---
+	Server.OnEvent("/", "invite_to_room", func(s socketio.Conn, msg string) string {
+		var payload dto.InviteRoomPayload
+		if err := json.Unmarshal([]byte(msg), &payload); err != nil {
+			return errorResponse("invalid payload")
+		}
+
+		ctx := s.Context().(*SocketContext)
+		userID := ctx.UserID
+
+		// 获取发送者信息
+		sender, err := userService.GetProfile(userID)
+		if err != nil {
+			return errorResponse("user not found")
+		}
+
+		// 获取房间信息
+		roomResp, err := roomService.GetRoom(payload.RoomID)
+		if err != nil {
+			return errorResponse("room not found")
+		}
+
+		// 创建数据库通知
+		content := sender.Nickname + " invited you to join room: " + roomResp.Name
+		notif, err := notificationService.CreateNotification(
+			payload.TargetUserID,
+			model.NotificationTypeInvite,
+			"Room Invitation",
+			content,
+			&roomResp.ID,
+		)
+
+		if err == nil {
+			// 发送新通知事件给目标用户
+			broadcastEvent(payload.TargetUserID, "new_notification", dto.NewNotificationEvent{
+				Notification: *notif,
+			})
+		}
+
+		// (可选) 兼容旧版前端事件
+		broadcastEvent(payload.TargetUserID, "room_invite", dto.RoomInviteEvent{
+			RoomID:   roomResp.ID,
+			RoomName: roomResp.Name,
+			Sender: dto.UserSimple{
+				ID:        sender.ID,
+				Nickname:  sender.Nickname,
+				AvatarURL: sender.AvatarUrl,
+			},
+		})
+
+		return successResponse(gin.H{"ok": true})
+	})
+
+	// --- 5.2 事件: send_private_message ---
+	Server.OnEvent("/", "send_private_message", func(s socketio.Conn, msg string) string {
+		var payload dto.SendPrivateMessagePayload
+		if err := json.Unmarshal([]byte(msg), &payload); err != nil {
+			return errorResponse("invalid payload")
+		}
+
+		ctx := s.Context().(*SocketContext)
+		userID := ctx.UserID
+
+		// 保存消息到数据库
+		savedMsg, err := messageService.SaveMessage(userID, payload.ReceiverID, payload.Content)
+		if err != nil {
+			return errorResponse("failed to save message")
+		}
+
+		// 发送给接收者 (private room is their UserID)
+		broadcastEvent(payload.ReceiverID, "receive_private_message", dto.PrivateMessageEvent{
+			Message: *savedMsg,
+		})
+
+		// 同时也发回给发送者，确保多端同步，如果发送者在其他设备登录的话
+		broadcastEvent(userID, "receive_private_message", dto.PrivateMessageEvent{
+			Message: *savedMsg,
 		})
 
 		return successResponse(gin.H{"ok": true})

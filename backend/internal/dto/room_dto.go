@@ -11,9 +11,20 @@ type CreateRoomRequest struct {
 	Name        string  `json:"name" binding:"required,max=50"`
 	Description *string `json:"description"`
 	TagID       *string `json:"tagId"`
+	Tags        string  `json:"tags"`       // 逗号分隔的伪标签
 	IsPrivate   bool    `json:"isPrivate"`
 	Password    *string `json:"password"`   // 只有私密房才需要
 	MaxMembers  int     `json:"maxMembers"` // 默认50
+}
+
+type UpdateRoomRequest struct {
+	Name        string  `json:"name" binding:"max=50"`
+	Description *string `json:"description"`
+	TagID       *string `json:"tagId"`
+	Tags        string  `json:"tags"`
+	IsPrivate   bool    `json:"isPrivate"`
+	Password    *string `json:"password"`
+	MaxMembers  int     `json:"maxMembers"`
 }
 
 type RoomResponse struct {
@@ -22,12 +33,14 @@ type RoomResponse struct {
 	Description *string   `json:"description"`
 	TagID       *string   `json:"tagId"`
 	TagName     string    `json:"tagName"` // 为了方便展示
+	Tags        string    `json:"tags"`
 	IsPrivate   bool      `json:"isPrivate"`
 	MaxMembers  int       `json:"maxMembers"`
 	CreatorID   string    `json:"creatorId"`
 	CreatedAt   time.Time `json:"createdAt"`
 	OnlineCount int       `json:"onlineCount"`
 	HasPassword bool      `json:"hasPassword"` // 不返回真实密码，只返回是否有密码
+	MatchScore  float64   `json:"matchScore,omitempty"` // 匹配度评分 (0-100)
 }
 
 type RoomListResponse struct {
@@ -41,7 +54,8 @@ type RoomListResponse struct {
 
 // Client -> Server: join_room
 type JoinRoomPayload struct {
-	RoomID string `json:"roomId"`
+	RoomID   string  `json:"roomId"`
+	Password *string `json:"password"` // Optional: for private rooms
 }
 
 // Client -> Server: send_message
@@ -54,6 +68,17 @@ type SendMessagePayload struct {
 type UpdateStatusPayload struct {
 	RoomID string           `json:"roomId"`
 	Status model.RoomStatus `json:"status"`
+}
+
+// Client -> Server: invite_to_room
+type InviteRoomPayload struct {
+	TargetUserID string `json:"targetUserId"`
+	RoomID       string `json:"roomId"`
+}
+
+type ValidateRoomPasswordRequest struct {
+	RoomID   string `json:"roomId" binding:"required"`
+	Password string `json:"password" binding:"required"`
 }
 
 // --- Socket Broadcast DTOs (Server -> Client) ---
@@ -82,10 +107,19 @@ type StatusUpdatedEvent struct {
 	Status model.RoomStatus `json:"status"`
 }
 
+// event: room_invite (Server -> Target Client)
+type RoomInviteEvent struct {
+	RoomID     string     `json:"roomId"`
+	RoomName   string     `json:"roomName"`
+	Sender     UserSimple `json:"sender"`
+}
+
 type RoomMemberResponse struct {
 	UserID    string           `json:"userId"`
 	Nickname  string           `json:"nickname"`
 	AvatarURL *string          `json:"avatarUrl"`
 	Status    model.RoomStatus `json:"status"` // learning, rest, idle
+	Role      string           `json:"role"`   // owner, admin, member
+	Level     int              `json:"level"`  // 用于小排行榜排序
 	JoinedAt  time.Time        `json:"joinedAt"`
 }

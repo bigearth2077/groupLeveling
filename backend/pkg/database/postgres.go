@@ -58,6 +58,8 @@ func InitDB() {
 		&model.Friend{},
 		&model.StudySession{},
 		&model.Blog{},
+		&model.BlogLike{},
+		&model.BlogBookmark{},
 		&model.Room{},
 		&model.RoomMember{},
 		&model.HealthData{},
@@ -66,6 +68,8 @@ func InitDB() {
 		&model.DailyStat{},
 		&model.Tag{},
 		&model.UserTagStat{},
+		&model.Message{},
+		&model.Notification{},
 	)
 
 	if err != nil {

@@ -1,0 +1,102 @@
+# =============================================
+# GroupLeveling - 全栈 Docker Compose
+# 启动命令: docker compose up -d
+# =============================================
+
+services:
+  # --- 前端 (React + Vite) ---
+  frontend:
+    build:
+      context: ./frontend-react
+      dockerfile: Dockerfile
+    container_name: gl-frontend
+    restart: always
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_TARGET=http://app:8080
+    volumes:
+      - ./frontend-react:/app
+      - /app/node_modules
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    depends_on:
+      - app
+    networks:
+      - app-network
+
+  # --- 后端 (Go + Gin) ---
+  app:
+    build:
+      context: ./backend
+      dockerfile: dockerfile.dev
+    container_name: gl-backend
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=db
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-mysecretpassword}
+      - DB_NAME=${DB_NAME:-study_app}
+      - DB_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=${JWT_SECRET:-dev-only-secret-please-change}
+      - GIN_MODE=debug
+      - SILICONFLOW_API_KEY=${SILICONFLOW_API_KEY}
+    volumes:
+      - ./backend:/app
+    command: sh -c "go mod tidy && air -c .air.toml"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  # --- PostgreSQL ---
+  db:
+    image: postgres:15-alpine
+    container_name: gl-postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=${DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-mysecretpassword}
+      - POSTGRES_DB=${DB_NAME:-study_app}
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./backend/pg_data:/var/lib/postgresql/data
+      - ./backend/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - app-network
+
+  # --- Redis ---
+  redis:
+    image: redis:7-alpine
+    container_name: gl-redis
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./backend/redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

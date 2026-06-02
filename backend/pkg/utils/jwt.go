@@ -4,12 +4,21 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtSecret = []byte("your_super_secret_key") // 记得放入配置文件
+var jwtSecret []byte
+
+func init() {
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		secret = "dev-only-secret-please-change-in-production"
+	}
+	jwtSecret = []byte(secret)
+}
 
 type Claims struct {
 	UserID string `json:"userId"`

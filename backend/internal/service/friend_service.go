@@ -166,11 +166,34 @@ func (s *FriendService) GetFriendList(userID string, q dto.FriendQuery) (*dto.Fr
 			targetUser = f.User // 我是接收方，朋友是 User
 		}
 
+		// 检查在线和房间状态
+		isOnline := false
+		var status string
+		var roomID *string
+		var roomName *string
+
+		var roomMember model.RoomMember
+		// Preload Room to get the room name
+		err := database.DB.Preload("Room").Where("user_id = ? AND left_at IS NULL", targetUser.ID).First(&roomMember).Error
+		if err == nil {
+			isOnline = true
+			status = string(roomMember.Status)
+			roomID = &roomMember.RoomID
+			if roomMember.Room.ID != "" {
+				rName := roomMember.Room.Name
+				roomName = &rName
+			}
+		}
+
 		items = append(items, dto.FriendItem{
 			ID:        targetUser.ID,
 			Nickname:  targetUser.Nickname,
 			AvatarURL: targetUser.AvatarUrl,
 			Bio:       targetUser.Bio,
+			IsOnline:  isOnline,
+			Status:    status,
+			RoomID:    roomID,
+			RoomName:  roomName,
 		})
 	}
 

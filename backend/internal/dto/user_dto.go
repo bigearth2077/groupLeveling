@@ -28,8 +28,10 @@ type PublicProfileResponse struct {
 	Nickname  string            `json:"nickname"`
 	AvatarURL *string           `json:"avatarUrl"`
 	Bio       *string           `json:"bio"`
-	LevelInfo LevelInfo         `json:"levelInfo"` // 总等级信息
-	TopTags   []UserTagResponse `json:"topTags"`   // 最擅长的 3 个标签
+	LevelInfo   LevelInfo         `json:"levelInfo"` // 总等级信息
+	TopTags     []UserTagResponse `json:"topTags"`   // 最擅长的 3 个标签
+	IsFriend    bool              `json:"isFriend"`
+	FriendStatus string           `json:"friendStatus"` // e.g., 'pending', 'accepted', ''
 }
 
 // SearchUserResponse (单项)
@@ -48,3 +50,14 @@ type SearchUserResult struct {
 	Page     int              `json:"page"`
 	PageSize int              `json:"pageSize"`
 }
+
+// AmbientBuddyResponse 
+type AmbientBuddyResponse struct {
+	ID         string   `json:"id"`
+	Nickname   string   `json:"nickname"`
+	AvatarURL  *string  `json:"avatarUrl"`
+	Bio        *string  `json:"bio"`
+	MatchScore float64  `json:"matchScore"`
+	SharedTags []string `json:"sharedTags"`
+}
+

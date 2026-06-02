@@ -3,6 +3,7 @@ package router
 import (
 	"backend/internal/handler"
 	"backend/internal/middleware"
+	"backend/internal/service"
 	"backend/internal/socket"
 
 	"github.com/gin-gonic/gin"
@@ -17,6 +18,28 @@ func SetupRouter(r *gin.Engine) {
 	roomHandler := &handler.RoomHandler{}
 	tagHandler := &handler.TagHandler{}
 
+	messageService := &service.MessageService{}
+	messageHandler := &handler.MessageHandler{Service: *messageService}
+
+	notificationService := &service.NotificationService{}
+	notificationHandler := &handler.NotificationHandler{Service: *notificationService}
+
+	analyticsService := &service.AnalyticsService{}
+	analyticsHandler := handler.NewAnalyticsHandler(analyticsService)
+
+	matchingService := &service.MatchingService{AnalyticsService: analyticsService}
+	matchingHandler := handler.NewMatchingHandler(matchingService)
+
+	aiService := &service.AIService{}
+
+	healthService := &service.HealthService{AIService: aiService}
+	healthHandler := handler.NewHealthHandler(healthService)
+
+	blogService := &service.BlogService{AIService: aiService}
+	blogHandler := handler.NewBlogHandler(blogService)
+
+	aiHandler := handler.NewAIHandler(aiService)
+
 	// --- Socket.IO 路由挂载 ---
 	// 必须在 main 中先 InitSocket()
 	// 注意 CORS：Socket.IO 需要专门处理 CORS，或者在 Nginx 层处理
@@ -25,7 +48,7 @@ func SetupRouter(r *gin.Engine) {
 	r.POST("/socket.io/*any", gin.WrapH(socket.Server))
 
 	// 公开路由
-	r.GET("/tags/search", tagHandler.Search)      // 公开搜索
+	r.GET("/tags/search", tagHandler.Search) // 公开搜索
 	r.GET("/tags/popular", tagHandler.GetPopular) // 热门标签
 
 	authGroup := r.Group("/auth")
@@ -49,7 +72,9 @@ func SetupRouter(r *gin.Engine) {
 			userGroup.DELETE("/me", userHandler.DeleteAccount)
 
 			userGroup.GET("/search", userHandler.SearchUsers) // 对应 /users/search?query=xxx
+			userGroup.GET("/ambient", matchingHandler.GetAmbientBuddies) // 智能同频学伴推荐
 			userGroup.GET("/:id/public", userHandler.GetPublicProfile)
+			userGroup.GET("/:id/blogs", blogHandler.GetUserBlogs) // 获取某用户的博客列表
 
 			// 用户的标签管理
 			userGroup.GET("/me/tags", tagHandler.GetMyTags)
@@ -61,14 +86,13 @@ func SetupRouter(r *gin.Engine) {
 		studyGroup := protected.Group("/study")
 		{
 			studyGroup.POST("/sessions/start", studyHandler.StartSession)
-			studyGroup.POST("/sessions/:id/end", studyHandler.EndSession)      // 注意 :id
+			studyGroup.POST("/sessions/:id/end", studyHandler.EndSession) // 注意 :id
 			studyGroup.POST("/sessions/:id/heartbeat", studyHandler.Heartbeat) // 心跳
 			studyGroup.GET("/sessions/active", studyHandler.GetActiveSession)
 			studyGroup.DELETE("/sessions/active", studyHandler.CancelActiveSession)
 			studyGroup.GET("/sessions", studyHandler.GetSessions) // 历史记录
 
 			studyGroup.GET("/stats/summary", studyHandler.GetStatsSummary)
-			studyGroup.GET("/stats/screen-time", studyHandler.GetScreenTimeStats)
 		}
 
 		// Friends 路由
@@ -90,7 +114,68 @@ func SetupRouter(r *gin.Engine) {
 		{
 			roomGroup.POST("", roomHandler.CreateRoom)
 			roomGroup.GET("", roomHandler.GetRooms)
+			roomGroup.GET("/recommended", matchingHandler.GetRecommendedRooms) // 算法推荐高分大厅
+			roomGroup.GET("/:id", roomHandler.GetRoom)       // 获取详情
+			roomGroup.PATCH("/:id", roomHandler.UpdateRoom)  // 更新房间
+			roomGroup.DELETE("/:id", roomHandler.DeleteRoom) // 删除房间
+			roomGroup.POST("/validate-password", roomHandler.ValidatePassword) // 新增验证接口
 			roomGroup.GET("/:id/members", roomHandler.GetRoomMembers)
+			roomGroup.PATCH("/:id/members/:userId/role", roomHandler.UpdateMemberRole) // 修改成员角色
+		}
+
+		// Analytics 路由
+		analyticsGroup := protected.Group("/analytics")
+		{
+			analyticsGroup.GET("/activity-heatmap", analyticsHandler.GetActivityHeatmap)
+			analyticsGroup.GET("/time-matrix", analyticsHandler.GetTimeMatrix)
+		}
+
+		// Health 路由
+		healthGroup := protected.Group("/health")
+		{
+			healthGroup.POST("/check-in", healthHandler.CheckIn)
+			healthGroup.GET("/today", healthHandler.GetToday)
+			healthGroup.GET("/history", healthHandler.GetHistory)
+			healthGroup.GET("/ai-report", healthHandler.GetAIReport)
+		}
+
+		// AI 模拟路由
+		aiGroup := protected.Group("/ai")
+		{
+			aiGroup.GET("/room-chat", aiHandler.GenerateRoomChat)
+		}
+
+		// Blog 路由
+		blogGroup := protected.Group("/blogs")
+		{
+			blogGroup.POST("", blogHandler.CreateBlog)
+			blogGroup.GET("", blogHandler.GetBlogs)
+			blogGroup.GET("/my", blogHandler.GetMyBlogs)
+			blogGroup.GET("/:id", blogHandler.GetBlog)
+			blogGroup.PATCH("/:id", blogHandler.UpdateBlog)
+			blogGroup.DELETE("/:id", blogHandler.DeleteBlog)
+
+			blogGroup.POST("/:id/like", blogHandler.LikeBlog)
+			blogGroup.DELETE("/:id/like", blogHandler.UnlikeBlog)
+			blogGroup.POST("/:id/bookmark", blogHandler.BookmarkBlog)
+			blogGroup.DELETE("/:id/bookmark", blogHandler.UnbookmarkBlog)
+		}
+
+		// Message 路由
+		messageGroup := protected.Group("/messages")
+		{
+			messageGroup.GET("/history", messageHandler.GetHistory)
+			messageGroup.GET("/unread", messageHandler.GetUnread)
+			messageGroup.GET("/unread/per-friend", messageHandler.GetUnreadPerFriend)
+		}
+
+		// Notification 路由
+		notificationGroup := protected.Group("/notifications")
+		{
+			notificationGroup.GET("", notificationHandler.GetNotifications)
+			notificationGroup.GET("/unread", notificationHandler.GetUnreadCount)
+			notificationGroup.PATCH("/:id/read", notificationHandler.MarkAsRead)
+			notificationGroup.PATCH("/read-all", notificationHandler.MarkAllAsRead)
 		}
 	}
 }

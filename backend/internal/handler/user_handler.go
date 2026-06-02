@@ -79,8 +79,9 @@ func (h *UserHandler) ChangePassword(c *gin.Context) {
 // GetPublicProfile 获取他人公开资料
 func (h *UserHandler) GetPublicProfile(c *gin.Context) {
 	targetID := c.Param("id")
+	callerID := c.GetString("userId") // 从中间件获取，可能为空如果未完全登录，但在我们架构中应该有
 
-	profile, err := h.Service.GetPublicProfile(targetID)
+	profile, err := h.Service.GetPublicProfile(callerID, targetID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return

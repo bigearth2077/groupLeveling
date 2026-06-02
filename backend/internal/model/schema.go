@@ -15,6 +15,14 @@ const (
 	FriendStatusAccepted FriendStatus = "accepted"
 )
 
+type NotificationType string
+
+const (
+	NotificationTypeSystem NotificationType = "system"
+	NotificationTypeInvite NotificationType = "invite"
+	NotificationTypeFriend NotificationType = "friend"
+)
+
 type SessionType string
 
 const (
@@ -114,16 +122,67 @@ type StudySession struct {
 	Tag  *Tag `gorm:"foreignKey:TagID"`
 }
 
-type Blog struct {
-	ID        string         `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
-	UserID    string         `gorm:"type:uuid;not null"`
-	Title     string         `gorm:"not null"`
-	Content   string         `gorm:"type:text;not null"`
-	Tags      pq.StringArray `gorm:"type:text[]"` // Postgres 数组
-	CreatedAt time.Time      `gorm:"autoCreateTime"`
-	UpdatedAt time.Time      `gorm:"autoUpdateTime"`
+type BlogStatus string
 
-	User User `gorm:"foreignKey:UserID"`
+const (
+	BlogStatusDraft     BlogStatus = "draft"
+	BlogStatusPublished BlogStatus = "published"
+)
+
+type BlogQuality string
+
+const (
+	BlogQualityBasic     BlogQuality = "basic"
+	BlogQualityGood      BlogQuality = "good"
+	BlogQualityExcellent BlogQuality = "excellent"
+)
+
+type Blog struct {
+	ID      string `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	UserID  string `gorm:"type:uuid;not null;index"`
+	Title   string `gorm:"not null"`
+	Content string `gorm:"type:text;not null"`
+	Format  string `gorm:"type:varchar(20);default:'markdown'"` // "markdown" | "richtext"
+	Summary *string `gorm:"type:text"`                          // AI 生成的摘要
+	Status  BlogStatus `gorm:"type:varchar(20);default:'published'"` // draft | published
+
+	// AI 分析结果
+	AITagIDs   pq.StringArray `gorm:"type:text[]"`              // AI 提取的标签 ID 数组
+	AIQuality  *BlogQuality   `gorm:"type:varchar(20)"`         // AI 质量评级
+	AIXpPerTag *int           `gorm:"default:null"`             // AI 评估的单 Tag XP 值
+
+	// 计数（非规范化，避免频繁 JOIN 聚合）
+	LikeCount     int `gorm:"default:0"`
+	BookmarkCount int `gorm:"default:0"`
+
+	CreatedAt time.Time `gorm:"autoCreateTime"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime"`
+
+	// Relations
+	User      User           `gorm:"foreignKey:UserID"`
+	BlogTags  []Tag          `gorm:"many2many:blog_tags;"`
+	Likes     []BlogLike     `gorm:"foreignKey:BlogID"`
+	Bookmarks []BlogBookmark `gorm:"foreignKey:BlogID"`
+}
+
+type BlogLike struct {
+	ID        string    `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	BlogID    string    `gorm:"type:uuid;not null;uniqueIndex:idx_blog_user_like"`
+	UserID    string    `gorm:"type:uuid;not null;uniqueIndex:idx_blog_user_like"`
+	CreatedAt time.Time `gorm:"autoCreateTime"`
+
+	Blog Blog `gorm:"foreignKey:BlogID;constraint:OnDelete:CASCADE;"`
+	User User `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;"`
+}
+
+type BlogBookmark struct {
+	ID        string    `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	BlogID    string    `gorm:"type:uuid;not null;uniqueIndex:idx_blog_user_bm"`
+	UserID    string    `gorm:"type:uuid;not null;uniqueIndex:idx_blog_user_bm"`
+	CreatedAt time.Time `gorm:"autoCreateTime"`
+
+	Blog Blog `gorm:"foreignKey:BlogID;constraint:OnDelete:CASCADE;"`
+	User User `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;"`
 }
 
 type Room struct {
@@ -134,6 +193,7 @@ type Room struct {
 	// 房间属性
 	CreatorID   string    `gorm:"type:uuid;not null"`         // 房主
 	TagID       *string   `gorm:"type:uuid;default:null"`     // 关联标签
+	Tags        string    `gorm:"type:varchar(255);default:''"` // 类似名字的伪标签，逗号分隔
 	IsPrivate   bool      `gorm:"default:false"`              // 是否私密(不公开列出)
 	Password    *string   `gorm:"default:null"`               // 访问密码
 	MaxMembers  int       `gorm:"default:50"`                 // 人数上限
@@ -151,6 +211,7 @@ type RoomMember struct {
 	RoomID   string     `gorm:"type:uuid;not null"`
 	UserID   string     `gorm:"type:uuid;not null"`
 	Status   RoomStatus `gorm:"type:varchar(20);not null"`
+	Role     string     `gorm:"type:varchar(20);default:'member'"` // owner, admin, member
 	JoinedAt time.Time  `gorm:"autoCreateTime"`
 	LeftAt   *time.Time `gorm:"default:null"`
 
@@ -160,11 +221,18 @@ type RoomMember struct {
 
 type HealthData struct {
 	ID              string    `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
-	UserID          string    `gorm:"type:uuid;not null"`
-	Date            time.Time `gorm:"not null"`
+	UserID          string    `gorm:"type:uuid;not null;index:idx_user_health_date,unique"`
+	Date            time.Time `gorm:"type:date;not null;index:idx_user_health_date,unique"`
 	SleepHours      *float64  `gorm:"default:null"`
+	SleepQuality    *string   `gorm:"type:varchar(20);default:null"` // e.g., 'bad', 'okay', 'great'
 	ExerciseMinutes *int      `gorm:"default:null"`
-	CreatedAt       time.Time `gorm:"autoCreateTime"`
+
+	// 每日自评字段（1-5 离散值）
+	StudyQuality *int `gorm:"default:null"` // 1-5 学习质量自评
+	MoodScore    *int `gorm:"default:null"` // 1-5 心情
+	FatigueLevel *int `gorm:"default:null"` // 1-5 疲劳度
+
+	CreatedAt time.Time `gorm:"autoCreateTime"`
 
 	User User `gorm:"foreignKey:UserID"`
 }
@@ -187,4 +255,29 @@ type RefreshToken struct {
 	CreatedAt time.Time  `gorm:"autoCreateTime"`
 
 	User User `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"` // 对应 onDelete: Cascade
+}
+
+type Message struct {
+	ID         string    `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	SenderID   string    `gorm:"type:uuid;not null;index"`
+	ReceiverID string    `gorm:"type:uuid;not null;index"`
+	Content    string    `gorm:"type:text;not null"`
+	IsRead     bool      `gorm:"default:false"`
+	CreatedAt  time.Time `gorm:"autoCreateTime"`
+
+	Sender   User `gorm:"foreignKey:SenderID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Receiver User `gorm:"foreignKey:ReceiverID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+}
+
+type Notification struct {
+	ID        string           `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	UserID    string           `gorm:"type:uuid;not null;index"`
+	Type      NotificationType `gorm:"type:varchar(20);not null"`
+	Title     string           `gorm:"not null"`
+	Content   string           `gorm:"type:text;not null"`
+	RelatedID *string          `gorm:"type:uuid;default:null"` // e.g. RoomID
+	IsRead    bool             `gorm:"default:false"`
+	CreatedAt time.Time        `gorm:"autoCreateTime"`
+
+	User User `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }

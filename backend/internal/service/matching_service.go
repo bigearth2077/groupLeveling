@@ -1,0 +1,276 @@
+package service
+
+import (
+	"backend/internal/model"
+	"backend/internal/dto"
+	"backend/pkg/database"
+	"fmt"
+	"math"
+	"sort"
+	"time"
+)
+
+type MatchingService struct {
+	AnalyticsService *AnalyticsService
+}
+
+// UserHabitProfile 表示基于学习习惯计算的用户画像，用于匹配
+type UserHabitProfile struct {
+	UserID             string
+	MorningRatio       float64 // 上午学习时间段占比 (06:00 - 12:00)
+	AfternoonRatio     float64 // 下午学习时间段占比 (12:00 - 18:00)
+	EveningRatio       float64 // 晚上学习时间段占比 (18:00 - 24:00)
+	NightRatio         float64 // 深夜学习时间段占比 (00:00 - 06:00)
+	NormalizedAvgDur   float64 // 归一化后的单次平均学习时长 (例如：最大值 120 分钟归一化为 1.0)
+	NormalizedDailyMin float64 // 归一化后的日均学习时长 (例如：最大值 480 分钟归一化为 1.0)
+	RawAvgDur          int     // 原始单次平均时长 (分钟)
+	TotalMins          int     // 累计学习总分钟数
+	PrimaryHabitLabel  string  // 核心习惯标签，例如 "夜猫子"
+}
+
+// fetchUserHabitProfile 根据用户最近 30 天的学习记录，构建用户的习惯画像
+func (s *MatchingService) fetchUserHabitProfile(userID string) (*UserHabitProfile, error) {
+	var sessions []model.StudySession
+	thirtyDaysAgo := time.Now().AddDate(0, 0, -30)
+	
+	if err := database.DB.Where("user_id = ? AND start_time > ? AND duration_minutes IS NOT NULL", userID, thirtyDaysAgo).Find(&sessions).Error; err != nil {
+		return nil, err
+	}
+
+	profile := &UserHabitProfile{
+		UserID: userID,
+	}
+
+	if len(sessions) == 0 {
+		return profile, nil
+	}
+
+	var morning, afternoon, evening, night float64
+	var totalSessions int
+	var totalMins int
+
+	for _, session := range sessions {
+		if session.DurationMinutes == nil || *session.DurationMinutes <= 0 {
+			continue
+		}
+		mins := *session.DurationMinutes
+		totalMins += mins
+		totalSessions++
+
+		hour := session.StartTime.Hour()
+		if hour >= 6 && hour < 12 {
+			morning += float64(mins)
+		} else if hour >= 12 && hour < 18 {
+			afternoon += float64(mins)
+		} else if hour >= 18 && hour <= 23 {
+			evening += float64(mins)
+		} else {
+			night += float64(mins)
+		}
+	}
+
+	if totalMins > 0 {
+		profile.MorningRatio = morning / float64(totalMins)
+		profile.AfternoonRatio = afternoon / float64(totalMins)
+		profile.EveningRatio = evening / float64(totalMins)
+		profile.NightRatio = night / float64(totalMins)
+		
+		// 寻找占比最高的时间段，赋予核心习惯标签
+		maxRatio := profile.MorningRatio
+		profile.PrimaryHabitLabel = "早起鸟"
+		if profile.AfternoonRatio > maxRatio {
+			maxRatio = profile.AfternoonRatio
+			profile.PrimaryHabitLabel = "下午茶"
+		}
+		if profile.EveningRatio > maxRatio {
+			maxRatio = profile.EveningRatio
+			profile.PrimaryHabitLabel = "晚高峰"
+		}
+		if profile.NightRatio > maxRatio {
+			profile.PrimaryHabitLabel = "夜猫子"
+		}
+
+		profile.RawAvgDur = totalMins / totalSessions
+		// 归一化单次平均时长（以 120 分钟为上限进行归一化）
+		profile.NormalizedAvgDur = math.Min(float64(profile.RawAvgDur)/120.0, 1.0)
+		
+		// 归一化日均时长（以 480 分钟为上限进行归一化）
+		dailyMins := float64(totalMins) / 30.0
+		profile.NormalizedDailyMin = math.Min(dailyMins/480.0, 1.0)
+	}
+	
+	profile.TotalMins = totalMins
+
+	return profile, nil
+}
+
+// calculateCosineSimilarity 基于用户的习惯向量计算两个用户之间的余弦相似度
+func (s *MatchingService) calculateCosineSimilarity(p1, p2 *UserHabitProfile) float64 {
+	if p1.TotalMins == 0 || p2.TotalMins == 0 {
+		return 0.0 // 无历史学习数据，缺乏对比基准
+	}
+
+	// 构建 6 维特征向量: [上午占比, 下午占比, 晚上占比, 深夜占比, 归一化单次时长, 归一化日均时长]
+	v1 := []float64{p1.MorningRatio, p1.AfternoonRatio, p1.EveningRatio, p1.NightRatio, p1.NormalizedAvgDur, p1.NormalizedDailyMin}
+	v2 := []float64{p2.MorningRatio, p2.AfternoonRatio, p2.EveningRatio, p2.NightRatio, p2.NormalizedAvgDur, p2.NormalizedDailyMin}
+
+	dotProduct := 0.0
+	norm1 := 0.0
+	norm2 := 0.0
+
+	for i := 0; i < 6; i++ {
+		dotProduct += v1[i] * v2[i]
+		norm1 += v1[i] * v1[i]
+		norm2 += v2[i] * v2[i]
+	}
+
+	if norm1 == 0 || norm2 == 0 {
+		return 0.0
+	}
+
+	return dotProduct / (math.Sqrt(norm1) * math.Sqrt(norm2))
+}
+
+// AmbientBuddy 表示推荐的学伴对象
+type AmbientBuddy struct {
+	model.User
+	MatchScore  float64
+	SharedTags  []string // 极简版本中用于展示习惯摘要（例如："同为夜猫子 · 均次45min"）
+}
+
+// GetAmbientBuddies 寻找具有相似学习习惯的活跃学伴
+func (s *MatchingService) GetAmbientBuddies(userID string, limit int) ([]AmbientBuddy, error) {
+	currentUserProfile, err := s.fetchUserHabitProfile(userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch user habit profile: %v", err)
+	}
+
+	var activeUsers []model.User
+	sevenDaysAgo := time.Now().AddDate(0, 0, -7)
+	// 查询最近活跃的用户（最近 7 天内活跃过，最大限制 50 名）
+	if err := database.DB.Where("updated_at > ?", sevenDaysAgo).Order("updated_at DESC").Limit(50).Find(&activeUsers).Error; err != nil {
+		return nil, err
+	}
+
+	var candidates []AmbientBuddy
+
+	for _, u := range activeUsers {
+		if u.ID == userID {
+			continue // 跳过自己
+		}
+
+		profile, err := s.fetchUserHabitProfile(u.ID)
+		if err != nil || profile.TotalMins == 0 {
+			continue
+		}
+
+		// 计算余弦相似度
+		score := s.calculateCosineSimilarity(currentUserProfile, profile)
+		
+		if score > 0.1 || currentUserProfile.TotalMins == 0 { // 允许新注册无数据的用户随机匹配
+			summary := fmt.Sprintf("同为%s · 均次%dmin", profile.PrimaryHabitLabel, profile.RawAvgDur)
+			
+			candidates = append(candidates, AmbientBuddy{
+				User:       u,
+				MatchScore: score,
+				SharedTags: []string{summary},
+			})
+		}
+	}
+
+	// 如果没有习惯匹配的对象，则降级为展示最近活跃的用户列表
+	if len(candidates) == 0 {
+		for _, u := range activeUsers {
+			if u.ID != userID {
+				candidates = append(candidates, AmbientBuddy{
+					User:       u,
+					MatchScore: 0.0,
+					SharedTags: []string{"近期活跃用户"},
+				})
+				if len(candidates) >= limit {
+					break
+				}
+			}
+		}
+	}
+
+	// 按照匹配度得分从高到低排序
+	sort.Slice(candidates, func(i, j int) bool {
+		return candidates[i].MatchScore > candidates[j].MatchScore
+	})
+
+	if len(candidates) > limit {
+		candidates = candidates[:limit]
+	}
+
+	return candidates, nil
+}
+
+// GetRecommendedRooms 返回推荐的房间列表，按照与用户的关联度（活跃度与人数）排序
+func (s *MatchingService) GetRecommendedRooms(userID string) ([]dto.RoomResponse, error) {
+	_, err := s.fetchUserHabitProfile(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	var rooms []model.Room
+	// 查询所有的公共房间
+	if err := database.DB.Preload("Tag").Preload("Creator").Where("is_private = ?", false).Find(&rooms).Error; err != nil {
+		return nil, err
+	}
+
+	type RoomWithScore struct {
+		Room  model.Room
+		Score float64
+	}
+
+	var matchGrid []RoomWithScore
+
+	for _, room := range rooms {
+		score := 0.0
+
+		// 目前由于去掉了复杂的标签系统，简单基于房间的流行度和成员人数进行评分
+		// 开发者也可以在此处根据需要将房间的主题与用户画像中的偏好进行深度结合。
+
+		// 计算房间活跃度/人数得分
+		var memberCount int64
+		database.DB.Model(&model.RoomMember{}).Where("room_id = ?", room.ID).Count(&memberCount)
+		score += float64(memberCount) * 2.0 // 对活跃人数较多的房间进行加权推荐
+
+		matchGrid = append(matchGrid, RoomWithScore{Room: room, Score: score})
+	}
+
+	// 按照推荐得分从高到低排序
+	sort.Slice(matchGrid, func(i, j int) bool {
+		return matchGrid[i].Score > matchGrid[j].Score
+	})
+
+	// 转换为前端需要的 DTO 格式
+	var response []dto.RoomResponse
+	for _, item := range matchGrid {
+		var onlineCount int64
+		database.DB.Model(&model.RoomMember{}).Where("room_id = ?", item.Room.ID).Count(&onlineCount)
+		
+		var tagName string
+		if item.Room.Tag != nil {
+			tagName = item.Room.Tag.Name
+		}
+		
+		response = append(response, dto.RoomResponse{
+			ID:          item.Room.ID,
+			Name:        item.Room.Name,
+			Description: item.Room.Description,
+			CreatorID:   item.Room.CreatorID,
+			IsPrivate:   item.Room.IsPrivate,
+			MaxMembers:  item.Room.MaxMembers,
+			CreatedAt:   item.Room.CreatedAt,
+			TagID:       item.Room.TagID,
+			TagName:     tagName,
+			OnlineCount: int(onlineCount),
+			HasPassword: item.Room.Password != nil,
+			MatchScore:  math.Round(item.Score * 100) / 100, // 四舍五入保留两位小数
+		})
+	}
+
+	return response, nil
+}
