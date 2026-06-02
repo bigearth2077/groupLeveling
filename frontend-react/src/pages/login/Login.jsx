@@ -24,15 +24,15 @@ const Login = () => {
 
   return (
     <AuthLayout
-      title="Welcome back"
-      subtitle="Enter your email to sign in to your account"
-      footerText="Don't have an account?"
-      footerLinkText="Sign up"
+      title="欢迎回来"
+      subtitle="请输入您的电子邮箱以登录您的账号"
+      footerText="还没有账号？"
+      footerLinkText="立即注册"
       footerLinkPath="/register"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <label htmlFor="email" className="text-sm font-medium text-slate-700">Email</label>
+          <label htmlFor="email" className="text-sm font-medium text-slate-700">电子邮箱</label>
           <Input
             id="email"
             type="email"
@@ -45,8 +45,8 @@ const Login = () => {
         </div>
         <div className="space-y-2">
            <div className="flex items-center justify-between">
-            <label htmlFor="password" className="text-sm font-medium text-slate-700">Password</label>
-            <a href="#" className="text-xs font-medium text-indigo-600 hover:text-indigo-500">Forgot password?</a>
+            <label htmlFor="password" className="text-sm font-medium text-slate-700">密码</label>
+            <a href="#" className="text-xs font-medium text-indigo-600 hover:text-indigo-500">忘记密码？</a>
           </div>
           <Input
             id="password"
@@ -71,9 +71,9 @@ const Login = () => {
           className="w-full h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all shadow-lg shadow-indigo-200"
         >
           {loading ? (
-            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Signing in...</>
+            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> 登录中...</>
           ) : (
-            'Sign In'
+            '立即登录'
           )}
         </Button>
       </form>

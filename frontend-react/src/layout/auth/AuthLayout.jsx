@@ -13,11 +13,11 @@ const AuthLayout = ({ children, title, subtitle, footerText, footerLinkText, foo
              <Zap size={24} className="text-white" />
           </div>
           <h1 className="text-5xl font-extrabold tracking-tight leading-tight">
-            Level up your <br />
-            <span className="text-indigo-400">productivity.</span>
+            提升你的 <br />
+            <span className="text-indigo-400">学习效率。</span>
           </h1>
           <p className="text-lg text-slate-300 leading-relaxed">
-            "GroupLeveling turns your study sessions into an RPG. Join rooms, earn XP, and compete with friends to stay motivated."
+            "GroupLeveling 将你的自律学习转化为RPG游戏。加入自习室、获取经验值、与好友并肩作战，激发你无限的动力。"
           </p>
           
           <div className="pt-8 flex gap-4">
@@ -27,7 +27,7 @@ const AuthLayout = ({ children, title, subtitle, footerText, footerLinkText, foo
                ))}
              </div>
              <div className="text-sm font-medium text-slate-400 self-center">
-               Join 2,000+ others
+               与 2,000+ 名学习者同行
              </div>
           </div>
         </div>

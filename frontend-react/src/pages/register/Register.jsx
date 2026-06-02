@@ -26,19 +26,19 @@ const Register = () => {
 
   return (
     <AuthLayout
-      title="Create an account"
-      subtitle="Start your leveling journey today"
-      footerText="Already have an account?"
-      footerLinkText="Sign in"
+      title="创建新账号"
+      subtitle="今天开启您的自律升级之旅"
+      footerText="已有账号？"
+      footerLinkText="立即登录"
       footerLinkPath="/login"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <label htmlFor="nickname" className="text-sm font-medium text-slate-700">Nickname</label>
+          <label htmlFor="nickname" className="text-sm font-medium text-slate-700">用户昵称</label>
           <Input
             id="nickname"
             type="text"
-            placeholder="Your hero name"
+            placeholder="您的自律称号"
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
             disabled={loading}
@@ -47,7 +47,7 @@ const Register = () => {
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="email" className="text-sm font-medium text-slate-700">Email</label>
+          <label htmlFor="email" className="text-sm font-medium text-slate-700">电子邮箱</label>
           <Input
             id="email"
             type="email"
@@ -60,11 +60,11 @@ const Register = () => {
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="password" className="text-sm font-medium text-slate-700">Password</label>
+          <label htmlFor="password" className="text-sm font-medium text-slate-700">账户密码</label>
           <Input
             id="password"
             type="password"
-            placeholder="Create a strong password"
+            placeholder="设置您的登录密码"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={loading}
@@ -84,9 +84,9 @@ const Register = () => {
           className="w-full h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all shadow-lg shadow-indigo-200"
         >
           {loading ? (
-            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating account...</>
+            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> 创建账号中...</>
           ) : (
-            'Create Account'
+            '立即注册'
           )}
         </Button>
       </form>

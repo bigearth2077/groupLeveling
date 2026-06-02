@@ -136,12 +136,12 @@ export function useRoomSimulation(roomInfo, enabled = true) {
 
     // 循环调度
     const scheduleNext = () => {
-      const delay = 10000 + Math.random() * 20000; // 10~30秒
+      const delay = 3000 + Math.random() * 7000; // 3~10秒
       timerRef.current = setTimeout(() => {
         injectMessage();
 
-        // 25% 概率触发状态切换
-        if (Math.random() < 0.25) {
+        // 50% 概率触发状态切换
+        if (Math.random() < 0.5) {
           simulateStatusChange();
         }
 
