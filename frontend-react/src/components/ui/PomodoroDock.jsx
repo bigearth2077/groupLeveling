@@ -11,10 +11,10 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useNavigate } from 'react-router-dom';
 import { useLogout } from '../../feature/auth/hooks/useLogout';
 import ProfileCard from '../../feature/profile';
 import SocialDrawer from '../../feature/social';
+import DashboardDrawer from '../../feature/dashboard';
 
 const RADIUS = 80;
 const DOCK_WIDTH = 220;
@@ -24,11 +24,15 @@ export default function PomodoroDock() {
   const [isHovered, setIsHovered] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showSocialDrawer, setShowSocialDrawer] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(false);
   const { logout } = useLogout();
-  const navigate = useNavigate();
 
   const icons = [
-    { icon: LayoutDashboard, label: '仪表盘', id: 'dashboard', onClick: () => navigate('/dashboard') },
+    { icon: LayoutDashboard, label: '仪表盘', id: 'dashboard', onClick: () => {
+      setShowDashboard(true);
+      setIsExpanded(false);
+      setIsHovered(false);
+    }},
     { icon: NotebookPen, label: '日志', id: 'journal' },
     { icon: Timer, label: '番茄钟', id: 'timer' },
     { icon: Users, label: '社交', id: 'social', onClick: () => {
@@ -155,6 +159,7 @@ export default function PomodoroDock() {
       
       <ProfileCard isOpen={showProfile} onClose={() => setShowProfile(false)} onLogout={logout} />
       <SocialDrawer isOpen={showSocialDrawer} onClose={() => setShowSocialDrawer(false)} />
+      <DashboardDrawer isOpen={showDashboard} onClose={() => setShowDashboard(false)} />
     </>
   );
 }

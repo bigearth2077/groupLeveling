@@ -5,7 +5,6 @@ import Login from '../pages/login/Login';
 import Register from '../pages/register/Register';
 import Auth from '../components/Auth';
 import Home from '../pages/home/Home';
-import Dashboard from '../pages/dashboard';
 
 // 路由配置
 const router = createBrowserRouter([
@@ -37,10 +36,7 @@ const router = createBrowserRouter([
             index: true,
             element: <Home />,
           },
-          {
-            path: 'dashboard',
-            element: <Dashboard />,
-          },
+
           {
             path: 'about',
             element: <div className="p-10 text-foreground">关于页面</div>,
