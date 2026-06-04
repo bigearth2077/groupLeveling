@@ -15,10 +15,6 @@ services:
       - "5173:5173"
     environment:
       - VITE_API_TARGET=http://app:8080
-    volumes:
-      - ./frontend-react:/app
-      - /app/node_modules
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
     depends_on:
       - app
     networks:
@@ -28,7 +24,7 @@ services:
   app:
     build:
       context: ./backend
-      dockerfile: dockerfile.dev
+      dockerfile: dockerfile
     container_name: gl-backend
     restart: always
     ports:
@@ -44,9 +40,6 @@ services:
       - JWT_SECRET=${JWT_SECRET:-dev-only-secret-please-change}
       - GIN_MODE=debug
       - SILICONFLOW_API_KEY=${SILICONFLOW_API_KEY}
-    volumes:
-      - ./backend:/app
-    command: sh -c "go mod tidy && air -c .air.toml"
     depends_on:
       db:
         condition: service_healthy
