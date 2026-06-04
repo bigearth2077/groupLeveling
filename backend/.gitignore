@@ -1,7 +1,7 @@
 # --- 1. 编译产物 (Binaries) ---
 # 忽略编译出来的可执行文件
-server
-main
+/server
+/main
 *.exe
 *.exe~
 *.dll
