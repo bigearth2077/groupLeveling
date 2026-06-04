@@ -12,7 +12,7 @@ services:
     container_name: gl-frontend
     restart: always
     ports:
-      - "5173:5173"
+      - "80:80"
     environment:
       - VITE_API_TARGET=http://app:8080
     depends_on:
